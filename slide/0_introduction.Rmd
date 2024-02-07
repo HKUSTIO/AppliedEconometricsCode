@@ -1,0 +1,118 @@
+---
+title: "Introduction"
+subtitle: "PhD Applied Micro-econometrics"
+author: "Kohei Kawaguchi, Hong Kong University of Science and Technology"
+output: 
+  ioslides_presentation:
+    widescreen: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+# Introduction 
+
+## Instructor
+
+- Kohei Kawaguchi
+- Empirical IO and quantiative marketing.
+
+## Prerequisite
+
+- ECON5300.
+- Students should understand the basics of statistical inference, ordinary least squares estimation, instrumental variable estimation, generalized method of moments, maximum likelihood estimation, and the estimation of panel data models.
+- If you are unsure about the basic econometrics, refer to Bruce Hansen, 2021, Econometrics [Author's page](https://www.ssc.wisc.edu/~bhansen/econometrics/) 
+
+## Learning Goal
+
+- The learning goal of this course is to be able to understand, design, and implement effective empirical strategies to support empirical claims, particularly causal claims, at the level required for professional researchers of empirical microeconomics. 
+- These empirical strategies include randomized experiments with and without compliance, regression discontinuity, the difference-in-difference, and recent techniques such as causal machine learning.
+- I expect students to understand how to write code in R to perform simulation, estimation, and inference. 
+- I also expect students to learn how to read empirical microeconomics papers critically.
+
+
+## Textbook of Econometrics
+
+- Randomized experiments:
+  - Guido W. Imbens and Donald B. Rubin, 2015, Causal Inference for Statistics, Social, and Biomedical Sciences, Cambridge University Press.
+    - [Publisher's website](https://www.cambridge.org/core/books/causal-inference-for-statistics-social-and-biomedical-sciences/71126BE90C58F1A431FE9B2DD07938AB)
+  - Athey, Susan, and Guido Imbens. 2016. “The Econometrics of Randomized Experiments.” arXiv [stat.ME]. 
+    - [arXiv](http://arxiv.org/abs/1607.00698)
+    
+## Textbook of Econometrics
+- Regression discontinuity design
+  - Cattaneo, Matias D., Nicolás Idrobo, and Rocío Titiunik. 2020. A Practical Introduction to Regression Discontinuity Designs: Foundations. Cambridge University Press.
+  - Cattaneo, Matias D., Nicolas Idrobo, and Rocio Titiunik. 2020. A Practical Introduction to Regression Discontinuity Designs: Extension. Cambridge University Press.
+- Difference in differences
+  - Roth, Jonathan, Pedro H. C. Sant’Anna, Alyssa Bilinski, and John Poe. “What’s Trending in Difference-in-Differences? A Synthesis of the Recent Econometrics Literature.” Journal of Econometrics 235, no. 2 (August 1, 2023): 2218–44.
+
+
+
+## Textbook of R
+
+- Garrett Grolemund, Hands-on Programming with R.
+  - [Online](https://rstudio-education.github.io/hopr/)
+- Hadley Wickham and Garrett Grolemund, R for Data Science.
+  - [Online](https://r4ds.had.co.nz/)
+- Hadley Wickham, R Packages.
+  - [Online](https://r-pkgs.org/)
+- Christoph Hanck, Martin Arnold, Alexander Gerber, and Martin Schmelzer, Introduction to Econometrics with R.
+  - [Online](https://www.econometrics-with-r.org/)
+
+## Evaluation
+
+- Approximately A range for >= 90, B range for >= 80, and C range for >= 50.
+- Assignment 50\%: 
+  - I will assign approximately ten pieces of homework. The score is based on the best 5 submissions.
+- Participation 30\%: 
+  - Every time you ask a question during the class, you will earn 1 point up to 30 points. 
+  - To claim a point, you have to note the question and answer in the designated channel of the Discord server.
+- Presentation 20\%.
+  - Each student picks up an empirical microeconomics paper published in the top 5 journals since 2010 and discusses the article in the classroom.
+  - Each student presents twice.
+
+# Setting up the environment
+
+## R and RStudio
+
+- Download and install R from the [website](https://www.r-project.org/).
+- Download and install RStudio from the [website](https://www.rstudio.com/).
+
+## RStudio project
+
+- Make RStudio project from `file > New Project...`
+- Choose `New Directory`.
+- If you do not write C/C++ functions, choose `R Package`.
+  - I recommend to develop a project as a package, because then you can install and load user-defined functions like the other R packages.
+- If you write C/C++ functions, choose `R Package using RcppEigen`.
+  - We do not use C/C++ functions in this class.
+- In the following, you can start the project by double-clicking the `ECON612-T.Rproj` file in the project folder.
+  - By default, the working directory is set at the project folder.
+  - Every path written inside the project folder should be relative to the projeft foler to make the project portable.
+
+## Reporting by Rmarkdown
+
+- Make a folder `assignment` in the project folder.
+- Make a HTML Rmarkdown file from `File > R Markdown > HTML`.
+- Save it to `assignment` folder as `0_intrtoduction.Rmd`.
+- Make the title "Assignment 0".
+- Then, you can "knit" the Rmarkdown file to generate an HTML report by pressing `Ctrl + Shift + K`.
+- If you successfully knit the Rmd file, you should find `0_introduction.html` in the `assignment` folder.
+
+## Reporting by Rmarkdown
+
+- In the Rmd file, you can use the markdown syntax.
+- For example, `#`, `##`, `###` are headings.
+- `-` makes an itemized list.
+- Please refer to the [cheatsheets](https://rmarkdown.rstudio.com/lesson-15.HTML).
+- Moreover, inside the Rmd file, you can make _R chunks_.
+- Put the cursol in a line you want to create the R chunk and press `Ctrl + Alt + I` to insert the chunk.
+- Inside the R chunk, you can write and run R code.
+- The outputs are shown to the report.
+
+## How to write R code?
+
+- Please try to replicate the first assignment.
+- Meanwhile, you should go over the aforementioned R textbooks.
+

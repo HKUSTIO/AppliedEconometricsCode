@@ -1,0 +1,89 @@
+---
+title: "Completely Randomized Experiments"
+subtitle: "Fisher's exact p-value for sharp null hypotheses"
+author: "Kohei Kawaguchi, Hong Kong University of Science and Technology"
+output: 
+  ioslides_presentation:
+    widescreen: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
+library(foreach)
+library(magrittr)
+library(ggplot2)
+```
+
+
+<style type="text/css">
+div.footnotes {
+  position: absolute;
+  bottom: 0;
+  margin-bottom: 10px;
+  width: 80%;
+  font-size: 10px;
+}
+body, td {
+   font-size: 14px;
+}
+code.r{
+  font-size: 11px;
+}
+pre {
+  font-size: 11px
+}
+blockquote {
+  background: #f9f9f9;
+  border-left: 5px solid #ccc;
+  margin: 1.5em 10px;
+  padding: 0.5em 1.5em;
+}
+</style>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<script>
+$(document).ready(function() {
+  $('slide:not(.backdrop):not(.title-slide)').append('<div class=\"footnotes\">');
+
+  $('footnote').each(function(index) {
+    var text  = $(this).html();
+    var fnNum = (index+1).toString();
+    $(this).html(fnNum.sup());
+
+    var footnote   = fnNum + '. ' + text + '<br/>';
+    var oldContent = $(this).parents('slide').children('div.footnotes').html();
+    var newContent = oldContent + footnote;
+    $(this).parents('slide').children('div.footnotes').html(newContent);
+  });
+});
+</script>
+
+## Sharp null hypothesis
+
+- Consider the null hypothesis:
+$$
+H_0: Y_i^\ast(0) = Y_i^\ast(1), \forall i = 1, \cdots, N.
+$$
+- Under this null hypothesis, we can infer all the missing potential outcomes from the observed ones.
+- A null hypothesis of this property is called the _sharp null hypothesis_.
+- Under a sharp null hypothesis, we can infer the exact distribution of any statistics that is a function of $\mathbf{Y}^{obs}, \mathbf{Z}$, and $\mathbf{W}$.
+
+## The difference in the means by treatment status
+
+- Consider a statistics:
+$$
+T^{ave}(\mathbf{Z}, \mathbf{Y}^{obs}, \mathbf{W}) \equiv \overline{Y}_t^{obs} - \overline{Y}_c^{ob} = \frac{1}{N_1} \sum_{i: Z_i = 1}Y_i^{obs} - \frac{1}{N_0} \sum_{i:Z_i = 0} Y_i^{obs}.
+$$
+- The p-value of the observation $\mathbf{Y}^{obs}, \mathbf{Z}^{obs}$, and $\mathbf{W}$ (where $\mathbf{Z}^{obs}$ is the realized treatment assignment) is:
+$$
+p = \mathbb{P}[|T^{ave}(\mathbf{Z}, \mathbf{Y}^{obs}, \mathbf{W})| \ge |T^{ave}(\mathbf{Z}^{obs}, \mathbf{Y}^{obs}, \mathbf{W})|],
+$$
+where the probability is about $\mathbf{Z}$.
+- It is known as the treatment assignment mechanism.
+
+## Reference
+
+- Chapter 5, Guido W. Imbens and Donald B. Rubin, 2015, Causal Inference for Statistics, Social, and Biomedical Sciences, Cambridge University Press.
+- Section 4.1, Athey, Susan, and Guido Imbens. 2016. “The Econometrics of Randomized Experiments.” arXiv [stat.ME]. arXiv. http://arxiv.org/abs/1607.00698.
+

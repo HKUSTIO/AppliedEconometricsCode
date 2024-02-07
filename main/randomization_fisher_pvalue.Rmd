@@ -1,6 +1,6 @@
 ---
-title: "無作為化実験 Randomized Experiment"
-subtitle: "フィッシャーのp値"
+title: "Randomized Experiment"
+subtitle: "Fisher's p-value"
 output: 
   html_document:
     css: style_do.css
@@ -15,7 +15,7 @@ output:
     df_print: paged
     code_folding: show
 #date: '2022-03-30'
-date: '最終更新: `r Sys.Date()`'
+date: 'Last Update: `r Sys.Date()`'
 ---
 
 ```{r setup, include=FALSE}

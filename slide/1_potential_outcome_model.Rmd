@@ -1,0 +1,732 @@
+---
+title: "Potential Outcome Model"
+subtitle: "PhD Applied Econometrics"
+author: "Kohei Kawaguchi, Hong Kong University of Science and Technology"
+output: 
+  ioslides_presentation:
+    widescreen: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+<style type="text/css">
+div.footnotes {
+  position: absolute;
+  bottom: 0;
+  margin-bottom: 10px;
+  width: 80%;
+  font-size: 10px;
+}
+body, td {
+   font-size: 14px;
+}
+code.r{
+  font-size: 11px;
+}
+pre {
+  font-size: 11px
+}
+blockquote {
+  background: #f9f9f9;
+  border-left: 5px solid #ccc;
+  margin: 1.5em 10px;
+  padding: 0.5em 1.5em;
+}
+</style>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<script>
+$(document).ready(function() {
+  $('slide:not(.backdrop):not(.title-slide)').append('<div class=\"footnotes\">');
+
+  $('footnote').each(function(index) {
+    var text  = $(this).html();
+    var fnNum = (index+1).toString();
+    $(this).html(fnNum.sup());
+
+    var footnote   = fnNum + '. ' + text + '<br/>';
+    var oldContent = $(this).parents('slide').children('div.footnotes').html();
+    var newContent = oldContent + footnote;
+    $(this).parents('slide').children('div.footnotes').html(newContent);
+  });
+});
+</script>
+
+# Causality: The Basic Framework
+
+## Unit and action
+
+- Consider a situation where an _action_ (or manipulation, treatment, or intervention) is applied to a _unit_.
+- For example, I (=unit) take the aspirin (=action) and you (= another unit) do not take the aspirin (=another action).
+
+## Potential outcomes
+
+- The _potential outcome_ is the outcome that could happen when an action was applied to a unit.
+- For example, the potential outcome for me when I take Aspirin, denoted by $Y^\ast(Aspirin)$, takes a value of either headache or no headache. 
+- The potential outcome for me when I do not take Aspirin, denoted by $Y^\ast(No Aspirin)$, also takes a value of either headache or no headache.
+- Suppose that the true potential outcomes are like: <footnote>Modified Table 1.1 of Imbens and Rubin (2015) </footnote>
+
+
+| Unit | Potential outcomes | |
+|------|--------------------|-|
+| | $Y^\ast(Aspirin)$ | $Y^\ast(No Aspirin)$ |
+| I | No Headache | Headache |
+
+## Causal effect
+
+- The causal effect of taking the aspirin for me involves the comparison of two potential outcomes $Y^\ast(Aspirin)$ and $Y^\ast(No Aspirin)$.
+- If $Y^\ast(Aspirin)$ is No Headache and $Y^\ast(NoAspirin)$ is Headache, the causal effect is labeled as the Improvement due to Aspirin.<footnote>Table 1.1 of Imbens and Rubin (2015) </footnote>
+
+
+| Unit | Potential outcomes | | Causal effect |
+|------|--------------------|-|---------------|
+| | $Y^\ast(Aspirin)$ | $Y^\ast(No Aspirin)$ | |
+| I | No Headache | Headache | Improvement due to Aspirin |
+
+## Possible causal effects
+
+- The truth is either of the following scenarios but we do not know which is true:<footnote>Modified Table 1.3 of Imbens and Rubin (2015) </footnote>
+
+| Unit | Potential outcomes | | Causal effect |
+|------|--------------------|-|---------------|
+| | $Y^\ast(Aspirin)$ | $Y^\ast(No Aspirin)$ | |
+| 1 | No Headache | Headache | Improvement due to Aspirin |
+| 2 | No Headache | No Headache | Headache gone regardless of Aspirin |
+| 3 | Headache | No Headache | Aspirin caused headache |
+| 4 | Headache | Headache | No effect of Aspirin |
+
+## Observed outcomes
+
+- Suppose that one of the potential outcomes of unit $i$ is observed when a treatment is assigned to the unit.
+- For example, if $Aspirin$ is assigned, then $Y_i = Y_i^\ast(Aspirin)$ is observed and if $No Aspirin$ is assigned, then $Y_i = Y_i^\ast(No Aspirin)$ is observed.
+- $Y_i$ is called the _observed outcome_ of unit $i$, which differs by the assignment to unit $i$.
+
+
+## Notations
+
+- Units: $i = 1, \cdots, N$.
+- Binary treatment indicator: $Z_i \in \{0, 1\}$.
+- Potential outcomes: $Y_i^\ast(Z_i)$.
+- Pre-treatment variabels or covariates: $W_i$.
+- $\mathbf{Y}^\ast(0)$: and $\mathbf{Y}^\ast(1)$ be the $N$-component column vectors of potential outcomes with $i$th elements equal to $Y_i^\ast(0)$ and $Y_i^\ast(1)$.
+- $\mathbf{Z}$: $N$-component column vector with $i$th element equal to $Z_i$.
+- $\mathbf{Z}$: $N \times K$ matrix of covariates with $i$th row equal to $W_i$.
+
+## Causal estimands
+
+
+- The _unit-level causal effects_:
+$$
+Y_i^\ast(1) - Y_i^\ast(0), i = 1, \cdots, N.
+$$
+
+- The _average causal effect_:
+$$
+\tau_{fs} = \frac{1}{N} \sum_{i = 1}^N [Y_i^\ast(1) - Y_i^\ast(0)].
+$$
+
+## Causal estimands
+
+- The _average causal effect conditional on the covariate_:
+
+$$
+\tau_{fs}(f) = \frac{1}{N} \sum_{i = 1, W_i = f}^N [Y_i^\ast(1) - Y_i^\ast(0)].
+$$
+
+- The _average causal effect for those who were exposed to it_:
+
+$$
+\tau_{fs, t} = \frac{1}{N} \sum_{i = 1, Z_i = 1}^N [Y_i^\ast(1) - Y_i^\ast(0)].
+$$
+
+## Causal estimands
+
+- The _average causal effect for positive outcomes_:
+$$
+\tau_{fs, pos} = \frac{1}{N} \sum_{i = 1, Y_i^\ast(0) > 0, Y_i^\ast(1) > 0}^N [Y_i^\ast(1) - Y_i^\ast(0)].
+$$
+  - e.g. effects on wages for employed workers.
+  - The definition depends on the potential outcomes but not on observed outcomes.
+
+
+- The general function of potential outcomes:
+$$
+\tau = \tau(\mathbf{Y}^\ast(0), \mathbf{Y}^\ast(1), \mathbf{W}, \mathbf{Z}),
+$$
+    - where $\tau$ is a row-exchangeable function.
+
+
+## Causal inference as missing data problem
+
+| Unit | Potential outcomes | | Causal Effecte |
+|------|--------------------|-|----------------|
+| | $Y_i^\ast(0)$ | $Y_i^\ast(1)$ | $Y_i^\ast(1) - Y_i^\ast(0)$ |
+| Patient 1 | 1 | 7 | 6 |
+| Patient 2 | 6 | 5 | -1 |
+| Patient 3 | 1 | 5 | 4 |
+| Patient 4 | 8 | 7 | -1 |
+| Average | 4 | 6 | 2 |
+
+- The average causal effect of this population is 2.<footnote>Table 1.4 of Imbens and Rubin (2015) </footnote>
+
+
+## Observed outcomes
+
+- The _observed_ outcome of unit $i$ is:
+$$
+Y_i^{obs} = Y_i^\ast(Z_i) = 
+\begin{cases}
+Y_i^\ast(0) & \text{   if   } Z_i = 0\\
+Y_i^\ast(1) & \text{   if   } Z_i = 1.
+\end{cases}
+$$
+
+
+- The _missing_ potential outcome of unit $i$ is:
+$$
+Y_i^{mis} = Y_i^\ast(1 - Z_i) = 
+\begin{cases}
+Y_i^\ast(1) & \text{   if   } Z_i = 0\\
+Y_i^\ast(0) & \text{   if   } Z_i = 1.
+\end{cases}
+$$
+
+## Observations from the previous treatment
+
+| Unit | Treatment | Observed outcome |
+|------|-----------|------------------|
+| Patient 1 | 1 | 7 |
+| Patient 2 | 0 | 6 |
+| Patient 3 | 1 | 5 |
+| Patient 4 | 0 | 8 |
+
+- The average outcomes are 6 for treated and 7 for not treated.<footnote>Table 1.5 of Imbens and Rubin (2015) </footnote>
+- The simple difference means that the treatment has the causal effect of -1, whereas the true average causal effect is 2.
+- No valid coclusion can be made without knowing the _treatment assignment mechanism_ to correct the missing data problem.
+
+## Fundamental problem of causal inference
+
+- The definition depends on the potential outcomes, but not on which outcome is actually observed.
+    - For example, I take Aspirin and feel no headache can be either of Improvement due to Aspirin and Headache gone regardless of Aspirin, becuase the headache could have gone without taking Aspirin.
+- The definition is based on the comparison of potential outcomes of the same unit.
+    - For example, I take Aspirin and feel no headache and you do not take Aspirin and feel headache does not mean that Aspirin improved my headache.
+- The _individual causal effect_ is _well-defined_ but _never estimated_ because at most one of the potential outcomes can be realized and observed for each unit.
+
+## SUTVA
+
+- The previous potential outcome model presumes the followings:
+
+- __Assumption: SUTVA (Stable unit treatment value assumption)__: 
+  1. (no spillover, no interference) The potential outcomes for any unit do not vary with the treatments assigned to other units, and;
+  2. (consistency, no multiple version of treatment) The observed outcome is uniquely determined by the potential outcome evaluated at the assignment to the unit.
+  
+
+# A Classification of Assignment Mechanisms 
+
+## Assignment mechanism
+
+- The _assignment mechanism_ is a function that assigns probabilities to all $2^N$ possible values for the $N$-vector of assignments $\mathbf{Z}$, given the $N$-vectors of potential outcomes $\mathbf{Y}^\ast(0)$ and $\mathbf{Y}^\ast(1)$, and given $N \times K$ matrix of covariates $\mathbf{W}$.
+
+- __Definition: Assignment Mechanism__:
+    - Given a population of $N$ units, the assignment mechanism is a row-exchangeable function $\mathbb{P}[\mathbf{Z}|\mathbf{W}, \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0)]$, taking on values in $[0, 1]$, satisfying:
+    $$
+    \sum_{\mathbf{Z} \in \{0, 1\}^N} \mathbb{P}[\mathbf{Z}|\mathbf{W}, \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0)] = 1,
+    $$
+    for all $\mathbf{W}$, $\mathbf{Y}^\ast(0)$, and $\mathbf{Y}^\ast(1)$.
+    
+## Remarks on the assignment mechanism
+
+- In general, dependence of the assignment on the potential outcomes is not ruled out.
+- The dependence of the assignment on the covariate, assignment, and the potential outcomes of other units does not contradict with SUTVA, because SUTVA is about the definition of the potential outcomes.
+    
+## Unit assigmnemt probability
+
+- Assignment mechanism is a joint probability of assignments for the entire population.
+- We can derive the unit assignment probability from the assignment mechanism:
+- __Definition: Unit Assignment Probability__:
+    $$
+    p_i(\mathbf{W}, \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0)) = \sum_{\mathbf{Z}: Z_i = 1} \mathbb{P}[\mathbf{Z}|\mathbf{W}, \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0)]
+    $$
+    
+## Finite population propensity score
+
+- The average unit assignment probability for units with $W_i = x$ is called the _propesity score_ at $x$.
+- __Definition: Finite Population Propensity Score__:
+    $$
+    e(x) = \frac{1}{N(x)} \sum_{i: W_i = x} p_i(\mathbf{W}, \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0)),
+    $$
+    where $N(x) = \#\{i = 1, \cdots, N| W_i = x\}$.
+    
+    
+## Restrictions on the assignment mechanism
+
+- To classify the various types of assignment mechanisms, present three general properties that assignment mechanisms may satisfy.
+
+  1. Individualistic assignment.
+  2. Probabilistic assignment.
+  3. Unconfounded assignment.
+
+
+## Individualistic assignment
+
+- The first restriction limits the dependence of the treatment assignment for unit $i$ on the outcomes and assignments for other units.
+- __Definition: Individualistic Assignemnt__:
+  - An assignment mechanism $\mathbb{P}[\mathbf{Z}|\mathbf{W}, \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0)]$ is _individualistic_ if, for some functions $q(\cdot) \in [0, 1]$:
+  $$
+  p_i(\mathbf{W}, \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0)) = q(W_i, Y_i^\ast(0), Y_i^\ast(1))
+  $$
+
+## Probabilistic assignment
+
+- The second restriction requires that every unit has positive probability of being assigned to treatment level 0 and to treatment level 1.
+- __Definition: Probabilistic Assignment__:
+  - An assignment mechanism $\mathbb{P}[\mathbf{Z}|\mathbf{W}, \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0)]$ is _probabilistic_ if:
+  $$
+  0 < p_i(\mathbf{W}, \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0)) < 1, \forall \mathbf{W}, \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0), \forall i.
+  $$
+
+
+## Unconfounded assignment
+
+- The third condition states that the assignment does not depend on the potential outcome.
+- __Definition: Unconfounded Assignment__:
+  - An assignment mechanism $\mathbb{P}[\mathbf{Z}|\mathbf{W}, \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0)]$ is _unconfounded_ if:
+  $$
+  \mathbb{P}[\mathbf{Z}|\mathbf{W}, \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0)] = \mathbb{P}[\mathbf{Z}|\mathbf{W}, \mathbf{Y}^\ast(1)', \mathbf{Y}^\ast(0)']
+  $$
+  for all $\mathbf{Z}, \mathbf{W}, \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0), \mathbf{Y}^\ast(1)', \mathbf{Y}^\ast(0)'$.
+- If an assignment mechanism is unconfounded, we can simplify the assignment to $\mathbb{P}(\mathbf{Z}|\mathbf{W})$.
+
+## Individualistic, probabilistic, and unconfounded assignment
+
+- The assignment mechanism is written as:
+$$
+\mathbb{P}[\mathbf{Z}|\mathbf{W}, \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0)] = \mathbb{P}(\mathbf{Z}|\mathbf{W}) = c \cdot \prod_{i = 1}^N q(W_i)^{Z_i} \cdot [1 - q(W_i)]^{1 - Z_i},
+$$
+and the propensity score is the unit-level assignment probability:
+$$
+e(x) = q(x).
+$$
+- Given individualistic assignment, the combination of probabilistic and unconfounded assignment is referred to as _strongly ignorable treatment assignment_.
+
+
+## Randomized experiment
+
+- __Definition: Randomized Experiment__:
+  - A _randomized experiment_ is an assignment mechanism that:
+    - is probabilistic, and
+    - has a known functional form that is controlled by the researcher.
+  
+- __Definition: Classical Randomized Experiment__:
+  - A _classical randomized experiment_ is a randomized experiment with an assignment mechanism that is:
+    - individualistic, and
+    - unconfounded.
+    
+- __Definition: Natural Experiment__:
+  - A randomized experiment in which the assignment mechanism is designed by someone different from the analyst.
+    
+## Completely randomized experiments
+
+- A fixed number of units, say $N_1$, is drawn at random from the population of $N$ units to receive the active treatment, with the remaining $N_0 = N - N_1$ assigned to the control group.
+- The assignment probability:
+$$
+\mathbb{P}[\mathbf{Z}|\mathbf{W}, \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0)] = 
+\begin{pmatrix}
+N\\
+N_1
+\end{pmatrix}^{-1},
+$$
+for all $\mathbf{Z}$ such that $\sum_{i = 1}^N Z_i = N_1$.
+
+## Stratfied randomized experiments
+
+- First partition the population on the basis of covariate values into $G$ strata, i.e. if the covariate space is $\mathbb{X}$, partition $\mathbb{X}$ into $\mathbb{X}_1, \cdots, \mathbb{X}_G$, so that $\bigcup_g \mathbb{X}_g = \mathbb{X}$ and $\mathbb{X}_g \cap \mathbb{X}_{g'} = \emptyset$ if $g \neq g'$.
+- Let $G_{ig} = 1_{W_i \in \mathbf{W}_g}$ and $N_g$ be the number of units in stratum $g$.
+- Fix the number of treated units in each stratum as $N_{tg}$ such that $\sum_g N_{tg} = N_1$.
+- The assignment probability is:
+$$
+\mathbb{P}[\mathbf{Z}|\mathbf{W}, \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0)] = \prod_{g = 1}^G 
+\begin{pmatrix}
+N_g\\
+N_{tg}
+\end{pmatrix}^{-1},
+$$
+for all $\mathbf{Z}$ such that $\sum_{i = 1}^N Z_i \cdot G_{ig} = N_{tg}$ for all $g$.
+
+## Paired randomized experiments
+
+- An extreme case of stratification where each stratum contains exactly one treated unit and exactly one control unit.
+- There are $G = N/2$ strata and $N_g = 2$ and $N_{tg} = 1$ for all $g$.
+- The assignment probability is:
+$$
+\mathbb{P}[\mathbf{Z}|\mathbf{W}, \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0)] = \bigg(\frac{1}{2}\bigg)^{\frac{N}{2}},
+$$
+for all $\mathbf{Z}$ such that $\sum_{i = 1}^N Z_i \cdot G_{ig} = 1$ for all $g$.
+
+
+## Clustered randomized experiments
+
+- Partition the covariate space into clusters and treatments are assigned randomly to entire clusters, with all units within a cluster receiving the same level of the treatment.
+- This design may be motivated by concerns that there are interactions between units.
+- $G_t$ out of $G$ clusters are selected randomly to be assigned to the treatment group.
+- Let $\overline{W}_g = \sum_{i: G_{ig} = 1} Z_i / N_g$ be the average value of $Z_i$.
+- The assignment probability is:
+$$
+\mathbb{P}[\mathbf{Z}|\mathbf{W}, \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0)] = 
+\begin{pmatrix}
+G \\
+G_t
+\end{pmatrix}^{-1},
+$$
+for all $\mathbf{Z}$ such that if $W_{ig} = W_{i'g} = 1$ and $\sum_g \overline{W}_g = G_t$.
+
+## Observational studies: Regular assignment mechanisms with compliance
+
+- __Definition: Observational Study__:
+  - An assignment mechanism corresponds to an observational study if the functional form of the assignment mechanism is unknown.
+  
+- __Definition: Regular Assignment Mechanism__:
+  - An assignment mechanism is _regular_ if:
+    - the assignment mechanism is individualistic,
+    - the assignment mechanism is probabilistic, and
+    - the assignment mechanism is unconfounded.
+    
+- __Definition: Quasi-Experiment__:
+  - An observational study in which some of the features of the regular assignment mechanism can be justified based on the institutional knowledge.
+  
+# Sampling-based and assignment-based uncertainty
+
+## Definition
+
+- Two types of uncertainty affects the inference.
+- The _sampling-based uncertainty_ refers to the randomness due to the sampling from the population.
+  - The sample is finite. The population may be infinite or finite.
+- The _assignment-based uncertainty_ refers to the randomness due to the assignment over the sample.
+  - Sometimes called design-based or randomization-based uncertainty.
+- Make sure which of (or both of) the uncertainty matters when considering inference.
+
+## Example
+
+<div style="display: flex; justify-content: center;">
+<table>
+    <tr style="background-color: #EFEFEF;">
+        <th style="padding: 1em; font-family: sans-serif;"> $i$ </th>
+        <th style="padding: 1em; font-family: sans-serif;"> $O_i$ </th>
+        <th style="padding: 1em; font-family: sans-serif;"> $Z_i$ </th>
+        <th colspan="2" style="font-family: sans-serif; background-color: #EFEFEF;"> $Y_i^\ast(\cdot)$ </th>
+    </tr>
+    <tr>
+        <td style="padding: 3em;"> </td>
+        <td style="padding: 3em;"> </td>
+        <td style="padding: 3em;"> </td>
+        <td style="padding: 3em;">0</td>
+        <td style="padding: 3em;">1</td>
+    </tr>
+    <tr style="background-color: #656565; color: #FFFFFF;">
+        <td>1</td>
+        <td>1</td>
+        <td>0</td>
+        <td style="text-decoration: underline; font-family: sans-serif;">350</td>
+        <td>500</td>
+    </tr>
+    <tr style="background-color: #656565; color: #FFFFFF;">
+        <td>2</td>
+        <td>1</td>
+        <td>1</td>
+        <td>320</td>
+        <td style="text-decoration: underline; font-family: sans-serif;">700</td>
+    </tr>
+    <tr>
+        <td>3</td>
+        <td>0</td>
+        <td>NA</td>
+        <td>800</td>
+        <td>900</td>
+    </tr>
+    <tr>
+        <td>4</td>
+        <td>0</td>
+        <td>NA</td>
+        <td>700</td>
+        <td>900</td>
+    </tr>
+    <tr style="background-color: #656565; color: #FFFFFF;">
+        <td>5</td>
+        <td>1</td>
+        <td>0</td>
+        <td style="text-decoration: underline; font-family: sans-serif;">650</td>
+        <td>780</td>
+    </tr>
+    <tr>
+        <td>6</td>
+        <td>0</td>
+        <td>NA</td>
+        <td>320</td>
+        <td>450</td>
+    </tr>
+    <tr style="background-color: #656565; color: #FFFFFF;">
+        <td>7</td>
+        <td>1</td>
+        <td>1</td>
+        <td>250</td>
+        <td style="text-decoration: underline; font-family: sans-serif;">400</td>
+    </tr>
+    <tr>
+        <td>8</td>
+        <td>0</td>
+        <td>NA</td>
+        <td>850</td>
+        <td>900</td>
+    </tr>
+    <tr style="background-color: #656565; color: #FFFFFF;">
+        <td>9</td>
+        <td>1</td>
+        <td>0</td>
+        <td>760</td>
+        <td style="text-decoration: underline; font-family: sans-serif;">820</td>
+    </tr>
+    <tr>
+        <td>10</td>
+        <td>0</td>
+        <td>NA</td>
+        <td>750</td>
+        <td>560</td>
+    </tr>
+</table>
+</div>
+
+- The test score of a student when they took a tutorial.
+- The grey background means the student is sampled.
+- The underline means the student is assigned to the treatment group.
+
+
+# Difference from structural estimation approach
+
+## Structural estimation approach
+
+- Traditional approach in economics.
+- Origins from Haavelmo (1943, 1944).
+- All textbooks and econometric classes starting from the OLS and moving on to IV and GMM are based on the structural estimation approach.
+  - Describe an economic model with shocks.
+  - Derive the equilibrium condition (_structural-form_ econometric model).
+  - Solve the equilibrium condition for endogenous variables (_reduced-form_ econometric model).
+  - Use OLS to estimate parameters in the reduced-form model.
+  - Use GMM to estimate parameters in the structural-form model.
+  - Use IV to estimate parameters in part of the structural-form model.
+- The pure form is found in Hsiao (1983)
+
+## Difference in philosophy
+
+- Anything assumed outside data distribution is a latent model.
+  - The latent model in structural estimation approach is an economic model.
+  - The latent model in potential outcome approach is a potential outcome model, which may or may not be derived from an economic model.
+- Restrictions from latent model
+  - In structural estimation approach, the economic model is used to derive restrictions.
+  - In potential outcome approach, institutional knowledge is used to derive restrictions, and using economic model is avoided.
+  - In potential outcome approach, an economic model just gives an interpretation of the result.
+
+# Identification
+
+## Model and the State of the World
+
+- Consider the previous table of student's test score.
+- Suppose that we are interested in the finite-sample average treatment effect.
+- _Model_ $\mathcal{M}$: possible values of $\mathbf{Y}^\ast(\cdot)$ and $\mathbf{P}_Z$.
+- _The state of the world_: a value of $m = (\mathbf{y}^\ast(\cdot), \mathbf{p}_Z) \in \mathcal{M}$.
+  - For example: $\mathbf{y}^\ast(\cdot)$ is as in the table, $\mathbf{p}_Z)$ is a completely randomized experiment.
+- This uniquely determines the value of _parameter of interest_ $\theta$:
+$$
+\theta = \frac{1}{N} \sum_{i = 1}^N [y_i^\ast(1) - y_i^\ast(0)] = 174.  
+$$
+
+## Information and Structure
+
+- _Information_ $\phi$ to the analyst: all information that the analyst has about the model.
+  - Includes the basic setting of the binary potential outcome model.
+  - Incclude the knowledge of the assignment mechanism.
+  - Does not include the potential outcome.
+- _Structure_ $s(\phi, \theta) \subset \mathcal{M}$: the value of $m \in \mathcal{M}$ that is consistent with the information $\phi$ and the value of $\theta$. 
+
+
+## Observationally equivalent and Identification
+
+- Parameter $\theta$ and $\tilde{\theta$ are said to be _observationally equivalent_ if there exist information $\theta$ and $s(\phi, \theta) \neq \emptyset$ and $s(\phi, \tilde{\theta}) \neq \emptyset$.
+  - If two parameters are observationally equivalent, both can be consistent with the information to the analysis.
+- The parameter $\theta$ is said to be _identified if there is no other parameter $\tilde{\theta}$ that is observationally equivalent to $\theta$.
+- The parameter space $\Theta$ is said to be _globally identified_ if every parameter in $\Theta$ is identified.
+
+## Example
+
+- Because $Y_i$ and the assignment mechanism $\mathbf{p}_z$ is included in information $\phi$, the analyst can calculate the following expected value
+$$
+\mathbb{E}\left[\frac{1}{N_1}\sum_{i = 1}^N Z_i Y_i - \frac{1}{N_0} \sum_{i = 1}^N (1 - Z_i) Y_i\right].
+$$
+
+## Example
+
+- Because the knowledge that the assignment mechanism is unconfounded is included in information $\phi$, the analyt can show that the above is
+$$
+\begin{split}
+    &\frac{1}{N_1} \sum_{i = 1}^N \mathbb{E}[Z_i] Y_i^\ast(1) - \frac{1}{N_0} \sum_{i = 1}^N (1 - \mathbb{E}[Z_i]) Y_i^\ast(0) \\
+    &= \frac{1}{N_1} \sum_{i = 1}^N \frac{N_1}{N} Y_i^\ast(1) - \frac{1}{N_0} \sum_{i = 1}^N \frac{N_0}{N} Y_i^\ast(0) \\
+    &= \frac{1}{N} \sum_{i = 1}^N Y_i^\ast(1) - \frac{1}{N} \sum_{i = 1}^N Y_i^\ast(0) \\
+    &= \theta
+\end{split}
+$$
+
+- The information uniquely determines $\theta$: The parameter $\theta$ is identified.
+
+## Counterexample
+
+- Suppose that assignment mechanism $\mathbf{p}_Z$ is such that assignint tutorial to three students whose individual treatment effect is the highest.
+  - Units 1, 2, 7 are always treated.
+  - Units 5, 9 are never treated.
+  
+## Counterexample
+
+
+<div style="display: flex; justify-content: center; gap: 20px;">
+<div>
+<table style="border-collapse: collapse; margin: auto; font-family: sans-serif;">
+    <tr style="background-color: #EFEFEF;">
+        <th style="padding: 0.5em;">$i$</th>
+        <th colspan="2" style="background-color: #EFEFEF; padding: 0.5em;"></th>
+    </tr>
+    <tr>
+        <td> </td>
+        <td style="padding: 0.5em;">$Y_i^\ast(0)$</td>
+        <td style="padding: 0.5em;">$Y_i^\ast(1)$</td>
+    </tr>
+    <tr style="background-color: #656565; color: #FFFFFF;">
+        <td>1</td>
+        <td>350</td>
+        <td style="text-decoration: underline;">500</td>
+    </tr>
+    <tr style="background-color: #656565; color: #FFFFFF;">
+        <td>2</td>
+        <td>320</td>
+        <td style="text-decoration: underline;">700</td>
+    </tr>
+    <tr>
+        <td>3</td>
+        <td>800</td>
+        <td>900</td>
+    </tr>
+    <tr>
+        <td>4</td>
+        <td>700</td>
+        <td>900</td>
+    </tr>
+    <tr style="background-color: #656565; color: #FFFFFF;">
+        <td>5</td>
+        <td style="text-decoration: underline;">650</td>
+        <td>780</td>
+    </tr>
+    <tr>
+        <td>6</td>
+        <td>320</td>
+        <td>450</td>
+    </tr>
+    <tr style="background-color: #656565; color: #FFFFFF;">
+        <td>7</td>
+        <td>250</td>
+        <td style="text-decoration: underline;">400</td>
+    </tr>
+    <tr>
+        <td>8</td>
+        <td>850</td>
+        <td>900</td>
+    </tr>
+    <tr style="background-color: #656565; color: #FFFFFF;">
+        <td>9</td>
+        <td style="text-decoration: underline;">760</td>
+        <td>820</td>
+    </tr>
+    <tr>
+        <td>10</td>
+        <td>750</td>
+        <td>560</td>
+    </tr>
+</table>
+</div>
+<div>
+<table style="border-collapse: collapse; margin: auto; font-family: sans-serif;">
+    <!-- Second table content here -->
+    <tr style="background-color: #EFEFEF;">
+        <th style="padding: 0.5em;">$i$</th>
+        <th colspan="2" style="background-color: #EFEFEF; padding: 0.5em;"></th>
+    </tr>
+    <tr>
+        <td> </td>
+        <td style="padding: 0.5em;">$Y_i^\ast(0)$</td>
+        <td style="padding: 0.5em;">$Y_i^\ast(1)$</td>
+    </tr>
+    <tr style="background-color: #656565; color: #FFFFFF;">
+        <td>1</td>
+        <td>[340]</td>
+        <td style="text-decoration: underline;">500</td>
+    </tr>
+    <tr style="background-color: #656565; color: #FFFFFF;">
+        <td>2</td>
+        <td>[310]</td>
+        <td style="text-decoration: underline;">700</td>
+    </tr>
+    <tr>
+        <td>3</td>
+        <td>800</td>
+        <td>900</td>
+    </tr>
+    <tr>
+        <td>4</td>
+        <td>700</td>
+        <td>900</td>
+    </tr>
+    <tr style="background-color: #656565; color: #FFFFFF;">
+        <td>5</td>
+        <td style="text-decoration: underline;">650</td>
+        <td>[790]</td>
+    </tr>
+    <tr>
+        <td>6</td>
+        <td>320</td>
+        <td>450</td>
+    </tr>
+    <tr style="background-color: #656565; color: #FFFFFF;">
+        <td>7</td>
+        <td>[240]</td>
+        <td style="text-decoration: underline;">400</td>
+    </tr>
+    <tr>
+        <td>8</td>
+        <td>850</td>
+        <td>900</td>
+    </tr>
+    <tr style="background-color: #656565; color: #FFFFFF;">
+        <td>9</td>
+        <td style="text-decoration: underline;">760</td>
+        <td>[830]</td>
+    </tr>
+    <tr>
+        <td>10</td>
+        <td>750</td>
+        <td>560</td>
+    </tr>
+</table>
+</div>
+</div>
+
+- The value of $\frac{1}{N_1} \sum_{i = 1}^N Z_i Y_i - \frac{1}{N_0} \sum_{i = 1}^N (1 - Z_i) Y_i$ is always -171.7 because treatment assignment does not change.
+- Change of the model from the left to right does not change $\phi$ including this value because it just modifies the values of potential outcome that are never observed and increases the average treatment effect by 10.
+
+
+## Reference
+
+- Chapter 1-4, Guido W. Imbens and Donald B. Rubin, 2015, Causal Inference for Statistics, Social, and Biomedical Sciences, Cambridge University Press.
+- Section 1-3, Athey, Susan, and Guido Imbens. 2016. “The Econometrics of Randomized Experiments.” arXiv [stat.ME]. arXiv. http://arxiv.org/abs/1607.00698.
+- Abadie, Alberto, Susan Athey, Guido W. Imbens, and Jeffrey M. Wooldridge. 2020. “Sampling‐based versus Design‐based Uncertainty in Regression Analysis.” Econometrica: Journal of the Econometric Society 88 (1): 265–96.
+- Haavelmo, Trygve. “The Statistical Implications of a System of Simultaneous Equations.” Econometrica 11, no. 1 (1943): 1–12.
+- Haavelmo, Trygve. “The Probability Approach in Econometrics.” Econometrica 12 (1944): iii–115.
+- Hsiao, Cheng. “Chapter 4 Identification.” In Handbook of Econometrics, 1:223–83. Elsevier, 1983.
