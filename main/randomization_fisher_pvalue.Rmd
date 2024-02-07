@@ -1,0 +1,177 @@
+---
+title: "無作為化実験 Randomized Experiment"
+subtitle: "フィッシャーのp値"
+output: 
+  html_document:
+    css: style_do.css
+    #以下設定追加
+    number_sections: yes
+    toc: yes
+    toc_depth: '3'
+    toc_float: yes
+    theme: spacelab #"default", "bootstrap", "cerulean", "cosmo", "darkly", "flatly",
+                 # "journal", "lumen", "paper", "readable", "sandstone", "simplex",
+                 # "spacelab", "united", "yeti"
+    df_print: paged
+    code_folding: show
+#date: '2022-03-30'
+date: '最終更新: `r Sys.Date()`'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(cache = FALSE, echo = TRUE, fig.align = "center")
+library(foreach)
+library(magrittr)
+library(ggplot2)
+library(kableExtra)
+color_main <- scales::viridis_pal(option = "C")(1)
+```
+
+Here we implement the method of "5 Fisher's p-value". The functions called from `AppliedEconometrics` are defined in `R/functions_randomized.R`. First, we generate the potential outcomes of the sample, and then we generate the treatment vector and the realized outcomes. Based on the realized treatment vector and outcomes, we calculate the test statistic based on the difference in means, and finally, we numerically calculate Fisher's p-value using the bootstrap method.
+
+# Generating simulation data
+
+## Setting constants and parameters
+
+First, we set the seed, the number of individuals `N`, the number of draws in the Monte Carlo simulation `R`, and the size of the treatment group `N_1`.
+
+```{r}
+set.seed(1)
+N <- 1000
+R <- 1000
+N_1 <- 500
+```
+
+Next, we set the average treatment effect in the population `tau_population`.
+
+```{r}
+tau_population <- 0.2
+```
+
+## Generating data
+
+We generate the potential outcomes of the sample based on the above constants and parameters. This operation corresponds to one random draw. We also calculate the average treatment effect `tau` in the sample.
+
+```{r}
+outcome_potential <-
+  tibble::tibble(
+    y_0 = 
+      rnorm(
+        N, 
+        mean = 0, 
+        sd = 1
+      ),
+    y_1 = 
+      rnorm(
+        N, 
+        mean = tau_population, 
+        sd = 1
+      )
+  )
+tau <-
+  outcome_potential %>%
+  dplyr::summarise(
+    tau = mean(y_1 - y_0)
+  ) %>%
+  dplyr::pull(tau)
+
+outcome_potential %>%
+  head() %>%
+  kbl() %>%
+  kable_styling()
+
+outcome_potential %>%
+  modelsummary::datasummary_skim()
+
+tau
+```
+
+Next, we generate the observed data. To do this, we first generate the treatment vector `z`. This operation corresponds to one randomization experiment. Furthermore, we calculate the realized outcomes from the realized treatment vector and potential outcomes. The resulting `data_realized` is the observed data.
+
+```{r}
+data_realized <-
+  AppliedEconometrics::generate_data_randomized(
+    outcome_potential = outcome_potential,
+    N_1 = N_1,
+    seed = 1
+  )
+data_realized %>%
+  head() %>%
+  kbl() %>%
+  kable_styling()
+data_realized %>%
+  modelsummary::datasummary_skim()
+```
+
+# Analysis  
+
+## Calculating the test statistic
+
+We calculate the test statistic based on the observed data. This operation will also be repeated in the calculation of the p-value, so we will make it a function.
+
+```{r}
+t <- 
+  AppliedEconometrics::calculate_difference_in_means(
+    data_realized = data_realized
+  )
+t
+```
+
+# Calculating the p-value
+
+Next, we calculate the p-value by Monte Carlo simulation. First, we create a data frame of potential outcomes that holds under the null hypothesis $Y_i^\ast(1)=Y_i^\ast(0)$, and estimate the distribution of the test statistic by re-randomizing the treatment vector on that data frame.
+
+```{r}
+outcome_potential_null <-
+  data_realized %>%
+  dplyr::mutate(
+    y_0 = y,
+    y_1 = y
+  )
+
+t_distribution <-
+  1:R %>%
+  purrr::map(
+    .,
+    ~ AppliedEconometrics::generate_data_randomized(
+        outcome_potential = outcome_potential_null,
+        N_1 = N_1,
+        seed = .
+      ) %>%
+      AppliedEconometrics::calculate_difference_in_means()
+  ) %>%
+  purrr::reduce(c)
+
+pvalue <- 
+  mean(
+    abs(t_distribution) > 
+    abs(t)
+  )
+pvalue
+```
+
+The relationship between the distribution of the test statistic and the realized test statistic is as follows.
+
+```{r, echo = FALSE}
+data.frame(
+  statistics = abs(t_distribution)
+  ) %>%
+  ggplot(
+    aes(
+      x = statistics
+      )
+  ) +
+  geom_density(
+    color = color_main
+  ) +
+  geom_vline(
+    xintercept = t,
+    colour = color_main,
+    linetype = 3
+    ) +
+  theme_classic()
+```
+
+
+
+
