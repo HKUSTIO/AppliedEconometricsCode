@@ -1,0 +1,209 @@
+---
+title: "Randomized Experiment"
+subtitle: "Estimation of Average Treatment Effect by Difference in Means"
+output: 
+  html_document:
+    css: style_do.css
+    #以下設定追加
+    number_sections: yes
+    toc: yes
+    toc_depth: '3'
+    toc_float: yes
+    theme: "spacelab" #"default", "bootstrap", "cerulean", "cosmo", "darkly", "flatly",
+                 # "journal", "lumen", "paper", "readable", "sandstone", "simplex",
+                 # "spacelab", "united", "yeti"
+    highlight: "pygments" #"default", "tango", "pygments", "kate", "monochrome",
+                 # "espresso", "zenburn", "haddock", "textmate"
+    df_print: paged
+    code_folding: show
+#date: '2022-03-30'
+date: 'Last Update: `r Sys.Date()`'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(cache = FALSE, echo = TRUE, fig.align = "center")
+library(foreach)
+library(magrittr)
+library(ggplot2)
+library(kableExtra)
+color_main <- scales::viridis_pal(option = "C")(1)
+```
+
+Here we implement the method of "6 Estimation of Average Treatment Effect" in the book. The functions called from `AppliedEconometrics` are defined in `R/functions_randomized.R`. First, we generate the potential outcomes of the sample, and then we generate the treatment vector and the realized outcomes. Based on the realized treatment vector and outcomes, we obtain the estimator of the average treatment effect based on the difference in means. Finally, we calculate the standard error of the estimator of the average treatment effect using Neyman's method.
+
+# Generate simulation data
+
+## Setting of constants and parameters
+
+First, we set the seed and the number of units `N`, the number of draws in the Monte Carlo simulation `R`, and the size of the treatment group `N_1`.
+
+```{r}
+set.seed(1)
+N <- 1000
+R <- 1000
+N_1 <- 500
+```
+
+Next, we set the average treatment effect `tau_population` in the population.
+
+```{r}
+tau_population <- 0.2
+```
+
+## Generate data
+
+We generate the potential outcomes of the sample based on the above constants and parameters. This operation corresponds to one draw of random sampling. We also calculate the average treatment effect `tau` in the sample obtained by random draw.
+
+```{r}
+outcome_potential <-
+  tibble::tibble(
+    y_0 = 
+      rnorm(
+        N, 
+        mean = 0, 
+        sd = 1
+      ),
+    y_1 = 
+      rnorm(
+        N, 
+        mean = tau_population, 
+        sd = 1
+      )
+  )
+tau <-
+  outcome_potential %>%
+  dplyr::summarise(
+    tau = mean(y_1 - y_0)
+  ) %>%
+  dplyr::pull(tau)
+
+outcome_potential %>%
+  head() %>%
+  kbl() %>%
+  kable_styling()
+
+outcome_potential %>%
+  modelsummary::datasummary_skim()
+
+tau
+```
+
+Next, we generate the observed data. To do this, we first generate the treatment vector `z`. This operation corresponds to one randomization experiment. Furthermore, we calculate the realized outcomes from the realized treatment vector and the potential outcomes. This part of the process is the same as in `randomization_fisher_pvalue.Rmd`.
+
+```{r}
+data_realized <-
+  AppliedEconometrics::generate_data_randomized(
+    outcome_potential = outcome_potential,
+    N_1 = N_1,
+    seed = 1
+  )
+data_realized %>%
+  head() %>%
+  kbl() %>%
+  kable_styling()
+data_realized %>%
+  modelsummary::datasummary_skim()
+```
+
+
+# Analysis
+
+## Calculation of the difference in means
+
+We calculate the difference in means of the outcomes based on the observed data. This is the estimator of the average treatment effect.
+
+```{r}
+mean_1 <- 
+  data_realized %>% 
+  dplyr::filter(
+    z == 1
+  ) %>%
+  dplyr::summarise(
+    y = mean(y)
+  ) %>%
+  dplyr::pull(y)
+mean_0 <- 
+  data_realized %>% 
+  dplyr::filter(
+    z == 0
+  ) %>%
+  dplyr::summarise(
+    y = mean(y)
+  ) %>%
+  dplyr::pull(y)
+n_1 <-   
+  data_realized %>% 
+  dplyr::filter(
+    z == 1
+  ) %>%
+  nrow()
+n_0 <-   
+  data_realized %>% 
+  dplyr::filter(
+    z == 0
+  ) %>%
+  nrow()
+tau_hat <- mean_1 - mean_0
+tau_hat
+```
+
+## Calculating the standard error
+
+Next, we estimate the standard error of the average treatment effect using Neyman's method.
+
+```{r}
+var_1 <- 
+  data_realized %>% 
+  dplyr::filter(
+    z == 1
+  ) %>%
+  dplyr::summarise(
+    y = 
+      sum(
+        (y - mean_1)^2 / 
+        (n_1 - 1)
+      )
+  ) %>%
+  dplyr::pull(y)
+var_0 <- 
+  data_realized %>% 
+  dplyr::filter(
+    z == 0
+  ) %>%
+  dplyr::summarise(
+    y = 
+    sum(
+      (y - mean_0)^2 / 
+      (n_0 - 1)
+    )
+  ) %>%
+  dplyr::pull(y)
+var_hat <-
+  var_1 / n_1 + 
+  var_0 / n_0
+var_hat
+se_hat <- sqrt(var_hat)
+se_hat
+```
+
+We summarize the estimation results in a table.
+
+```{r}
+data.frame(
+  tau_hat,
+  se_hat,
+  tau,
+  tau_population
+) %>%
+magrittr::set_rownames("Average treatment effect") %>%
+kbl(
+  col.names = c(
+    "Estimate",
+    "S.E.",
+    "True (Sample)",
+    "True (Population)"
+  )
+) %>%
+kable_styling()
+```
+

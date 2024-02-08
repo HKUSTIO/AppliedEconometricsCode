@@ -1,0 +1,168 @@
+---
+title: "Completely Randomized Experiments"
+subtitle: "Neyman's inference for average treatment effects"
+author: "Kohei Kawaguchi, Hong Kong University of Science and Technology"
+output: 
+  ioslides_presentation:
+    widescreen: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
+library(foreach)
+library(magrittr)
+library(ggplot2)
+```
+
+<style type="text/css">
+div.footnotes {
+  position: absolute;
+  bottom: 0;
+  margin-bottom: 10px;
+  width: 80%;
+  font-size: 10px;
+}
+body, td {
+   font-size: 14px;
+}
+code.r{
+  font-size: 11px;
+}
+pre {
+  font-size: 11px
+}
+blockquote {
+  background: #f9f9f9;
+  border-left: 5px solid #ccc;
+  margin: 1.5em 10px;
+  padding: 0.5em 1.5em;
+}
+</style>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<script>
+$(document).ready(function() {
+  $('slide:not(.backdrop):not(.title-slide)').append('<div class=\"footnotes\">');
+
+  $('footnote').each(function(index) {
+    var text  = $(this).html();
+    var fnNum = (index+1).toString();
+    $(this).html(fnNum.sup());
+
+    var footnote   = fnNum + '. ' + text + '<br/>';
+    var oldContent = $(this).parents('slide').children('div.footnotes').html();
+    var newContent = oldContent + footnote;
+    $(this).parents('slide').children('div.footnotes').html(newContent);
+  });
+});
+</script>
+
+
+## Finite-sample average treatment effect
+
+- Consider a finite-sample average treatment effect as an estimand:
+$$
+\tau_{fs} \equiv \frac{1}{N} \sum_{i = 1}^N [Y_i^\ast(1) - Y_i^\ast(0)] \equiv \overline{Y}^\ast(1) - \overline{Y}^\ast(0),
+$$
+where $fs$ represents being the finite-sample parameter.
+- Assignment-based uncertainty: The sample and the potential outcome are fixed, while the treatment assignment is random.
+
+## Estimator for the finite-sample average treatment effect
+
+- The natural estimator is:
+$$
+\hat{\tau}_{fs} \equiv \overline{Y}_1 - \overline{Y}_0 \equiv \frac{1}{N_1} \sum_{i: W_i = 1} Y_i - \frac{1}{N_0} \sum_{i: W_i = 0} Y_i.
+$$
+
+- Is this estimator unbiased?
+- How to calculate the standard error of the estimator?
+
+## The estimator is unbiased
+
+- The estimator is arranged to:
+$$
+\hat{\tau}_{fs} \equiv \tau_{fs} + \frac{1}{N} \sum_{i = 1} D_i \cdot \Bigg[\frac{N}{N_1} \cdot Y_i^\ast(1) + \frac{N}{N_0} \cdot Y_i^\ast(0) \Bigg],
+$$
+where
+$$
+D_i = W_i - \frac{N_1}{N}.
+$$
+- Because $\mathbb{E}(D_i) = 0$, by unconfoundedness, $\mathbb{E}(\hat{\tau}_{fs}) = \tau_{fs}$: unbiased.
+
+## Evaluating the standard error
+
+- Involves two steps:
+1. Derive the (random assignment) standard deviation of $\hat{\tau}_{fs}$.
+1. Develop the estimator for the (random assignment) standard deviation.
+
+
+## Random assignment variance of $\hat{\tau}_{fs}$
+
+- We can show that:
+$$
+\mathbb{V}(\hat{\tau}_{fs}) = \frac{S_0^2}{N_0} + \frac{S_1^2}{N_1} - \frac{S_{10}^2}{N},
+$$
+where:
+$$
+S_0^2 \equiv \frac{1}{N - 1} \sum_{i = 1}^N [Y_i^\ast(0) - \overline{Y}(0)]^2, S_1^2 \equiv \frac{1}{N - 1} \sum_{i = 1}^N [Y_i^\ast(1) - \overline{Y}(1)]^2, 
+$$
+$$
+S_{10}^2 \equiv \frac{1}{N - 1} \sum_{i = 1}^N \{Y_i^\ast(1) - Y_i^\ast(0) - [\overline{Y}(1) - \overline{Y}(0)]\}^2.
+$$
+
+## Estimating the random assignment variance of $\hat{\tau}_{fs}$
+
+- The first two terms can be estimated unbiasedly by:
+$$
+s_0^2 \equiv \frac{1}{N_0 - 1} \sum_{i: W_i = 0} (Y_i - \overline{Y}_0)^2,
+$$
+$$
+s_1^2 \equiv \frac{1}{N_1 - 1} \sum_{i: W_i = 1} (Y_i - \overline{Y}_1)^2.
+$$
+- However, the third term cannot be estimated because it involves the individual causal effect $Y_i^\ast(1) - Y_i^\ast(0)$.
+
+## Neyman's random assignment variance estimator
+
+- Because $\frac{S_{10}^2}{N} \ge 0$, Neyman proposed the following upwardly biased estimate:
+$$
+\widehat{\mathbb{V}}_{Neyman} \equiv \frac{s_0^2}{N_0} + \frac{s_1^2}{N_1}.
+$$
+- The standard error estimate is good because:
+1. It is conservative: $\widehat{\mathbb{V}}_{Neyman}$ is at least as large as the $\mathbb{V}(\hat{\tau}_{fs})$. It is unbiased when $Y_i^\ast(1) - Y_i^\ast(0) = \overline{Y}(1) - \overline{Y}(0)$ for all $i$, i.e., when the causal effect is constant.
+1. It is an unbiased estimator for sampling variance of $\hat{\tau}_{fs}$ as an estimator to the super-population average treatment effect.
+
+## Super-population average treatment effect
+
+- Take the sample-based approach, i.e., regard the $N$ sample as a random sample from the infinite super-population.
+- The super-population average treatment effect:
+$$
+\tau_{sp} \equiv \mathbb{E}[Y_i^\ast(1) - Y_i^\ast(0)],
+$$
+where the probability is for both $\mathbf{W}, \mathbf{Y}^\ast(1)$, and $\mathbf{Y}^\ast(0)$. 
+
+## Neyman's estimator is an unbiased estimator for $\tau_{sp}$
+
+- With random sampling:
+$$
+\mathbb{E}[\tau_{fs}] = \mathbb{E}[\overline{Y}(1) - \overline{Y}(0)] = \frac{1}{N} \sum_{i = 1}^N \mathbb{E}[Y_i^\ast(1) - Y_i^\ast(0)] = \tau_{sp}.
+$$
+- Because $\hat{\tau}_{fs}$ is unbiased for $\tau_{fs}$ by taking expectations due to randomization, further taking the expectation due to sampling shows that $\hat{\tau}_{fs}$ is also unbiased for $\tau_{sp}$.
+
+
+## Sampling and random assignment variance of $\hat{\tau}_{fs}$
+
+- If this is the estimand, the sampling variance of $\hat{\tau}_{fs}$ due to the randomness of $\mathbf{W}, \mathbf{Y}^\ast(1)$, and $\mathbf{Y}^\ast(0)$ is, after a lengthy algebra:
+$$
+\mathbb{V}(\hat{\tau}_{fs}) = \frac{\sigma_0^2}{N_0} + \frac{\sigma_1^2}{N_1},
+$$
+where:
+$$
+\sigma_0^2 \equiv \mathbb{V}[Y_i^\ast(0)], \sigma_1^2 \equiv \mathbb{V}[Y_i^\ast(1)].
+$$
+
+## Reference
+
+- Chapter 6, Guido W. Imbens and Donald B. Rubin, 2015, Causal Inference for Statistics, Social, and Biomedical Sciences, Cambridge University Press.
+- Section 4.2, Athey, Susan, and Guido Imbens. 2016. “The Econometrics of Randomized Experiments.” arXiv [stat.ME]. arXiv. http://arxiv.org/abs/1607.00698.
+

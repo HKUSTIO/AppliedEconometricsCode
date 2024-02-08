@@ -1,0 +1,363 @@
+---
+title: "Completely Randomized Experiments"
+subtitle: "Regression methods for completely randomized experiments"
+author: "Kohei Kawaguchi, Hong Kong University of Science and Technology"
+output: 
+  ioslides_presentation:
+    widescreen: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
+library(foreach)
+library(magrittr)
+library(ggplot2)
+library(modelsummary)
+library(kableExtra)
+```
+
+<style type="text/css">
+div.footnotes {
+  position: absolute;
+  bottom: 0;
+  margin-bottom: 10px;
+  width: 80%;
+  font-size: 10px;
+}
+body, td {
+   font-size: 14px;
+}
+code.r{
+  font-size: 11px;
+}
+pre {
+  font-size: 11px
+}
+blockquote {
+  background: #f9f9f9;
+  border-left: 5px solid #ccc;
+  margin: 1.5em 10px;
+  padding: 0.5em 1.5em;
+}
+</style>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<script>
+$(document).ready(function() {
+  $('slide:not(.backdrop):not(.title-slide)').append('<div class=\"footnotes\">');
+
+  $('footnote').each(function(index) {
+    var text  = $(this).html();
+    var fnNum = (index+1).toString();
+    $(this).html(fnNum.sup());
+
+    var footnote   = fnNum + '. ' + text + '<br/>';
+    var oldContent = $(this).parents('slide').children('div.footnotes').html();
+    var newContent = oldContent + footnote;
+    $(this).parents('slide').children('div.footnotes').html(newContent);
+  });
+});
+</script>
+
+
+
+## Incorporating covariates
+
+- A researcher may wish to incorporate covariates into the analysis if covariates are recorded for each unit.
+- If one has covariates observed prior to the randomization, one should modify the design of the experiment and carry out a stratified randomized experiment.
+- Moreover, if one has a conducted a completely randomized experiment where the randomization did not take the covariates into account, one can just ignore the covariates and focus on the difference in means to estimate the average treatment effect. 
+
+## The role of ex-post covariate adjustment
+
+- Consider a case where the completely randomized experiments did not take the covariates into account at the design stage.
+- There are still some roles in ex-post covariate adjustment.
+- If the covariates are sufficiently strongly correlated with the potential outcomes, the estimation results may be more precise.
+- The covariates allow the assessments of heterogeneity in treatment effects.
+- If the randomization is compromised because of practical problems, adjusting for covariate differences may remove the biases. 
+
+## Regression methods and the randomization-based approach
+
+- We often use regression methods to estimate treatment effects, especially for controlling for covariates.
+- However, the inference of regression methods are based on sampling-based approach.
+- Moreover, the assumptions for the regression methods do not immediately follow from randomization.
+- Therefore, regression methods often go beyond analyses that are justified by randomization and end up with analyses that rely on a mix of randomization assumptions, modelling assumptions, and large sample approximations.
+
+## Mixing sampling-based and randomization-based approach
+
+- We assume that the sample of size $N$ can be a simple random sample drawn from an infinite super-population.
+- This random sample induces a distribution on the pair of potential outcomes and covariates.
+- Then, the treatment status is randomly assigned and observed outcome is determined.
+- The estimand is the super-population average treatment effect:
+$$
+\tau_{sp} \equiv \mathbb{E}[Y_i^\ast(1) - Y_i^\ast(0)],
+$$
+which is the expected value of the unit-level treatment effects under the distribution induced by sampling from the super-population.
+
+## Notations
+
+- For each covariate value $w$;
+$$
+\mu_0(x) \equiv \mathbb{E}[Y_i^\ast(0)|W_i = w], \mu_1 \equiv \mathbb{E}[Y_i^\ast(1) | W_i = w],
+$$
+$$
+\sigma_0^2(x) \equiv \mathbb{V}_0[Y_i^\ast(0)|W_i = w], \sigma_1^2 \equiv \mathbb{V}[Y_i^\ast(1)|W_i = w],
+$$
+$$
+\tau(x) \equiv \mathbb{E}[Y_i^\ast(1) - Y_i^\ast(0)| W_i = w], \sigma_{10}^2(x) \equiv \mathbb{V}[Y_i^\ast(1) - Y_i^\ast(0)| W_i = w].
+$$
+- Marginally:
+$$
+\mu_0 \equiv \mathbb{E}[Y_i^\ast(0)] = \mathbb{E}[\mu_0(W_i)], \mu_1 \equiv \mathbb{E}[Y_i^\ast(1)] = \mathbb{E}[\mu_1(W_i)], 
+$$
+$$
+\sigma_0^2 \equiv \mathbb{V}[Y_i^\ast(0)] = \mathbb{E}[\sigma_0^2(W_i)] + \mathbb{V}[\mu_0(W_i)],
+$$
+$$
+\sigma_1^2 \equiv \mathbb{V}[Y_i^\ast(1)] = \mathbb{E}[\sigma_1^2(W_i)] + \mathbb{V}[\mu_1(W_i)].
+$$
+
+## Notations
+
+- For the covariates:
+$$
+\mu_W \equiv \mathbb{E}[W_i], \Omega_W \equiv \mathbb{V}(W_i) = \mathbb{E}[(W_i - \mu_W)' (W_i - \mu_W)].
+$$
+
+
+# Linear regression with no covariate
+
+## Definie a linear regression function
+
+- Specify a linear regression function for the observed outcome $Y_i$:
+$$
+Y_i \equiv \alpha + \tau \cdot Z_i + \epsilon_i.
+$$
+- Remark that this linear regression function is correctly specified without loss of generality, because we can set:
+$$
+\alpha = \mu_{c}, \tau = \tau_{sp}, \epsilon_i = Y_i^\ast(0) - \mu_0 + Z_i \cdot [Y_i^\ast(1) - Y_i^\ast(0) - \tau_{sp}]. 
+$$
+
+## Define ols estimator of $\tau$
+
+- The ordinary least squares (ols) estimator for $\tau$ is defined as:
+$$
+(\hat{\tau}_{ols}, \hat{\alpha}_{ols}) \equiv \text{argmin}_{\tau, \alpha} \sum_{i = 1}^N (Y_i - \alpha - \tau \cdot Z_i)^2,
+$$
+and is solved as:
+$$
+\hat{\tau}_{ols} = \frac{\sum_{i = 1}^N(Z_i - \overline{Z}) (Y_i - \overline{Y})}{\sum_{i = 1}^N (Z_i - \overline{Z})^2}, \hat{\alpha}_{ols} = \overline{Y} - \hat{\tau}_{ols} \cdot \overline{Z}, 
+$$
+where:
+$$
+\overline{Y} \equiv \frac{1}{N} \sum_{i = 1}^N Y_i, \overline{Z} = \frac{1}{N} \sum_{i = 1}^N Z_i.
+$$
+
+## Ols estimator as Neyman's estimator
+
+- A simple algebra shows that:
+$$
+\hat{\tau}_{ols} = \overline{Y}_1 - \overline{Y}_0 \equiv \hat{\tau}_{fs}
+$$
+- Thus, the ols estimator is equivalent to Neyman's estimator for the finite-sample average treatment effect.
+- In the previous lecture, we showed that $\hat{\tau}_{fs}$ is unbiased for $\tau_{sp}$ with random assignment and random sampling.
+- This shows that $\hat{\tau}_{ols}$ is unbiased for $\tau_{sp}$.
+
+
+## Is conditional mean zero assumption justified from the current setting?
+
+- We did not use the standard argument for the unbiasedness of the ols estimator that rely on the conditional mean zero assumption.
+- Can we justify this assumption from the random assignment and random sampling?
+- Specifying the linear regression model is equivalent to _defining_ $\epsilon_i$ as follows:
+$$
+\epsilon_i \equiv Y_i^\ast(0) - \mu_0 + Z_i \cdot [Y_i^\ast(1) - Y_i^\ast(0) - \tau_{sp}].
+$$
+- In other words, can we derive $\mathbb{E}(\epsilon_i | Z_i = z) = 0$ for $w = 0, 1$ from random sampling and random assignment?
+
+## Showing conditional mean zero
+
+- The random sampling allows viewing the potential outcome as random variables.
+- Moreover, the randam assignment implies:
+$$
+\mathbb{P}[Z_i = 1|Y_i^\ast(0), Y_i^\ast(1)] = \mathbb{P}(Z_i = 1).
+$$
+- Therefore:
+$$
+\mathbb{E}[\epsilon_i | Z_i = 0] = \mathbb{E}[Y_i^\ast(0) - \mu_0| Z_i = 0] = \mathbb{E}[Y_i^\ast(0) - \mu_0] = 0,
+$$
+and:
+$$
+\mathbb{E}[\epsilon_i | Z_i = 1] = \mathbb{E}[Y_i^\ast(1) - \mu_0 - \tau_{sp}| Z_i = 1] = \mathbb{E}[Y_i^\ast(1) - \mu_0 - \tau_{sp}] = 0. 
+$$
+
+## Heteroskedasticity robust sampling variance estimator of $\hat{\tau}_{ols}$
+
+- The standard robust sampling variance estimator of $\hat{\tau}_{ols}$ allowing for heteroskedasticity due to $Z_i$:
+$$
+\widehat{\mathbb{V}}_{hetero} \equiv \frac{\sum_{i = 1}^N \hat{\epsilon}_i^2 \cdot (Z_i - \overline{Z})^2}{[\sum_{i = 1}^N (Z_i - \overline{Z})^2]^2},
+$$
+where:
+$$
+\hat{\epsilon}_i \equiv Y_i - \hat{\alpha}_{ols} - \hat{\tau}_{ols} \cdot Z_i.
+$$
+
+## ..is the same with $\widehat{\mathbb{V}}_{Neyman}$ for $\hat{\tau}_{fs}$
+
+
+- A simple algebra shows:
+$$
+\widehat{\mathbb{V}}_{hetero} = \frac{s_0^2}{N_0} + \frac{s_1^2}{N_1} = \widehat{\mathbb{V}}_{Neyman},
+$$
+where:
+$$
+s_0^2 \equiv \frac{1}{N_0 - 1} \sum_{i: Z_i = 0} (Y_i - \overline{Y})^2, s_1^2 \equiv \frac{1}{N_1 - 1} \sum_{i: Z_i = 1} (Y_i - \overline{Y})^2.
+$$
+- Whereas $\widehat{\mathbb{V}}_{Neyman}$ for $\hat{\tau}_{fs}$ is justified as a conservative estimator for the variance of $\hat{\tau}_{fs}$ due to random assignment, $\widehat{\mathbb{V}}_{hetero}$ is justified as a consistent estimator to the variance of $\hat{\tau}_{ols}$ under random sampling.
+
+# Linear regression with additional covariates
+
+## Define a linear regression function
+
+- We have $W_i$ as additional covariates.
+- Define a linear regression function with $W_i$ as:
+$$
+Y_i \equiv \alpha + \tau \cdot Z_i + W_i \beta + \epsilon_i.
+$$
+- We _do not_ assume that the conditional mean of $Y_i$ is actually linear in $Z_i$ and $W_i$.
+- We are interested in $\tau$ but _not_ in the nuisance parameters $\alpha$ and $\beta$.
+
+
+## Define ols estimator for $\tau$
+
+- The ols estimator is defined using least squares:
+$$
+(\hat{\tau}_{ols}, \hat{\alpha}_{ols}, \hat{\beta}_{ols}) \equiv \text{argmin}_{\tau, \alpha, \beta} \sum_{i = 1}^N(Y_i - \alpha - \tau \cdot Z_i - W_i \beta)^2.
+$$
+- Define the super-population values as:
+$$
+(\hat{\tau}^*, \hat{\alpha}^*, \hat{\beta}^*) \equiv \text{argmin}_{\tau, \alpha, \beta} \mathbb{E}(Y_i - \alpha - \tau \cdot Z_i - W_i \beta)^2.
+$$
+
+
+## Consistency of $\hat{\tau}_{ols}$
+
+- If $W_i \beta$ is included, $\hat{\tau}_{ols}$ is no longer unbiased for $\tau_{sp}$ in the finite sample.
+- In the large sample, $\hat{\tau}_{ols}$ converges to $\tau^*$ as shown in the basic econometrics.
+- Moreover, we can show $\tau^* = \tau_{sp}$. 
+- Therefore, in the large sample, $\hat{\tau}_{ols}$ is unbiased for $\tau_{sp}$.
+- Intuition:
+  - In the large sample, $\hat{\tau}_{ols}$ is unbiased for $\tau_{sp}$, because in the large sample, the correlation between $Z_i$ and $W_i$ is zero because of the random assignment.
+  - In the finite sample, however, the correlation between $Z_i$ and $W_i$ can be non-zero.
+  
+## Asymptotic normality of $\hat{\tau}_{ols}$
+
+- __Theorem__:
+  - Suppose we conduct a completely randomized experiment in a sample drawn at random from an infinite population. Then:
+  1. $\tau^* = \tau_{sp}$.
+  1. $\hat{\tau}_{ols}$ is asymptotically normal centered at $\tau_{sp}$, i.e.:
+  $$
+  \sqrt{N} \cdot (\hat{\tau}_{ols} - \tau_{sp}) \xrightarrow{d} N(0, V),
+  $$ 
+  where:
+  $$
+  V \equiv \frac{\mathbb{E}[(Z_i - p)^2 \cdot (Y_i - \alpha^* - \tau_{sp} \cdot Z_i - W_i \cdot \beta^*)^2]}{p^2 \cdot (1 - p)^2}.
+  $$
+  
+## Heteroskedasticity robust sampling variance estimator of $\hat{\tau}_{ols}$
+
+- The estimator of the sampling variance of $\hat{\tau}_{ols}$ is:
+$$
+\scriptsize
+\widehat{\mathbb{V}}_{hetero} \equiv \frac{1}{N\cdot(N - \text{dim}(W_i) - 2)} \frac{\sum_{i = 1}^N (Z_i - \overline{Z})^2 \cdot (Y_i - \hat{\alpha}_{ols} - \hat{\tau}_{ols} \cdot Z_i - W_i \hat{\beta}_{Ols})^2}{[\overline{Z} \cdot (1 - \overline{Z})]^2}.
+$$
+- Including $W_i$ may reduce the sampling variance to the degree of correlated with the potential outcome.
+- The price paid for this is to give up the finite-sample unbiasedness.
+- The unbiasedness in the large sample is maintained.
+  
+# Linear regression with covariates and interactions
+
+## Define a linear regression function
+
+- We can further define a linear regression function with covariates and interactions:
+$$
+Y_i \equiv \alpha + \tau \cdot Z_i + W_i \beta + Z_i \cdot (W_i - \overline{W}) \gamma + \epsilon_i.
+$$
+- Again, we _do not_ assume that this is the correct specification for the conditional mean of $Y_i$.
+- We are interested in $\tau$ but _not_ in the nuisance parameters $\alpha$, $\beta$, and $\gamma$.
+
+
+## Define ols estimator for $\tau$
+
+- Define ols estimator as:
+$$
+\scriptsize
+(\hat{\tau}_{ols}, \hat{\alpha}_{ols}, \hat{\beta}_{ols}, \hat{\gamma}_{ols}) \equiv \text{argmin}_{\tau, \alpha, \beta, \gamma} \sum_{i = 1}^N [Y_i - \alpha - \tau \cdot Z_i - W_i \beta - Z_i \cdot (W_i - \overline{W}) \gamma]^2.
+$$
+- Define $\tau^*, \alpha^*, \beta^*$, and $\gamma^*$ as their super-population counterparts.
+
+
+## Consistency of $\hat{\tau}_{ols}$
+
+- $\hat{\tau}_{ols}$ is no longer unbiased for $\tau_{sp}$ in the finite sample.
+- In the large sample, $\hat{\tau}_{ols}$ converges to $\tau^*$ as shown in the basic econometrics.
+- Moreover, we can show $\tau^* = \tau_{sp}$. 
+- Therefore, in the large sample, $\hat{\tau}_{ols}$ is unbiased for $\tau_{sp}$.
+- Intuition:
+  - In the large sample, $\hat{\tau}_{ols}$ is unbiased for $\tau_{sp}$, because in the large sample, the correlation between $Z_i$ and $W_i$ is zero because of the random assignment.
+  - In the finite sample, however, the correlation between $Z_i$ and $W_i$ can be non-zero.
+  
+## Asymptotic normality of $\hat{\tau}_{ols}$
+
+- __Theorem__:
+  - Suppose we conduct a completely randomized experiment in a sample drawn at random from an infinite population. Then:
+  1. $\tau^* = \tau_{sp}$.
+  1. $\hat{\tau}_{ols}$ is asymptotically normal centered at $\tau_{sp}$, i.e.:
+  $$
+  \sqrt{N} \cdot (\hat{\tau}_{ols} - \tau_{sp}) \xrightarrow{d} N(0, V),
+  $$ 
+  where:
+  $$
+  \scriptsize
+  V \equiv \frac{\mathbb{E}[(Z_i - p)^2 \cdot (Y_i - \alpha^* - \tau_{sp} \cdot Z_i - W_i \cdot \beta^* - Z_i \cdot (W_i - \mu_W) \gamma^*)^2]}{p^2 \cdot (1 - p)^2}.
+  $$
+  
+## Heteroskedasticity robust sampling variance estimator of $\hat{\tau}_{ols}$
+
+- The estimator of the sampling variance of $\hat{\tau}_{ols}$ is:
+$$
+\tiny
+\widehat{\mathbb{V}}_{hetero} \equiv \frac{1}{N\cdot(N - 2 \cdot \text{dim}(W_i)) - 2} \frac{\sum_{i = 1}^N (Z_i - \overline{Z})^2 \cdot [ Y_i - \hat{\alpha}_{ols} - \hat{\tau}_{ols} \cdot Z_i - W_i \hat{\beta}_{ols} - Z_i \cdot (W_i - \overline{W})\hat{\gamma}_{ols} ]^2}{[\overline{Z} \cdot (1 - \overline{Z})]^2}.
+$$
+- Including $W_i$ may reduce the sampling variance to the degree of correlated with the potential outcome.
+- The price paid for this is to give up the finite-sample unbiasedness.
+- The unbiasedness in the large sample is maintained.
+
+
+## Can we test the presence of treatment effect heterogeneity?
+
+- Based on the ols estimator $\hat{\tau}_{ols}$ and its sampling variance estimator, we can test the null of $\tau_{sp} = 0$.
+- Can we further test the following null hypothesis?: $Y_i^\ast(1) - Y_i^\ast(0) = \tau$ for some $\tau$.
+
+
+## Chi-squared test statistics
+- Consider a test statistics such that:
+$$
+Q \equiv \hat{\gamma}_{ols}' \widehat{V}_\gamma^{-1} \hat{\gamma}_{ols},
+$$
+where $\widehat{V}_\gamma$ is the sampling variance estimator for $\hat{\gamma}_{ols}$.
+- __Theorem__:
+  - Suppose we conduct a completely randomized experiment in a random sample from an infinite population. If $Y_i^\ast(1) - Y_i^\ast(0) = \tau$ for some value $\tau$ and all units, then:
+  1. $\gamma^* = 0$.
+  1. $Q \xrightarrow{d} \chi(\text{dim}(W_i))$.
+ 
+## Reference
+
+
+- Chapter 7, Guido W. Imbens and Donald B. Rubin, 2015, Causal Inference for Statistics, Social, and Biomedical Sciences, Cambridge University Press.
+- Section 5, Athey, Susan, and Guido Imbens. 2016. “The Econometrics of Randomized Experiments.” arXiv [stat.ME]. arXiv. http://arxiv.org/abs/1607.00698.
+
+
+
+
+
+  
