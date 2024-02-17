@@ -246,12 +246,81 @@ $$
 
 - If $W_i \beta$ is included, $\hat{\tau}_{ols}$ is no longer unbiased for $\tau_{sp}$ in the finite sample.
 - In the large sample, $\hat{\tau}_{ols}$ converges to $\tau^*$ as shown in the basic econometrics.
-- Moreover, we can show $\tau^* = \tau_{sp}$. 
+- Moreover, we can show $\tau^\ast = \tau_{sp}$. 
 - Therefore, in the large sample, $\hat{\tau}_{ols}$ is unbiased for $\tau_{sp}$.
 - Intuition:
   - In the large sample, $\hat{\tau}_{ols}$ is unbiased for $\tau_{sp}$, because in the large sample, the correlation between $Z_i$ and $W_i$ is zero because of the random assignment.
   - In the finite sample, however, the correlation between $Z_i$ and $W_i$ can be non-zero.
 - If $Z_i$ is not randomly assigned, the consistency may fail because of the misspecification.
+
+## Proof of $\tau^\ast = \tau_{sp}$
+
+- Consider the limiting objective function:
+$$
+\begin{split}
+Q(\tau, \alpha, \beta) &\equiv \mathbb{E}[(Y_i - \alpha - \tau \cdot Z_i - W_i \beta)^2]\\
+&= \mathbb{E}[(Y_i - \tilde{\alpha} - \tau \cdot Z_i - (W_i - \mu_W) \beta)^2]\\
+&= \mathbb{E}[(Y_i - \tilde{\alpha} - \tau \cdot Z_i)^2] + \mathbb{E}[(W_i - \mu_W)^2 \beta^2]\\
+&-2 \mathbb{E}[ (W_i - \mu_W) \beta \cdot (Y_i - \tilde{\alpha} - \tau \cdot Z_i)],
+\end{split}
+$$
+with
+$$
+\tilde{\alpha} \equiv \alpha + \mu_W \beta.
+$$
+  
+##  Proof of $\tau^\ast = \tau_{sp}$
+
+- This reduces to
+
+$$
+\begin{split}
+Q(\tau, \alpha, \beta) &= \mathbb{E}[(Y_i - \tilde{\alpha} - \tau \cdot Z_i)^2] + \mathbb{E}[(W_i - \mu_W)^2 \beta^2]\\
+&-2 \mathbb{E}[ (W_i - \mu_W) \beta \cdot Y_i]
+\end{split}
+$$
+because of
+$$
+\mathbb{E}[(W_i - \mu_W) \beta] = 0,
+$$
+and
+$$
+\mathbb{E}[(W_i - \mu_W) \beta \cdot \tau Z_i] =\mathbb{E}[(W_i - \mu_W) \beta] \cdot \mathbb{E}[\tau Z_i] = 0,
+$$
+if $W_i$ and $Z_i$ are independent.
+
+## Independence and Conditionally Mean Zero
+
+- The argument so far is robust to the misscpefification.
+- The independence of $Z_i$ and $W_i$ is the key.
+- We often assume the conditionally mean zero in a regression analysis:
+$$
+\mathbb{E}\{\epsilon_i|Z_i, W_i\} = 0,
+$$
+with a true model $f$.
+$$
+\epsilon_i = Y_i - f(Z_i, W_i).
+$$
+- With this assumption, we cannot make $\mathbb{E}[(W_i - \mu_W) \beta \cdot \tau Z_i]$ zero.
+
+
+## Proof of $\tau^\ast = \tau_{sp}$
+
+- The only term in the limiting objective function that depends on $\tilde{\alpha}$ and $\tau$ is:
+$$
+\mathbb{E}[(Y_i - \alpha - \tau \cdot Z_i)^2],
+$$
+which leads to the solution:
+$$
+\tilde{\alpha}^\ast = \mathbb{E}[Y_i|Z_i = 0] = \mathbb{E}[Y_i(0)|Z_i = 0] = \mu_0,
+$$
+$$
+\begin{split}
+\tau^\ast &= \mathbb{E}[Y_i|Z_i = 1] - \mathbb{E}[Y_i|Z_i = 0]\\
+&= \mathbb{E}[Y_i^\ast(1)|Z_i = 1] - \mathbb{E}[Y_i^\ast(0)|Z_i = 0]\\
+&= \tau_{sp}.
+\end{split}
+$$
   
 ## Asymptotic normality of $\hat{\tau}_{ols}$
 

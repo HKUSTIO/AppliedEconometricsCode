@@ -3365,7 +3365,7 @@ Y_i \equiv \alpha + \tau \cdot Z_i + W_i \beta + \epsilon_i.
 <ul>
 <li>If \(W_i \beta\) is included, \(\hat{\tau}_{ols}\) is no longer unbiased for \(\tau_{sp}\) in the finite sample.</li>
 <li>In the large sample, \(\hat{\tau}_{ols}\) converges to \(\tau^*\) as shown in the basic econometrics.</li>
-<li>Moreover, we can show \(\tau^* = \tau_{sp}\).</li>
+<li>Moreover, we can show \(\tau^\ast = \tau_{sp}\).</li>
 <li>Therefore, in the large sample, \(\hat{\tau}_{ols}\) is unbiased for \(\tau_{sp}\).</li>
 <li>Intuition:
 
@@ -3374,6 +3374,67 @@ Y_i \equiv \alpha + \tau \cdot Z_i + W_i \beta + \epsilon_i.
 <li>In the finite sample, however, the correlation between \(Z_i\) and \(W_i\) can be non-zero.</li>
 </ul></li>
 <li>If \(Z_i\) is not randomly assigned, the consistency may fail because of the misspecification.</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Proof of \(\tau^\ast = \tau_{sp}\)</h2></hgroup><article  id="proof-of-tauast-tau_sp">
+
+<ul>
+<li>Consider the limiting objective function: \[
+\begin{split}
+Q(\tau, \alpha, \beta) &amp;\equiv \mathbb{E}[(Y_i - \alpha - \tau \cdot Z_i - W_i \beta)^2]\\
+&amp;= \mathbb{E}[(Y_i - \tilde{\alpha} - \tau \cdot Z_i - (W_i - \mu_W) \beta)^2]\\
+&amp;= \mathbb{E}[(Y_i - \tilde{\alpha} - \tau \cdot Z_i)^2] + \mathbb{E}[(W_i - \mu_W)^2 \beta^2]\\
+&amp;-2 \mathbb{E}[ (W_i - \mu_W) \beta \cdot (Y_i - \tilde{\alpha} - \tau \cdot Z_i)],
+\end{split}
+\] with \[
+\tilde{\alpha} \equiv \alpha + \mu_W \beta.
+\]</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Proof of \(\tau^\ast = \tau_{sp}\)</h2></hgroup><article  id="proof-of-tauast-tau_sp-1">
+
+<ul>
+<li>This reduces to</li>
+</ul>
+
+<p>\[
+\begin{split}
+Q(\tau, \alpha, \beta) &amp;= \mathbb{E}[(Y_i - \tilde{\alpha} - \tau \cdot Z_i)^2] + \mathbb{E}[(W_i - \mu_W)^2 \beta^2]\\
+&amp;-2 \mathbb{E}[ (W_i - \mu_W) \beta \cdot Y_i]
+\end{split}
+\] because of \[
+\mathbb{E}[(W_i - \mu_W) \beta] = 0,
+\] and \[
+\mathbb{E}[(W_i - \mu_W) \beta \cdot \tau Z_i] =\mathbb{E}[(W_i - \mu_W) \beta] \cdot \mathbb{E}[\tau Z_i] = 0,
+\] if \(W_i\) and \(Z_i\) are independent.</p>
+
+</article></slide><slide class=""><hgroup><h2>Independence and Conditionally Mean Zero</h2></hgroup><article  id="independence-and-conditionally-mean-zero">
+
+<ul>
+<li>The argument so far is robust to the misscpefification.</li>
+<li>The independence of \(Z_i\) and \(W_i\) is the key.</li>
+<li>We often assume the conditionally mean zero in a regression analysis: \[
+\mathbb{E}\{\epsilon_i|Z_i, W_i\} = 0,
+\] with a true model \(f\). \[
+\epsilon_i = Y_i - f(Z_i, W_i).
+\]</li>
+<li>With this assumption, we cannot make \(\mathbb{E}[(W_i - \mu_W) \beta \cdot \tau Z_i]\) zero.</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Proof of \(\tau^\ast = \tau_{sp}\)</h2></hgroup><article  id="proof-of-tauast-tau_sp-2">
+
+<ul>
+<li>The only term in the limiting objective function that depends on \(\tilde{\alpha}\) and \(\tau\) is: \[
+\mathbb{E}[(Y_i - \alpha - \tau \cdot Z_i)^2],
+\] which leads to the solution: \[
+\tilde{\alpha}^\ast = \mathbb{E}[Y_i|Z_i = 0] = \mathbb{E}[Y_i(0)|Z_i = 0] = \mu_0,
+\] \[
+\begin{split}
+\tau^\ast &amp;= \mathbb{E}[Y_i|Z_i = 1] - \mathbb{E}[Y_i|Z_i = 0]\\
+&amp;= \mathbb{E}[Y_i^\ast(1)|Z_i = 1] - \mathbb{E}[Y_i^\ast(0)|Z_i = 0]\\
+&amp;= \tau_{sp}.
+\end{split}
+\]</li>
 </ul>
 
 </article></slide><slide class=""><hgroup><h2>Asymptotic normality of \(\hat{\tau}_{ols}\)</h2></hgroup><article  id="asymptotic-normality-of-hattau_ols">
