@@ -4,7 +4,6 @@ subtitle: "Fisher's p-value"
 output: 
   html_document:
     css: style_do.css
-    #以下設定追加
     number_sections: yes
     toc: yes
     toc_depth: '3'
@@ -27,7 +26,7 @@ library(kableExtra)
 color_main <- scales::viridis_pal(option = "C")(1)
 ```
 
-Here we implement the method of "5 Fisher's p-value". The functions called from `AppliedEconometrics` are defined in `R/functions_randomized.R`. First, we generate the potential outcomes of the sample, and then we generate the treatment vector and the realized outcomes. Based on the realized treatment vector and outcomes, we calculate the test statistic based on the difference in means, and finally, we numerically calculate Fisher's p-value using the bootstrap method.
+Here we implement the method of "5 Fisher's p-value". The functions called from `AppliedEconometricsCode` are defined in `R/functions_randomized.R`. First, we generate the potential outcomes of the sample, and then we generate the treatment vector and the realized outcomes. Based on the realized treatment vector and outcomes, we calculate the test statistic based on the difference in means, and finally, we numerically calculate Fisher's p-value using the bootstrap method.
 
 # Generating simulation data
 
@@ -86,11 +85,11 @@ outcome_potential %>%
 tau
 ```
 
-Next, we generate the observed data. To do this, we first generate the treatment vector `z`. This operation corresponds to one randomization experiment. Furthermore, we calculate the realized outcomes from the realized treatment vector and potential outcomes. The resulting `data_realized` is the observed data.
+Next, we generate the observed data. To do this, we first generate the treatment vector `z`. This operation corresponds to one randomized experiment. Furthermore, we calculate the realized outcomes from the realized treatment vector and potential outcomes. The resulting `data_realized` is the observed data.
 
 ```{r}
 data_realized <-
-  AppliedEconometrics::generate_data_randomized(
+  AppliedEconometricsCode::generate_data_randomized(
     outcome_potential = outcome_potential,
     N_1 = N_1,
     seed = 1
@@ -111,7 +110,7 @@ We calculate the test statistic based on the observed data. This operation will 
 
 ```{r}
 t <- 
-  AppliedEconometrics::calculate_difference_in_means(
+  AppliedEconometricsCode::calculate_difference_in_means(
     data_realized = data_realized
   )
 t
@@ -133,12 +132,12 @@ t_distribution <-
   1:R %>%
   purrr::map(
     .,
-    ~ AppliedEconometrics::generate_data_randomized(
+    ~ AppliedEconometricsCode::generate_data_randomized(
         outcome_potential = outcome_potential_null,
         N_1 = N_1,
         seed = .
       ) %>%
-      AppliedEconometrics::calculate_difference_in_means()
+      AppliedEconometricsCode::calculate_difference_in_means()
   ) %>%
   purrr::reduce(c)
 

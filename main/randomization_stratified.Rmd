@@ -1,0 +1,210 @@
+---
+title: "Randomized Experiment"
+subtitle: "Stratified Randomized Experiments"
+output: 
+  html_document:
+    css: style_do.css
+    #以下設定追加
+    number_sections: yes
+    toc: yes
+    toc_depth: '3'
+    toc_float: yes
+    theme: spacelab #"default", "bootstrap", "cerulean", "cosmo", "darkly", "flatly",
+                 # "journal", "lumen", "paper", "readable", "sandstone", "simplex",
+                 # "spacelab", "united", "yeti"
+    df_print: paged
+    code_folding: show
+#date: '2022-03-30'
+date: 'Last Update: `r Sys.Date()`'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(cache = FALSE, echo = TRUE, fig.align = "center")
+library(foreach)
+library(magrittr)
+library(ggplot2)
+library(kableExtra)
+color_main <- scales::viridis_pal(option = "C")(1)
+```
+
+Here, we implement the stratified randomized experiment. The functions called from `AppliedEconometricsCode` are defined in `R/functions_randomized.R`. First, we generate the potential outcomes of the sample, and then we generate the treatment vector and the realized outcomes. Based on the realized treatment vector and outcomes, we calculate the test statistic based on the difference in means for each stratum, and finally, we numerically calculate Fisher's p-value using the bootstrap method.
+
+# Generating simulated data
+
+## Setting constants and parameters
+
+We consider a stratified randomized experiment with two strata. First, we fix the seed and set the number of individuals `N`, the proportion of individuals in the two strata `q`, the propensity scores `e` in the two strata, and the size of the treatment group `N_1`.
+
+```{r}
+set.seed(1)
+N <- 2000
+R <- 1000
+q <- c(0.6, 0.4)
+e <- c(0.3, 0.7)
+N_1 <- N * q * e
+```
+
+Next, we set the population average treatment effect `tau_population` in the two strata.
+
+```{r}
+tau_population <- 
+  c(
+    0.2, 
+    0.3
+  )
+```
+
+## Generating potential outcomes
+
+We generate the potential outcomes for the sample. This operation corresponds to one random draw. We also calculate the average treatment effect `tau` in the sample.
+
+```{r}
+outcome_potential <-
+  1:2 %>%
+  purrr::map(
+    .,
+    ~ tibble::tibble(
+      g = .,
+      y_0 = 
+        rnorm(
+          N * q[.], 
+          mean = 0, 
+          sd = 1
+        ),
+      y_1 = 
+        rnorm(
+          N * q[.], 
+          mean = tau_population[.], 
+          sd = 1
+        )
+    )
+  ) %>%
+  dplyr::bind_rows()
+
+tau <-
+  outcome_potential %>%
+  dplyr::group_by(g) %>%
+  dplyr::summarise(
+    tau = mean(y_1 - y_0)
+  ) %>%
+  dplyr::pull(tau)
+
+outcome_potential %>%
+  head() %>%
+  kbl() %>%
+  kable_styling()
+
+outcome_potential %>%
+  modelsummary::datasummary_skim()
+
+tau
+```
+
+Next, we generate the observed data. First, we generate the treatment vector `z`. This operation corresponds to one randomized experiment. We then calculate the realized outcomes based on the realized treatment vector and potential outcomes. The resulting `data_realized` is the observed data.
+
+
+```{r}
+data_realized <-
+  AppliedEconometricsCode::generate_data_stratified(
+    outcome_potential = outcome_potential,
+    N_1 = N_1,
+    seed = 1
+  )
+data_realized %>%
+  head() %>%
+  kbl() %>%
+  kable_styling()
+data_realized %>%
+  dplyr::filter(
+    g == 1
+  ) %>%
+  modelsummary::datasummary_skim()
+data_realized %>%
+  dplyr::filter(
+    g == 2
+  ) %>%
+  modelsummary::datasummary_skim()
+```
+
+# Analysis
+
+## Calculating the test statistic
+
+We calculate the test statistic based on the observed data. This operation will be repeated when calculating the p-value, so we will make it a function. We will also make it possible to pass the weights `lambda` to be assigned to each stratum as an argument. Here, we set $\lambda_g = q_g e_g (1 - e_g)$.
+
+
+```{r}
+lambda <- 
+  q * 
+  e * 
+  (1 - e)
+t <- 
+  AppliedEconometricsCode::calculate_difference_in_means_stratified(
+    data_realized = data_realized, 
+    lambda = lambda
+  )
+t
+```
+
+# Calculating the p-value
+
+Translate: Next, we calculate the p-value by Monte Carlo simulation. First, we create a data frame of potential outcomes that satisfies the null hypothesis $Y_i^\ast(1)=Y_i^\ast(0)$, and estimate the distribution of the test statistic by reassigning the treatment vector randomly on that data frame.
+
+
+```{r}
+outcome_potential_null <-
+  data_realized %>%
+  dplyr::mutate(
+    y_0 = y,
+    y_1 = y
+  )
+
+t_distribution <-
+  1:R %>%
+  purrr::map(
+    .,
+    ~ AppliedEconometricsCode::generate_data_stratified(
+        outcome_potential = outcome_potential_null,
+        N_1 = N_1,
+        seed = .
+      ) %>%
+      AppliedEconometricsCode::calculate_difference_in_means_stratified(
+        data_realized = .,
+        lambda = lambda
+      )
+  ) %>%
+  purrr::reduce(c)
+
+pvalue <- 
+  mean(
+    abs(t_distribution) > 
+    abs(t)
+  )
+pvalue
+```
+
+The relationship between the distribution of the test statistic and the test statistic realized under the data is as follows.
+
+```{r, echo = FALSE}
+data.frame(
+  statistics = abs(t_distribution)
+) %>%
+ggplot(
+   aes(
+    x = statistics
+    )
+) +
+geom_density(
+  color = color_main
+) +
+geom_vline(
+  xintercept = t,
+  colour = color_main,
+  linetype = 3
+  ) +
+theme_classic()
+```
+
+
+
+

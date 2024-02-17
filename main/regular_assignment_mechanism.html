@@ -11,7 +11,7 @@
 
 
 
-<title>Randomized Experiment</title>
+<title>Observational Study</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -3085,517 +3085,731 @@ border-radius: 0px;
 
 
 
-<h1 class="title toc-ignore">Randomized Experiment</h1>
-<h3 class="subtitle">Fisher’s p-value</h3>
+<h1 class="title toc-ignore">Observational Study</h1>
+<h3 class="subtitle">Regular Assignment Mechanism</h3>
 <h4 class="date">Last Update: 2024-02-17</h4>
 
 </div>
 
 
-<p>Here we implement the method of “5 Fisher’s p-value”. The functions
-called from <code>AppliedEconometricsCode</code> are defined in
-<code>R/functions_randomized.R</code>. First, we generate the potential
-outcomes of the sample, and then we generate the treatment vector and
-the realized outcomes. Based on the realized treatment vector and
-outcomes, we calculate the test statistic based on the difference in
-means, and finally, we numerically calculate Fisher’s p-value using the
-bootstrap method.</p>
+<p>Here, we implement methods in the observational study with regular
+assignment mechanism. We consider the following methods: imputing by a
+linear regression, using a weighing estimator, using a blocking
+estimator, and using a matching estimator.</p>
 <div id="generating-simulation-data" class="section level1" number="1">
 <h1><span class="header-section-number">1</span> Generating simulation
 data</h1>
 <div id="setting-constants-and-parameters" class="section level2" number="1.1">
 <h2><span class="header-section-number">1.1</span> Setting constants and
 parameters</h2>
-<p>First, we set the seed, the number of individuals <code>N</code>, the
-number of draws in the Monte Carlo simulation <code>R</code>, and the
-size of the treatment group <code>N_1</code>.</p>
+<p>First, we set the seed and the number of observations <code>N</code>,
+blocks for the blocking estimator <code>J</code>, and neighbors for the
+matching estimator <code>M</code>. We also set the true
+coefficients.</p>
 <pre class="r"><code>set.seed(1)
 N &lt;- 1000
-R &lt;- 1000
-N_1 &lt;- 500</code></pre>
-<p>Next, we set the average treatment effect in the population
-<code>tau_population</code>.</p>
-<pre class="r"><code>tau_population &lt;- 0.2</code></pre>
+J &lt;- 4
+M &lt;- 1
+beta_t &lt;- c(1, 0.1)
+beta_c &lt;- c(0, 0.05)</code></pre>
 </div>
 <div id="generating-data" class="section level2" number="1.2">
 <h2><span class="header-section-number">1.2</span> Generating data</h2>
-<p>We generate the potential outcomes of the sample based on the above
-constants and parameters. This operation corresponds to one random draw.
-We also calculate the average treatment effect <code>tau</code> in the
-sample.</p>
-<pre class="r"><code>outcome_potential &lt;-
+<p>We generate the data for the observational study. We generate the
+covariate <code>x</code> from a standard normal distribution and the
+potential outcomes <code>y_0</code> and <code>y_1</code> from normal
+distributions with the true coefficients.</p>
+<pre class="r"><code>outcome &lt;-
   tibble::tibble(
-    y_0 = 
-      rnorm(
-        N, 
-        mean = 0, 
-        sd = 1
-      ),
-    y_1 = 
-      rnorm(
-        N, 
-        mean = tau_population, 
-        sd = 1
-      )
+    x = rnorm(N),
+    y_0 = beta_c[1] + beta_c[2] * x + rnorm(N),
+    y_1 = beta_t[1] + beta_t[2] * x + rnorm(N)
   )
-tau &lt;-
-  outcome_potential %&gt;%
-  dplyr::summarise(
-    tau = mean(y_1 - y_0)
-  ) %&gt;%
+head(outcome)</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["x"],"name":[1],"type":["dbl"],"align":["right"]},{"label":["y_0"],"name":[2],"type":["dbl"],"align":["right"]},{"label":["y_1"],"name":[3],"type":["dbl"],"align":["right"]}],"data":[{"1":"-0.6264538","2":"1.10364240","3":"0.05120503"},{"1":"0.1836433","2":"1.12111401","3":"-0.90389056"},{"1":"-0.8356286","2":"-0.91255906","3":"2.53613788"},{"1":"1.5952808","2":"0.29049563","3":"1.67879798"},{"1":"0.3295078","2":"0.08587104","3":"0.97710085"},{"1":"-0.8204684","2":"-1.70367227","3":"1.61437077"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<p>We calculate the average treatment effect in the sample.</p>
+<pre class="r"><code>tau_fs &lt;- 
+  outcome %&gt;%
+  dplyr::summarise(tau = mean(y_1 - y_0)) %&gt;%
   dplyr::pull(tau)
-
-outcome_potential %&gt;%
-  head() %&gt;%
-  kbl() %&gt;%
-  kable_styling()</code></pre>
-<table class="table" style="margin-left: auto; margin-right: auto;">
-<thead>
-<tr>
-<th style="text-align:right;">
-y_0
-</th>
-<th style="text-align:right;">
-y_1
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:right;">
--0.6264538
-</td>
-<td style="text-align:right;">
-1.3349651
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-0.1836433
-</td>
-<td style="text-align:right;">
-1.3119318
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
--0.8356286
-</td>
-<td style="text-align:right;">
--0.6707776
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-1.5952808
-</td>
-<td style="text-align:right;">
-0.4107316
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-0.3295078
-</td>
-<td style="text-align:right;">
-0.2693956
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
--0.8204684
-</td>
-<td style="text-align:right;">
--1.4626489
-</td>
-</tr>
-</tbody>
-</table>
-<pre class="r"><code>outcome_potential %&gt;%
-  modelsummary::datasummary_skim()</code></pre>
-<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
-<thead>
-<tr>
-<th style="text-align:left;">
-</th>
-<th style="text-align:right;">
-Unique (#)
-</th>
-<th style="text-align:right;">
-Missing (%)
-</th>
-<th style="text-align:right;">
-Mean
-</th>
-<th style="text-align:right;">
-SD
-</th>
-<th style="text-align:right;">
-Min
-</th>
-<th style="text-align:right;">
-Median
-</th>
-<th style="text-align:right;">
-Max
-</th>
-<th style="text-align:right;">
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-y_0
-</td>
-<td style="text-align:right;">
-1000
-</td>
-<td style="text-align:right;">
-0
-</td>
-<td style="text-align:right;">
-−0.0
-</td>
-<td style="text-align:right;">
-1.0
-</td>
-<td style="text-align:right;">
-−3.0
-</td>
-<td style="text-align:right;">
-−0.0
-</td>
-<td style="text-align:right;">
-3.8
-</td>
-<td style="text-align:right;">
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" class="svglite" width="48.00pt" height="12.00pt" viewBox="0 0 48.00 12.00">
-<defs>
-<style type="text/css">
-.svglite line, .svglite polyline, .svglite polygon, .svglite path, .svglite rect, .svglite circle {
-fill: none;
-stroke: #000000;
-stroke-linecap: round;
-stroke-linejoin: round;
-stroke-miterlimit: 10.00;
-}
-.svglite text {
-white-space: pre;
-}
-</style>
-</defs><rect width="100%" height="100%" style="stroke: none; fill: none;"></rect><defs><clipPath id="cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw"><rect x="0.00" y="0.00" width="48.00" height="12.00"></rect></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw)">
-</g><defs><clipPath id="cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw"><rect x="0.00" y="2.88" width="48.00" height="9.12"></rect></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw)"><rect x="-1.43" y="11.62" width="3.26" height="0.040" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="1.83" y="11.38" width="3.26" height="0.28" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="5.09" y="10.67" width="3.26" height="0.99" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="8.35" y="10.12" width="3.26" height="1.55" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="11.61" y="7.86" width="3.26" height="3.81" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="14.87" y="6.23" width="3.26" height="5.43" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="18.13" y="3.22" width="3.26" height="8.44" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="21.39" y="5.04" width="3.26" height="6.62" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="24.64" y="5.44" width="3.26" height="6.22" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="27.90" y="8.41" width="3.26" height="3.25" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="31.16" y="9.72" width="3.26" height="1.94" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="34.42" y="10.75" width="3.26" height="0.91" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="37.68" y="11.58" width="3.26" height="0.079" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="40.94" y="11.62" width="3.26" height="0.040" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="44.20" y="11.62" width="3.26" height="0.040" style="stroke-width: 0.38; fill: #000000;"></rect></g>
-</svg>
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-y_1
-</td>
-<td style="text-align:right;">
-1000
-</td>
-<td style="text-align:right;">
-0
-</td>
-<td style="text-align:right;">
-0.2
-</td>
-<td style="text-align:right;">
-1.0
-</td>
-<td style="text-align:right;">
-−3.1
-</td>
-<td style="text-align:right;">
-0.2
-</td>
-<td style="text-align:right;">
-3.8
-</td>
-<td style="text-align:right;">
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" class="svglite" width="48.00pt" height="12.00pt" viewBox="0 0 48.00 12.00">
-<defs>
-<style type="text/css">
-.svglite line, .svglite polyline, .svglite polygon, .svglite path, .svglite rect, .svglite circle {
-fill: none;
-stroke: #000000;
-stroke-linecap: round;
-stroke-linejoin: round;
-stroke-miterlimit: 10.00;
-}
-.svglite text {
-white-space: pre;
-}
-</style>
-</defs><rect width="100%" height="100%" style="stroke: none; fill: none;"></rect><defs><clipPath id="cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw"><rect x="0.00" y="0.00" width="48.00" height="12.00"></rect></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw)">
-</g><defs><clipPath id="cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw"><rect x="0.00" y="2.88" width="48.00" height="9.12"></rect></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw)"><rect x="-1.10" y="11.57" width="3.22" height="0.088" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="2.12" y="11.57" width="3.22" height="0.088" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="5.34" y="11.09" width="3.22" height="0.57" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="8.57" y="10.08" width="3.22" height="1.58" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="11.79" y="8.10" width="3.22" height="3.56" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="15.02" y="6.56" width="3.22" height="5.10" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="18.24" y="3.48" width="3.22" height="8.18" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="21.46" y="3.22" width="3.22" height="8.44" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="24.69" y="5.15" width="3.22" height="6.51" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="27.91" y="6.25" width="3.22" height="5.41" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="31.14" y="8.89" width="3.22" height="2.77" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="34.36" y="10.47" width="3.22" height="1.19" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="37.58" y="11.35" width="3.22" height="0.31" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="40.81" y="11.53" width="3.22" height="0.13" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="44.03" y="11.62" width="3.22" height="0.044" style="stroke-width: 0.38; fill: #000000;"></rect></g>
-</svg>
-</td>
-</tr>
-</tbody>
-</table>
-<pre class="r"><code>tau</code></pre>
-<pre><code>## [1] 0.1953862</code></pre>
-<p>Next, we generate the observed data. To do this, we first generate
-the treatment vector <code>z</code>. This operation corresponds to one
-randomized experiment. Furthermore, we calculate the realized outcomes
-from the realized treatment vector and potential outcomes. The resulting
-<code>data_realized</code> is the observed data.</p>
-<pre class="r"><code>data_realized &lt;-
-  AppliedEconometricsCode::generate_data_randomized(
-    outcome_potential = outcome_potential,
-    N_1 = N_1,
-    seed = 1
-  )
-data_realized %&gt;%
-  head() %&gt;%
-  kbl() %&gt;%
-  kable_styling()</code></pre>
-<table class="table" style="margin-left: auto; margin-right: auto;">
-<thead>
-<tr>
-<th style="text-align:right;">
-z
-</th>
-<th style="text-align:right;">
-y
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:right;">
-1
-</td>
-<td style="text-align:right;">
-1.3349651
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-0
-</td>
-<td style="text-align:right;">
-0.1836433
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-1
-</td>
-<td style="text-align:right;">
--0.6707776
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-0
-</td>
-<td style="text-align:right;">
-1.5952808
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-1
-</td>
-<td style="text-align:right;">
-0.2693956
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-0
-</td>
-<td style="text-align:right;">
--0.8204684
-</td>
-</tr>
-</tbody>
-</table>
-<pre class="r"><code>data_realized %&gt;%
-  modelsummary::datasummary_skim()</code></pre>
-<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
-<thead>
-<tr>
-<th style="text-align:left;">
-</th>
-<th style="text-align:right;">
-Unique (#)
-</th>
-<th style="text-align:right;">
-Missing (%)
-</th>
-<th style="text-align:right;">
-Mean
-</th>
-<th style="text-align:right;">
-SD
-</th>
-<th style="text-align:right;">
-Min
-</th>
-<th style="text-align:right;">
-Median
-</th>
-<th style="text-align:right;">
-Max
-</th>
-<th style="text-align:right;">
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-z
-</td>
-<td style="text-align:right;">
-2
-</td>
-<td style="text-align:right;">
-0
-</td>
-<td style="text-align:right;">
-0.5
-</td>
-<td style="text-align:right;">
-0.5
-</td>
-<td style="text-align:right;">
-0.0
-</td>
-<td style="text-align:right;">
-0.5
-</td>
-<td style="text-align:right;">
-1.0
-</td>
-<td style="text-align:right;">
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" class="svglite" width="48.00pt" height="12.00pt" viewBox="0 0 48.00 12.00">
-<defs>
-<style type="text/css">
-.svglite line, .svglite polyline, .svglite polygon, .svglite path, .svglite rect, .svglite circle {
-fill: none;
-stroke: #000000;
-stroke-linecap: round;
-stroke-linejoin: round;
-stroke-miterlimit: 10.00;
-}
-.svglite text {
-white-space: pre;
-}
-</style>
-</defs><rect width="100%" height="100%" style="stroke: none; fill: none;"></rect><defs><clipPath id="cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw"><rect x="0.00" y="0.00" width="48.00" height="12.00"></rect></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw)">
-</g><defs><clipPath id="cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw"><rect x="0.00" y="2.88" width="48.00" height="9.12"></rect></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw)"><rect x="1.78" y="3.22" width="4.44" height="8.44" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="6.22" y="11.66" width="4.44" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="10.67" y="11.66" width="4.44" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="15.11" y="11.66" width="4.44" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="19.56" y="11.66" width="4.44" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="24.00" y="11.66" width="4.44" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="28.44" y="11.66" width="4.44" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="32.89" y="11.66" width="4.44" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="37.33" y="11.66" width="4.44" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="41.78" y="3.22" width="4.44" height="8.44" style="stroke-width: 0.38; fill: #000000;"></rect></g>
-</svg>
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-y
-</td>
-<td style="text-align:right;">
-1000
-</td>
-<td style="text-align:right;">
-0
-</td>
-<td style="text-align:right;">
-0.1
-</td>
-<td style="text-align:right;">
-1.0
-</td>
-<td style="text-align:right;">
-−3.1
-</td>
-<td style="text-align:right;">
-0.1
-</td>
-<td style="text-align:right;">
-3.8
-</td>
-<td style="text-align:right;">
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" class="svglite" width="48.00pt" height="12.00pt" viewBox="0 0 48.00 12.00">
-<defs>
-<style type="text/css">
-.svglite line, .svglite polyline, .svglite polygon, .svglite path, .svglite rect, .svglite circle {
-fill: none;
-stroke: #000000;
-stroke-linecap: round;
-stroke-linejoin: round;
-stroke-miterlimit: 10.00;
-}
-.svglite text {
-white-space: pre;
-}
-</style>
-</defs><rect width="100%" height="100%" style="stroke: none; fill: none;"></rect><defs><clipPath id="cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw"><rect x="0.00" y="0.00" width="48.00" height="12.00"></rect></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw)">
-</g><defs><clipPath id="cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw"><rect x="0.00" y="2.88" width="48.00" height="9.12"></rect></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw)"><rect x="-1.10" y="11.58" width="3.22" height="0.083" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="2.12" y="11.41" width="3.22" height="0.25" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="5.34" y="11.04" width="3.22" height="0.62" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="8.57" y="10.42" width="3.22" height="1.24" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="11.79" y="8.14" width="3.22" height="3.52" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="15.02" y="6.74" width="3.22" height="4.93" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="18.24" y="3.22" width="3.22" height="8.44" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="21.46" y="3.92" width="3.22" height="7.74" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="24.69" y="5.37" width="3.22" height="6.29" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="27.91" y="7.48" width="3.22" height="4.18" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="31.14" y="9.05" width="3.22" height="2.61" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="34.36" y="10.59" width="3.22" height="1.08" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="37.58" y="11.41" width="3.22" height="0.25" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="40.81" y="11.54" width="3.22" height="0.12" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="44.03" y="11.62" width="3.22" height="0.041" style="stroke-width: 0.38; fill: #000000;"></rect></g>
-</svg>
-</td>
-</tr>
-</tbody>
-</table>
+tau_fs</code></pre>
+<pre><code>## [1] 1.030989</code></pre>
+<p>We calculate the propensity score and assign the treatment based on
+the propensity score. Thus, the assignment mechanisms depends on the
+covariates.</p>
+<pre class="r"><code>outcome &lt;-
+  outcome %&gt;%
+  dplyr::mutate(
+    e = exp(x) / (1 + exp(x)),
+    z = (runif(N) &lt; e)
+    )
+head(outcome)</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["x"],"name":[1],"type":["dbl"],"align":["right"]},{"label":["y_0"],"name":[2],"type":["dbl"],"align":["right"]},{"label":["y_1"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["e"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["z"],"name":[5],"type":["lgl"],"align":["right"]}],"data":[{"1":"-0.6264538","2":"1.10364240","3":"0.05120503","4":"0.3483151","5":"FALSE"},{"1":"0.1836433","2":"1.12111401","3":"-0.90389056","4":"0.5457822","5":"FALSE"},{"1":"-0.8356286","2":"-0.91255906","3":"2.53613788","4":"0.3024562","5":"FALSE"},{"1":"1.5952808","2":"0.29049563","3":"1.67879798","4":"0.8313578","5":"TRUE"},{"1":"0.3295078","2":"0.08587104","3":"0.97710085","4":"0.5816396","5":"FALSE"},{"1":"-0.8204684","2":"-1.70367227","3":"1.61437077","4":"0.3056642","5":"TRUE"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+<div id="check-the-balance-in-the-covariate" class="section level2" number="1.3">
+<h2><span class="header-section-number">1.3</span> Check the balance in
+the covariate</h2>
+<p>We check the balance in the covariate <code>x</code> between the
+treatment and control groups.</p>
+<p><img src="data:image/png;base64,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" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>outcome_observed &lt;-
+  outcome %&gt;%
+  dplyr::mutate(y = y_0 * (1 - z) + y_1 * z) %&gt;%
+  dplyr::select(y, z, x)
+head(outcome_observed)</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["y"],"name":[1],"type":["dbl"],"align":["right"]},{"label":["z"],"name":[2],"type":["lgl"],"align":["right"]},{"label":["x"],"name":[3],"type":["dbl"],"align":["right"]}],"data":[{"1":"1.10364240","2":"FALSE","3":"-0.6264538"},{"1":"1.12111401","2":"FALSE","3":"0.1836433"},{"1":"-0.91255906","2":"FALSE","3":"-0.8356286"},{"1":"1.67879798","2":"TRUE","3":"1.5952808"},{"1":"0.08587104","2":"FALSE","3":"0.3295078"},{"1":"1.61437077","2":"TRUE","3":"-0.8204684"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
 </div>
 </div>
 <div id="analysis" class="section level1" number="2">
 <h1><span class="header-section-number">2</span> Analysis</h1>
-<div id="calculating-the-test-statistic" class="section level2" number="2.1">
-<h2><span class="header-section-number">2.1</span> Calculating the test
-statistic</h2>
-<p>We calculate the test statistic based on the observed data. This
-operation will also be repeated in the calculation of the p-value, so we
-will make it a function.</p>
-<pre class="r"><code>t &lt;- 
-  AppliedEconometricsCode::calculate_difference_in_means(
-    data_realized = data_realized
+<div id="imputing-by-a-linear-regression" class="section level2" number="2.1">
+<h2><span class="header-section-number">2.1</span> Imputing by a linear
+regression</h2>
+<p>We estimate the average treatment effect by imputing the potential
+outcomes by a linear regression.</p>
+<pre class="r"><code>result &lt;-
+  lm(
+    data = outcome_observed,
+    formula = y ~ z + z:x 
   )
-t</code></pre>
-<pre><code>## [1] 0.2362761</code></pre>
-</div>
-</div>
-<div id="calculating-the-p-value" class="section level1" number="3">
-<h1><span class="header-section-number">3</span> Calculating the
-p-value</h1>
-<p>Next, we calculate the p-value by Monte Carlo simulation. First, we
-create a data frame of potential outcomes that holds under the null
-hypothesis <span class="math inline">\(Y_i^\ast(1)=Y_i^\ast(0)\)</span>,
-and estimate the distribution of the test statistic by re-randomizing
-the treatment vector on that data frame.</p>
-<pre class="r"><code>outcome_potential_null &lt;-
-  data_realized %&gt;%
-  dplyr::mutate(
-    y_0 = y,
-    y_1 = y
-  )
-
-t_distribution &lt;-
-  1:R %&gt;%
+result %&gt;%
+  modelsummary(fmt = 6)</code></pre>
+<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:center;">
+ (1)
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+(Intercept)
+</td>
+<td style="text-align:center;">
+−0.017528
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.049717)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+zTRUE
+</td>
+<td style="text-align:center;">
+1.103605
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.073258)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+zFALSE × x
+</td>
+<td style="text-align:center;">
+0.088752
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.047710)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+zTRUE × x
+</td>
+<td style="text-align:center;">
+0.068441
+</td>
+</tr>
+<tr>
+<td style="text-align:left;box-shadow: 0px 1.5px">
+</td>
+<td style="text-align:center;box-shadow: 0px 1.5px">
+(0.052452)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Num.Obs.
+</td>
+<td style="text-align:center;">
+1000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+R2
+</td>
+<td style="text-align:center;">
+0.238
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+R2 Adj.
+</td>
+<td style="text-align:center;">
+0.236
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AIC
+</td>
+<td style="text-align:center;">
+2949.7
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BIC
+</td>
+<td style="text-align:center;">
+2974.3
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Log.Lik.
+</td>
+<td style="text-align:center;">
+−1469.856
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+F
+</td>
+<td style="text-align:center;">
+103.888
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+RMSE
+</td>
+<td style="text-align:center;">
+1.05
+</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>result &lt;-
+  c(
+    y ~ z + z:exp(x),
+    y ~ z + z:x^2,
+    y ~ z + z:(x + x^2)
+  ) %&gt;%
   purrr::map(
     .,
-    ~ AppliedEconometricsCode::generate_data_randomized(
-        outcome_potential = outcome_potential_null,
-        N_1 = N_1,
-        seed = .
-      ) %&gt;%
-      AppliedEconometricsCode::calculate_difference_in_means()
-  ) %&gt;%
-  purrr::reduce(c)
-
-pvalue &lt;- 
-  mean(
-    abs(t_distribution) &gt; 
-    abs(t)
+    ~ lm(
+      data = outcome_observed,
+      formula = .
+      )
+  )</code></pre>
+<pre class="r"><code>result %&gt;%
+  modelsummary(fmt = 6)</code></pre>
+<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:center;">
+ (1)
+</th>
+<th style="text-align:center;">
+  (2)
+</th>
+<th style="text-align:center;">
+  (3)
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+(Intercept)
+</td>
+<td style="text-align:center;">
+−0.125049
+</td>
+<td style="text-align:center;">
+−0.017528
+</td>
+<td style="text-align:center;">
+−0.017528
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.057698)
+</td>
+<td style="text-align:center;">
+(0.049717)
+</td>
+<td style="text-align:center;">
+(0.049717)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+zTRUE
+</td>
+<td style="text-align:center;">
+1.179050
+</td>
+<td style="text-align:center;">
+1.103605
+</td>
+<td style="text-align:center;">
+1.103605
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.084518)
+</td>
+<td style="text-align:center;">
+(0.073258)
+</td>
+<td style="text-align:center;">
+(0.073258)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+zFALSE × exp(x)
+</td>
+<td style="text-align:center;">
+0.066445
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.032783)
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+zTRUE × exp(x)
+</td>
+<td style="text-align:center;">
+0.026059
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.016001)
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+zFALSE × x
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+0.088752
+</td>
+<td style="text-align:center;">
+0.088752
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+(0.047710)
+</td>
+<td style="text-align:center;">
+(0.047710)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+zTRUE × x
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+0.068441
+</td>
+<td style="text-align:center;">
+0.068441
+</td>
+</tr>
+<tr>
+<td style="text-align:left;box-shadow: 0px 1.5px">
+</td>
+<td style="text-align:center;box-shadow: 0px 1.5px">
+</td>
+<td style="text-align:center;box-shadow: 0px 1.5px">
+(0.052452)
+</td>
+<td style="text-align:center;box-shadow: 0px 1.5px">
+(0.052452)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Num.Obs.
+</td>
+<td style="text-align:center;">
+1000
+</td>
+<td style="text-align:center;">
+1000
+</td>
+<td style="text-align:center;">
+1000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+R2
+</td>
+<td style="text-align:center;">
+0.240
+</td>
+<td style="text-align:center;">
+0.238
+</td>
+<td style="text-align:center;">
+0.238
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+R2 Adj.
+</td>
+<td style="text-align:center;">
+0.237
+</td>
+<td style="text-align:center;">
+0.236
+</td>
+<td style="text-align:center;">
+0.236
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AIC
+</td>
+<td style="text-align:center;">
+2948.1
+</td>
+<td style="text-align:center;">
+2949.7
+</td>
+<td style="text-align:center;">
+2949.7
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BIC
+</td>
+<td style="text-align:center;">
+2972.7
+</td>
+<td style="text-align:center;">
+2974.3
+</td>
+<td style="text-align:center;">
+2974.3
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Log.Lik.
+</td>
+<td style="text-align:center;">
+−1469.059
+</td>
+<td style="text-align:center;">
+−1469.856
+</td>
+<td style="text-align:center;">
+−1469.856
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+F
+</td>
+<td style="text-align:center;">
+104.583
+</td>
+<td style="text-align:center;">
+103.888
+</td>
+<td style="text-align:center;">
+103.888
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+RMSE
+</td>
+<td style="text-align:center;">
+1.05
+</td>
+<td style="text-align:center;">
+1.05
+</td>
+<td style="text-align:center;">
+1.05
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="using-a-weighing-estimator" class="section level2" number="2.2">
+<h2><span class="header-section-number">2.2</span> Using a weighing
+estimator</h2>
+<p>We first estimate the propensity score by a correctly specified
+logistic function.</p>
+<pre class="r"><code>propensity_score &lt;-
+  glm(
+    data = outcome_observed,
+    formula = z ~ x,
+    family = binomial(&quot;logit&quot;)
   )
-pvalue</code></pre>
-<pre><code>## [1] 0.001</code></pre>
-<p>The relationship between the distribution of the test statistic and
-the realized test statistic is as follows.</p>
-<p><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABUAAAAPACAMAAADDuCPrAAABR1BMVEUAAAAAADoAAGYAOjoAOmYAOpAAZrYNCIczMzM6AAA6OgA6Ojo6OmY6OpA6ZmY6ZpA6ZrY6kNtNTU1NTW5NTY5Nbm5Nbo5NbqtNjshmAABmADpmOgBmOjpmZjpmZmZmZpBmkGZmkJBmkLZmtttmtv9uTU1ubk1ubm5ubo5ujqtujshuq+SOTU2Obk2Obm6Oq6uOq8iOq+SOyOSOyP+QOgCQOjqQZjqQZmaQZpCQkGaQkLaQtraQttuQ2/+rbk2rbm6rjm6ryOSr5P+2ZgC2Zjq2Zma2kDq2kGa2tra2ttu229u22/+2///Ijk3Ijm7Iq27IyKvI5P/I///bkDrbkGbbtmbbtpDbtrbb27bb29vb2//b///kq27kyI7kyKvk////tmb/yI7/25D/27b/29v/5Kv/5Mj/5OT//7b//8j//9v//+T///9o7vtdAAAACXBIWXMAAB2HAAAdhwGP5fFlAAAgAElEQVR4nO3d7YMbxZ3gcTkBBpNsIDILOCTklmT2ApjcHuTCPSQ+grmEbDB3xkeWBYOxwT5jz///+kYaaWakUeuh1A9Vv/p8XjC2xtPT1W1/qZZKPaMjAJKMht4BgFIJKEAiAQVIJKAAiQQUIJGAAiQSUIBEAgqQSEABEgkoQCIBBUgkoACJBBQgUZsBHakxUBMBBepycNDapgQUqIuAAgxPQAESCShAIgEFSCSgAIkEFCCRgAJ1sYwJIJGAAgxPQAESCShAIgEFSCSgAIkEFCCRgAJ1sYwJIJGAAgxPQAESCShAIgEFSCSgAIkEFCCRgAJ1sYwJIJGAAgxPQAESCShAIgEFSCSgAIkEFCCRgAJ1sYwJIJGAAgxPQAESCShAoloCenBq6D0BwqggoAerDb1bQPGCB/RiL3UUaEvkgK5tpBkpVMoypi1sl0XX9lAbAd1s1xQ2PFMqqECjqAFND5+SAluKGdA2cyeiQIOQAe2mdCIKLIoY0A4bp6HAmYAB7bpvEgqciBfQPuImoVAuy5ia9VQ2CYVSCWij/rLmSh6qFyygvSZNQaFy4QLa9/dTUKhXrID2nzMFhYqFCugQMVNQqFesgA7yTRUUahUpoAOVTEGhKJYxrTJYxxQUSiKgqwxXMcuZoE5xAjpkwxQUqhQmoAMXTEGhQlECOni/Bt8BoHdhAjrct57vwfC7APQrSEBzqFcO+wD0KUZA82hXFjsBbGAZ06I8+pnLbgBrCeiiXMqVy34A/YgQ0HyWEOWyH0AvYgR0mO97UT57AvRAQFuV0a4AnQsQ0Hyu4I8UFKoSIqCDfNvVsqo50K3yA5pZsjLbHWCZZUzn5Bas3PYHWCSg52QXrOx2COhI8QHN8JI5ux0CuhEgoAN80/Uy3CWgC6UHNMMJqCko1KL8gPb/PTfKcqeA1gloF/LcK6BlAtqJPPcKOLKM6Uym/cx2vwABPZVtp7LdMaA9ZQc034levnsGtKbwgPb9DbeX8a4BLSk6oDlP83LeN6AdJQc070ZlvXNAGwS0K3nvHdACAe1M5rsHtbKMaSLLt8Gfl/nuQaUEdCL3fua/g8B+BLRD2e8gsJdyA5r9FXwJiQf2UXJA+/xuaUrYRyCZgHaphH0EkhUb0AKu4AUUgis4oD1+s1RFVB4qYxlTIQEtZC+hKgJaSppMQSGyUgNaSpkK2U0gRbkB7e977aOU/QQSCGi3SpkpAwkKDWg5XSpmR4GdFRvQ3r7VnsrZU2BXAtq1gnYVqmAZU0lVKmhXoQbVB7Scp0CPyoo9sItSA9rXd2pDWXsLbK3IgBY1AT1SUIiq0ID29I1aUtr+AtsR0B6Utr/AdkoMaGlX8OXtMLCVMgPaz/dpT3l7DHHVvYypwPlceXsMcdUe0F6+TZsKbD6wmYD2osR9BjYR0F6UuM/AJuUFtMjL4SJ3GtigxID28V3aVuZeA2sJaD9MQSEgAe1JobsN8VS9jKnQEhW62xBPzQEt9Vq41P0GmhUY0B6+SReK3XGgiYD2pdgdB5oIaF9cw0M4pQW04AyVu+fAauUFtPvv0ZGCdx1YSUB7U/DkGSKpeBlTyREqed8hDgEtUsn7DqxQWECLvgwued+BFYoLaOffokNl7z2wTED7VPbeA0sEtE+F7z6wqKyAFv0U6EThuw8sKC2gXX+HjhU/AChftcuYyu9P+SOA0gloscofAXBKQPtV/giAU0UFtPjXkEIMAZgrLKAdf4MeRBgDcEJAexZhDMCJkgIa4vI3xCCAqbIC2u32+xFjFFCuSpcxxUhPjFFAuQS0YDFGARwVFdAgzx4GGQZQWEA73XxvoowDENDeRRkHUE5Aw1z6hhkIVK+kgHa59T7FGQlUTkD7F2ckUKIqlzHFyY5reBiSgJYt0FCgasUENFJ0Io0FaiagA3ANDzEI6BBCDQbqJaBDMAWFEAR0ELFGA7UqJaDBihNsOFCSCpcxBSuOa3gYjIAWL9p4oEoCOgxTUAhAQAcSbkBQIQEdSLgBQYUKCWi83LiGh/IJ6FACDglqI6BDCTgkKMLQy5ge/nY8vvIvdy9sS0B34BoehjFwQL8aT7306fK2BHQXEccEdUlo3oPD8cu3jp58Mn55aQ7aXUBDtibkoKAqCc27OSvnzfG7S9sS0F2EHBRUZffmPbk+C+e98StL2xLQXXgSFEqXEtArH0x/8eBw6RpeQHcTc1RQkVYC+uyMgO4k5qigIknPgb4y+yige3END0MYdhnTg8Pxm3cnr8KPX1xcyNTZJXzU0EQdF2Rt4HWgd07Wgf6n3p4DjRqaqOOCWiQ17+u3x+Pf3OrvRaSooXEND2Xbo3n9LWMK25mwA4M67NG8m+O3lrYloDsKOzCoQ0Lz7pyE88HhbDnT2bY6CmjczLiGh6IlNO/e+Mo7R0dfHy5PQAV0d4GHBhVIad4nJ6/CL99LREB3F3hokKuh7wf61T+Px//4zsVtCeiuAg8NcjV0QJu2JaC78iQolExAhxV5bBBeAQEN3ZjQg4PoBHRYruGhYAI6sNijg9gEdGCmoFAuAR1a8OFBdupaxhS8MMGHB9mpKqDRA+MaHooloIMLP0AIS0AHZwoKpRLQ4cUfIQSVfUArmJ/FHyEEVUBAO9hoXir4fwTEJKAZqGGMkI2aljHVEJcaxgjZENBYXMNDmXIPaB1tqWKQEE/+AW1/m/mpY5QQjoDmoI5RQjgCmoM6nqiAcDIPaC1lqWSYEEz2AW19k1mqZZyQgXqWMdUSllpm2pABAQ2nmoFCJAKah2oGCpEIaB5cw0OBBDQT9YwU4sg7oBVVpaKhQhgCmomKhgphCGguahorDKmaZUxVRaWmscKABDSiqgYLIQhoPqoaLESQdUDr6mdtw4XyCWhGahsvlE5AM1LbeKF0ApqR2sYLpRPQjNQ2XhhELcuYaguKO4pADwQ0qOoGDGXLOaD15aS+EUPRBDQnruGhKAKalQqHDAUT0KxUOGQomIBmxTU8lERA81LjmKFfdSxjqrIlVQ4aeiWgYbmGh4IIaGbqHDWUSUAzU+eooUwCmhnX8FAOAc1NpcOGEglobiodNpQo34DWGpJaxw19qWIZU7UhqXbg0A8BDa3agUNpBDQ/9Y4cCiOgGap35FAWAc1QxUOHoghojmoeOxQk24BW3ZCqBw/lENAcVT146FgNy5iqbog3xEN3BDS6ukcPpRDQLJmCQglyDWjtAal9/FAEAc1T7eOHIghonlzDQwEENFPVHwAogIBmqvoDAF2Jv4xJPlzDQ0cEtAIOAWRPQHPlEED2BDRXruEhe3kGVDuOHATIn4BmyxQUcieg+XIUIHMCmi9HAboQfhmTdEy4hocuCGgdHAbIm4BmzGGAvAlozhwHyFqWAdWNOQcCciagWXMkIGcCmjeHAjImoJlzLKBl0ZcxicYZxwJaJqD1cCwgXwKaOW9HgnzlGFDJOM/RgGwJaO5MQSFbApo9hwNyJaDZczggVwKaPdfw0Krgy5gEY5HjAW0S0Ko4HpApAS2AAwJ5yjCgcnGBIwJZEtASOCSQJQEtgkMCORLQIjgmkCMBLYODAm2JvYxJK1ZxVKAlAlohRwWyk19A9XM1xwWyI6DFcFwgNwJaDAcGciOg5XBgIDMCWg5HBjIjoAVxZKAFoZcxCWgjhwZaIKCVcmggK9kFVD/XcHAgKwJaFAcHciKgRXF0ICcCWhaHBzIioGXxM44hIwJaGAWFPUVexqQPGzhAsB8BrZkjBLnILaDqsJlDBJkQ0PI4RpAJAS2QYwR5ENACOUiQBwEtkaMEWcgsoMqwHYcJksVdxiSg23GcIJmAVs+BggwIaKEcKRiegBbKe+JheHkFVBS2p6AwOAEtloLC0AS0XAoKAxPQgikoJAi7jEkQdqOgsLuoAZWDXTliMCQBLZtDBgMS0MI5ZjAcAS2dgwaDEdDSeSEJBiOgxVNQGIqAlu9AQmEHljFxnoLCDoIGVAWSKSgMQUBjUFAYgIAGoaDQPwGNwhOh0DsBDUNBoW8CGoiEQr8ENJIDCYWNLGOigYLCJjED6l9+KxQUeiOg4ZiEQl8ENB4FhZ4IaEQKCr0Q0JC8HA99ENCYFBR6IKBhKSisZBkTWzAJhVVCBtQ/9ta5joduCWhoCgpdEtDgJBS6I6DRuY6HzghofBIKHRHQGigodEJA66CgMGcZE7tSUJiJGFD/vjvmMh5aJ6DV8FoStE1AK6Kg0C4BrYqCQpsEtC4KCi0S0MooKLRHQGujoNTOMibSKSiVE1D2oKDQklwC6t90jyxngnYIaI0UFFohoHVSUGiBgFZKQWF/AlorBYW9CWi1FJRKBVzG5B9z/xSUOgkobVBQ2E8mAfUveRAKCnsR0KopKOxDQOumoLAHAa2cgkI6Aa2dQw/JBLR6jj2VibeMyT/iATn41EVAaZODD2nyCKh+DsrhhzQCiuMPiQSUIycA0ggoR1aDQpqk5j355HA8/sd3LmxLQIuloJBgdfMe/eyFL5q/5uG18dSby9sS0HI5BVSj82VMj66ORj98/cvVX/Lk+vilW0dP/vf4ygdL2xLQgjkH1KLzgD7+cDTx1B9WNfTe+MVPJx/vjF9Z2paAlsxJgF01Nu/zn08b+uM/LH/ieAL6bsO22nxFit4JKOxoXfP+ftLQ5/+28Oj3104moCu2JaBFMwWFHa1v3uO/vzpJ6KXXz72k9ODw5btf/fN4/NKfTh96dkZAy6agsJuNzfvu95enl/Kn09DjgL5/8ir8W/OHBDQIAYWdbJiB/uW50dwLs8fuTRYw3T168kmLr8KTB1NQ2Mma5s3rOXkt/rsPR6Ofnjx8bz71vNneq/BkQkGpQA+3s5s9+3m2GvSb0dMnv3pwOJt5Tp4MXdyWgBZPQImv+3Wgvxstv3j06OoPPp7+4sHh7FX401+cbktAi2cKCjtofifSpcXlS4+uzmagT67PZqD3xmag8QgobK8poM//69JDj/86n43On/u8efYy/GxbAlo+U1DYXkLzHhyO37jlVfioFBS21vAc6Hu/PHsX/P1f/MPiW+LvHU6XgV5ZfkengEbgxnawtaZL+NkrRhd+M/Xw/eOE/ubWhW0JaAQKCtvaIqD3Ly8HtGlbAhqCgBJbl8uYJi/AL3u64c6gy9sS0BgUlNA6XQf6zcWA/nrLbQloEAIKW7nYvMf/67XXfnH50k9em/un5RVNjdsS0CBMQWErWzwHuv22BDQKAYVtbLGMafttCWgUpqCwjTx+Ljy5EVDYwnLzHr/32vHk8/i/5205HRXQOExBYQvLzXt0dfSDj5fXMlkHWh8BJawOlzEJKFOmoITVww2Vk7YloIEIKGwkoKxmCgobCSgNBBQ22dC8x//20V+335aARmIKCps0Nu/b//rl0dGjyU+We+qP225LQENRUNigqXm3py+939jlRXgBjUZBYb2G5n0zzeb9y6Onv/z26vwnwm/cloAGI6BE1P0yphvTe4B+M7r0x3M/EX7jtgQ0GFNQIurh58JPyjnL6Na3ZhLQcAQU1ll3O7tHV0fPHAlozUxBYZ11Ab1/eXovegGtmIDCGusu4W9PnwL1HGjNTEFhjcYXkZ6ZvPw+KadX4asmoNCseRnTyU+Te/z70ck8dJttCWg8pqDQrHkh/bFnpi8kXdryh3IKaEgKSjR93M7u2/d++YfjD49+9vzftt6WgAYkoETjfqD0RkChkYCy3oGCQpN1zfv3uS+23JaARiSg0KSped/+3s9EYkpAoUlD8xZ/qpyAVk1BoUFD826PRk/900dzf/VOpKoJKKzW9FbO6W1Edt2WgMZkCkoonS9jenR123cfLWxLQIMSUCLpIaDb/hiPhW0JaFCmoLDS2hsq77otAY1KQWGVxheRtrwD08K2BDQsBYUVGpp3PAX91e7bEtC4FBQuariEf+8Xo9Gln7w280vLmKonoHBR04tIIwvpOU9A4SIBZSvuKUIYbmdH7wSUKASU3gkoXLC2eY+3vI/dfFsCGpmCwrLm5v3955MnPx/97PXtXoI/EtDoBBSWNDXv8Ycnrx49ujp66uNttyWgoZmCwpKm5t0YjZ76D5d/8PHj/zKa/nT4rbYloLEpKCxq/rnwv5rdUuSzy6Mtf66xgAYnoLCooXk3Ju+Fn92T6fa29wYV0OAElBA6X8Z0cjemWUDvX7aQngmL6Qmhp/uBzgK69c1BBTQ6AYUFAsr2BBQWNP5MpF+flvObbV+GF9DwFBTOa7yh8jPzgG7/A+YEND4BhXMamnf/8uiFL6cB/fbV0bY/3kNA4zMFhXOamnd7NBr96PKlnzx3/HHbn+4hoBVQUDjT2Lz/e3l+N9CtfzqSgNZAQSldL7ez++4vPzqu5w+f/9v22xLQCggopXM/UAYjoHBKQNmNtyPBqQvN++7fL9ryvsoCWgUBhbnl5i39ODk/VI5lAgpzAsquFBRmlpv3+N8+mvrzaHTpl//jo4/+23OjS6//1Vs5OUdA4URD844novPln59tOwEV0FqYglK07pcx3Ti3fN4NlVmioJSspxsqz9y/7G5MLBBQmFp3P9BVv1m7LQGthIDCVFNAF2agAsoCi+lhqvE50GdW/nr9tgS0FgIKE80/1viFkyc+H3848mONWSKgMNHUvBuj0ejHr7322uR+oC9suy0BrYaCwlFzQCcTT/cDpZGAUqye7gc6mX3+8PUt7yRyJKBVMQWlWO4HyuAUFASUVAoKAkoiAQUBJZGAgoCSyNuRQEBJJaBUT0BJJaCUyTImcqCgFElAyYKAUjkBJZ0pKJUTUPagoNRNQNmDgFI3AWUPAkrdBJQ9WExP3QSUfQgo5bGMiUyYglIeASUXAkrNBJS9CCg1E1D24hqemgko+xFQKiag7EdAqZiAsicFpV4Cyr4ElLJYxkRGTEEpi4CSEwWlVgLK/hSUSgko+xNQKiWg7E9AqZSAsj9vR6JSAkoLBJQ6CSgtEFAKYhkTmVFQyiGg5EZAqZGA0gpTUGokoLRDQamQgNIOAaVCAko7BJQKCSjtsJieCgkoLRFQCmEZE/kRUAohoGRIQamOgNIaAaU2AkprTEGpjYDSHgWlMgJKiwSUuggoLTIFpS4CSpsElPxZxkSmTEHJn4CSKwWlJgJKqwSUmggorRJQaiKgtMpNmaiJgNIuAaUiAkq7BJSKCCgtU1AyZxkTGRNQ8iagZMwUlGoIKK0TUGohoLTOFJRaCCjtE1AqIaC0zxSUSggoHVBQ6iCgdEFAyZdlTGTOFJR8CSi5E1BqIKB0whSUGggo3RBQKiCgdMMUlAoIKB0RUOITUDpiCkp8AkpXBJQ8WcZEAUxByZOAUgIBJToBpTOmoEQnoHRHQQlOQOmOgBKcgNIdASU4AaU7BwpKbAJKhwSUDFnGRBkElAwJKIVQUEITUDqloEQmoHRLQQlMQOmYgBKXgNIxU1DiElC6JqCEJaB0zRSUvFjGREkElKwIKCUxBSUqAaV7CkpQAkoPBJSYBJQemIISk4DSBwElJAGlD6aghCSg9EJAyYZlTJTGFJRsCCjFUVACElB6oqDEI6D0RUAJR0Dpiyko4QgovVFQohFQ+iOgBCOg9McUlBxYxkSZBJQMCChlMgUlFgGlTwJKKAJKn0xBCUVA6ZWCEomA0i8FJRABpV8HCkocAkrPFJSBWcZEwQSUYQkoJVNQohBQ+qegBCGgDEBAiUFAGYApKDEIKENQUEIQUAYhoEQgoAzCFJTBWMZE8RSUoQgo5RNQyiegDMQUlPIJKENRUIonoAxGQSldUvO+fns8vvIvdy9sS0DZxYEbM1G4lObdGU+99OnytgSUnSgohUto3oPDK+8cHT18e/zK8rYElB0pKP0bdhnTzfFbkw8PDl9cmoIKKDsTUHqXxTrQ768JKPtTUAqW3rwHhy8vvYwkoCRQUMqV3LyvDsfvzn/97IyAkkBBKVZi826Ox1f+dPo7AWUPXkiiWGnNe/I//+Ph+Mp/Xt6WgJJCQSlVevO+PncNP9uWgJLEelAKtUfz7o2XXkUSUBIpKD3KYhnTxZfhBZRkCkpvBg3ok+uzS3cBpUUmoRQo6Z1Iryx8PNuWgJJOQSlP0nvhx2/ePXryyfjKB0vbElD2oaCUJqV5907uxnRl6UV4AWVPCkphkpr38LfH+Xzj1oVtCSj7cRlPWdyRnpwcSCglEVDyIqF0LY91oBe3JaC0QELploASmoRSCAElRwcaSgkElDxJKAUQULJ1IKJkTkDJ2MGpofcEVhFQMndw3tA7AwsElBIcLBl6fyiZZUzUSUdpgYBSNx0lDwJKuUSUgQkoxZNQhiKghKChDEFACcK1PP0TUOJQUHomoMSioGxiGRM0MQtlAwGFRi7k6Y2AEpCE0g8BJSQFpQ8CSlAKSvcElKhcx9M5ASUsBaVrAkpkCspFljHBdhSUCwQUtqSgdEhACU5B6Y6AEp2C0hkBJTwFpSsCSnwKSkcElAooKN0QUGpgST1nLGOC3SgopwQUdqWgtE9AqYWA0joBpRoKStsElHooKC0TUCqioLRLQKmIF5Jol4BSEwXFMiZIZT0oAgqpBJQWCSi1UVBaI6BUR0Fpi4BSHwGlJQJKfUxBaYmAUiEFpR0CSo0UtGaWMcFeLGaqmYDCfhSUNggodVJQWiCgVEpB2Z+AUisBZW8CSrUUlH0JKPVSUPYkoFRMQKtkGRO0wRS0SgIKrVBQ9iKgVE1B2YeAUjWrQdmHgFI3AWUPAkrlFJR0AkrtFJRkAkr1FLQyljFBe7yQVBkBhRYpKIkEFFzEk0hAQUFJJKBwpKCkEVCYEFASCChMmIKSQEBhSkGrYRkTtE5BayGg0DqrQdmZgMKMgrIrAYU5BWVHAgqnFJTdCCicEVB2IqBwjoKyCwGF8xQ0PsuYoCsCGp6AQldMQdmegMIiBWVrAgpLFJRtCSgssRqUbQkoLFNQtiSgcIGCsh0BhYsUNDLLmKBbChqYgELHFJQtCCisJKBsJqCwmoKykYBCAwVlEwGFJgrKBgIKTbyQxAYCCo0UNCTLmKAXChqRgEI/FJR1BBTWUVDWEFBYS0FpJqCwnoLSSEBhAwWliYDCJgpKAwGFjRQ0FMuYoFcKGomAQr8UlFUEFLahoKwgoLCVAwnlAgGF7SgoFwgobEtBWSKgsDWTUBYJKGxPQSOwjAkGoqDlE1AYioJyRkBhNy7jOSWgsKMDCWVGQGFnCsoJAYUECsqEgEIKk1COBBQSKWixLGOC4SlooQQUMuDl+OoJKCRT0NoJKOxDQasmoLAXk9CaCSjsx3V8xQQU9nWgobUSUNifgpbEMibIjYIWQ0AhOyahFRJQaInr+PoIKLTGq0m1EVBokYTWRUChXRJaEQGFtkloNQQU2qegObOMCTKnoPkSUMid6/gaCCh0wwvyFRBQ6IyERieg0CEJjU1AoVOu5CMTUOiYgsYloNA9Bc2JZUxQFpPQjAgoFMZ1fEgCCv2Q0IAEFPqioOEIKPRHQoMRUOiR6/hYBBR6JaGRCCj0TEIHZhkTlExBByWgUDYJjUFAYQiu40MQUBiGhAYgoDAUBS2egMJwFLRwAgoDch1fNgGFISlo/yxjgjgUtGcCCoGYhBZLQGFwruNLJaCQAQUtk4BCFhS0RAIKeXAdXyABhUwcSGhxBBTyoaB9sIwJglLQ7gkoRGUSWhIBhbx4KrQgAgq5kdBiCChkSEHLIKCQJQUtgYBCnkxCCyCgkClPhXbEMiaogYR2QkChEhKaNQGFvEloxgQUcieh2RJQyJ8nQzMloFACCc2SgEIhJDQ/AgrFkNBWWMYEdTo4cC2/NwGFWkloTgQUyqOimRBQKNHBgYhmQEChWCI6NAGFoh0cmIwOR0CheAcX7fBHN+hzIMURUIhi9zjW2VLLmIB12otgwI4KKNC7cCXdn4ACO+l+Tpr8HMPW2trTpOY9ef9wPH7j1oVtCShUpJU0dR/LNvaySUrzvr82nnjx0+VtCSjUKNu+dS6leTfHL986enh9/PLdpW0JKFQucCxXSWjeg8Pp3PP7a1c+WNqWgAI1SWjenfErs49vLW1LQIHsDbuM6eb43enHe7OQnm1LQIHsDRrQJ9dnl+4PDudPgj47I6BATQQUINFeAV1ayOQSHqhKKzPQ+bYEFKiJgAIk8io8QKKkdaBvLXw825aAAtkbdh2odyIBBRs2oE+uj1/yXniAlOY9dDcmgMT7gT58/7ifb9xdflhAgaq4Iz1AIgEFSCSgAIkEFKiLH2sMkEhAAYYnoACJBBQgkYACJBJQgEQCCpBIQIG6WMYEkEhAAYYnoACJBBQgkYACJBJQgEQCCpBIQIG6WMYEkEhAAYYnoACJBBQgkYACJBJQgEQCCpBIQIG6ZLuMCSCyDgOaWtBnn211hPkz4OBqG29NA+4yoImefXboPeiZAQdX23jrG/ApAR2AAQdX23jrG/ApAR2AAQdX23jrG/ApAR2AAQdX23jrG/ApAR2AAQdX23jrG/ApAR2AAQdX23jrG/ApAR2AAQdX23jrG/CpHAIKUCQBBUgkoACJBBQgkYACJBJQgEQCCpBIQAES9R7QJ+8fjsdv3Gp8aMXny7ZhwN9fG0+9+Okge9eB1Wfw+2uvrP18uTaMt4oT/PVvx+MrYf8Jr9N3QGd/nc7/bVp4aMXny7ZpwA8Og/37ajiDN8evrP18sTaNt4YT/MnJEK980PD5wPoO6M3xy7eOHl4fv3x39UMrPl+2TQO+N/+HFsXKM/jk5ng+zmhneNN4KzjB98ZX3jmaPDSNZrQTvF7PAX1wOD3G3187+Z/VhYdWfL5smwZ8/NftrcF2rgsrz+DXb4/nQYl2hjeNt4IT/OT6+N2j6UOTj9FO8AY9B/TO7K/VnbO/VQsPrfh82TYN+Mn1YH/PVp3BO+Pxm1+dPh7rDG8abwUn+Ptrs8v1myH/Ca/Xc0Bvnvy/6vx1zcJDKz5ftk0D/v7ay//neLrymzBPua86gxvDRpQAAATMSURBVHde+tPp76Od4U3jreIEn37qrXgneIN+A3r6v+MHh/NnSBYeWvH5sm0a8OlLDLO/dcVrPIOzf0/RzvCm8dZzgmdX7dFO8CYC2qmNAb13fLV39+j/vT8OcqEnoDPzgFZzgmcX79FO8CaDBXS+ymHhoRWfL9umAZ8+YxTlpYbGM3gxoCHO8Kbx1nOCJ6/FfxDvBG9iBtqpjTPQuXtBVn2Ygc4sPwUY/wQfXnl33eeDEtBObR3QKP+/FtCZ5YBGP8F3Zs9RRDvBm3gVvlubBjwX5q9b0xms6VX4Vb8PfoI/OX2ON9oJ3qD3daBvLXxcfmjF58u2YcDzNchx/ro1ncGz5wRjneEN463jBD+5OX7p0zWfD8w7kbq1acA3l/6dFa/pDJ4t64l1hjeNt4oTfPPcE7zRTvAGPQf0+O/RS0tvlF14aMXny7ZpwA8OJ6tcHr4decBT86BEO8ObxlvDCb5zfnDRTvAGfd9M5OG5W7U8OJz+T+r8Q4u/iWDTgO/M7tUT5p0qKwY8cXoJG+0Mbxpv/BM8v2Hf7P3/0U7wer3fD/Th+8cH943p/5zmf93OPbT0mwg2DnhyK8U3Yw/46PxzgNHO8MbxRj/B98YLAQ13gtdyR3qARAIKkEhAARIJKEAiAQVIJKAAiQQUIJGAAiQSUIBEAgqQSEABEgkoQCIBBUgkoBToxujpL1M/C+0RUHL02T+sTuDs8YZErv8stE5AyVBTAuePr/78+s9C+wSUDG0K6G5fBV0RUDIkoJRBQMmQgFIGASUL3/7+8mg0+vEfJr++PZr66eTXn08f/9HrXy48Pk/l6q86Den00yefXfrD0AoBJQefjWae+vh8Ch9/uPrxWSIbvmoe0NkjoxcufgtohYCSgfuXR0//7biXfx6Nnpn8/lwCXzj+xbevLj1+8rHpq2Yfj7/4+NOTBv90xbeAFggoGbg9+sHH01/cOPnFLIGPrs5id/yL6QOLiWz4qtnH+dc8/t30s8t/GFogoGTg9ujSH8//fpbCb+YPzyJ4IaArv2r28ZvR6NfTh0+2svyHoQUCSgaOY3fp+X89+/2F19NXzjGbvmppfrr6W0ALBJQcnLxY9MPXvzj57fmAfvf5R+89N1oV0KavOvm4HOGlPwwtEFCy8Pefz14in64yOo3fZ8/NXztfFdCGr1od0KU/DC0QUHLx+XvTWk6euLxx+vrPZBHoa//9i5WX8A1f1RTQxT8MLRBQMjJZZHQufrNVTEcNz4E2fNVpQGfPgR5n+JmLfxhaIKAM71ziTrJ3ksDjh2epe3R1RUAbvurCq/D3Lx//4sIfhhYIKBm4fW690tlc8iygt1c+B7r6q5bXgc6CufyHoQUCSgaOY3fpV5O3HP3uZNo4qd3jL+aX8J+/Ohqd5G/2+FkiV33V2SrS8+9EWv7D0AIBJQf3L89fbZ/eQuSbya+eOXr06uzB5/98Ur3Z4/NErv6qhvfCL/1haIGAkoXHf/nRZJXmC7NVmp8d1+6ZL48ffe5k/fv8TZ2zx+eJXP1VDXdjWvrDsD8BBUgkoACJBBQgkYACJBJQgEQCCpBIQAESCShAIgEFSCSgAIkEFCCRgAIkElCARAIKkEhAARIJKEAiAQVIJKAAiQQUIJGAAiT6/8akK7zsIGXCAAAAAElFTkSuQmCC" width="672" style="display: block; margin: auto;" /></p>
+propensity_score %&gt;%
+  modelsummary(fmt = 6)</code></pre>
+<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:center;">
+ (1)
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+(Intercept)
+</td>
+<td style="text-align:center;">
+−0.139605
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.069562)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+x
+</td>
+<td style="text-align:center;">
+0.951090
+</td>
+</tr>
+<tr>
+<td style="text-align:left;box-shadow: 0px 1.5px">
+</td>
+<td style="text-align:center;box-shadow: 0px 1.5px">
+(0.080246)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Num.Obs.
+</td>
+<td style="text-align:center;">
+1000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AIC
+</td>
+<td style="text-align:center;">
+1204.7
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BIC
+</td>
+<td style="text-align:center;">
+1214.5
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Log.Lik.
+</td>
+<td style="text-align:center;">
+−600.337
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+F
+</td>
+<td style="text-align:center;">
+140.473
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+RMSE
+</td>
+<td style="text-align:center;">
+0.45
+</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>outcome_observed &lt;-
+  outcome_observed %&gt;%
+  dplyr::mutate(e = predict(propensity_score, type = &quot;response&quot;))
+outcome_observed %&gt;%
+  ggplot(
+    aes(
+      x = x,
+      y = e
+    )
+  ) +
+  geom_line() +
+  theme_classic()</code></pre>
+<p><img src="data:image/png;base64,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" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>outcome_observed %&gt;%
+  dplyr::mutate(weight = (z / e + (1 - z) / (1 - e)) / length(z)) %&gt;%
+  dplyr::summarise(y = sum(z * y * weight) - sum((1 - z) * y * weight)) </code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["y"],"name":[1],"type":["dbl"],"align":["right"]}],"data":[{"1":"1.083165"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+<div id="using-a-blocking-estimator" class="section level2" number="2.3">
+<h2><span class="header-section-number">2.3</span> Using a blocking
+estimator</h2>
+<pre class="r"><code>blocking_estimator &lt;-
+  outcome_observed %&gt;%
+  dplyr::mutate(j = dplyr::ntile(outcome_observed$e, J)) %&gt;%
+  dplyr::group_by(j) %&gt;%
+  dplyr::summarise(
+    N_j = length(y),
+    y = sum(y * z) / sum(z) - sum(y * (1 - z)) / sum(1 - z)
+    ) %&gt;%
+  dplyr::ungroup()
+blocking_estimator</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["j"],"name":[1],"type":["int"],"align":["right"]},{"label":["N_j"],"name":[2],"type":["int"],"align":["right"]},{"label":["y"],"name":[3],"type":["dbl"],"align":["right"]}],"data":[{"1":"1","2":"250","3":"1.087479"},{"1":"2","2":"250","3":"1.211927"},{"1":"3","2":"250","3":"1.002900"},{"1":"4","2":"250","3":"1.166894"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<pre class="r"><code>blocking_estimator %&gt;%
+  dplyr::summarise(y = sum(y * N_j) / sum(N_j))</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["y"],"name":[1],"type":["dbl"],"align":["right"]}],"data":[{"1":"1.1173"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+<div id="using-a-matching-estimator" class="section level2" number="2.4">
+<h2><span class="header-section-number">2.4</span> Using a matching
+estimator</h2>
+<pre class="r"><code>matched &lt;-
+  MatchIt::matchit(
+    data = outcome_observed,
+    formula = z ~ x,
+    method = &quot;nearest&quot;,
+    distance = &quot;glm&quot;,
+    ratio = M
+  )
+ matched </code></pre>
+<pre><code>## A matchit object
+##  - method: 1:1 nearest neighbor matching without replacement
+##  - distance: Propensity score
+##              - estimated with logistic regression
+##  - number of obs.: 1000 (original), 938 (matched)
+##  - target estimand: ATT
+##  - covariates: x</code></pre>
+<pre class="r"><code>matched_observed &lt;-
+  MatchIt::match.data(matched) 
+matched_observed</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["y"],"name":[1],"type":["dbl"],"align":["right"]},{"label":["z"],"name":[2],"type":["lgl"],"align":["right"]},{"label":["x"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["e"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["distance"],"name":[5],"type":["dbl"],"align":["right"]},{"label":["weights"],"name":[6],"type":["dbl"],"align":["right"]},{"label":["subclass"],"name":[7],"type":["fct"],"align":["left"]}],"data":[{"1":"1.103642398","2":"FALSE","3":"-0.626453811","4":"0.32400671","5":"0.32400671","6":"1","7":"424"},{"1":"1.121114011","2":"FALSE","3":"0.183643324","4":"0.50876329","5":"0.50876329","6":"1","7":"59"},{"1":"-0.912559064","2":"FALSE","3":"-0.835628612","4":"0.28204038","5":"0.28204038","6":"1","7":"363"},{"1":"1.678797985","2":"TRUE","3":"1.595280802","4":"0.79861359","5":"0.79861359","6":"1","7":"158"},{"1":"0.085871036","2":"FALSE","3":"0.329507772","4":"0.54333774","5":"0.54333774","6":"1","7":"39"},{"1":"1.614370772","2":"TRUE","3":"-0.820468384","4":"0.28496924","5":"0.28496924","6":"1","7":"265"},{"1":"1.102258584","2":"TRUE","3":"0.487429052","4":"0.58029499","5":"0.58029499","6":"1","7":"314"},{"1":"-0.236451027","2":"TRUE","3":"0.738324705","4":"0.63705598","5":"0.63705598","6":"1","7":"366"},{"1":"-1.065487923","2":"TRUE","3":"0.575781352","4":"0.60061193","5":"0.60061193","6":"1","7":"412"},{"1":"0.982885026","2":"FALSE","3":"-0.305388387","4":"0.39411280","5":"0.39411280","6":"1","7":"113"},{"1":"-0.465283686","2":"FALSE","3":"1.511781168","4":"0.78553795","5":"0.78553795","6":"1","7":"38"},{"1":"-0.019251386","2":"TRUE","3":"0.389843236","4":"0.55753687","5":"0.55753687","6":"1","7":"11"},{"1":"-1.652999322","2":"FALSE","3":"-0.621240581","4":"0.32509365","5":"0.32509365","6":"1","7":"330"},{"1":"1.938042226","2":"TRUE","3":"1.124930918","4":"0.71713744","5":"0.71713744","6":"1","7":"23"},{"1":"-0.176793609","2":"FALSE","3":"-0.044933609","4":"0.45454073","5":"0.45454073","6":"1","7":"457"},{"1":"-0.592237983","2":"FALSE","3":"-0.016190263","4":"0.46132663","5":"0.46132663","6":"1","7":"436"},{"1":"-1.286835450","2":"FALSE","3":"0.943836211","4":"0.68093433","5":"0.68093433","6":"1","7":"408"},{"1":"-1.056237441","2":"FALSE","3":"0.821221195","4":"0.65508138","5":"0.65508138","6":"1","7":"448"},{"1":"2.065798675","2":"FALSE","3":"0.593901321","4":"0.60473866","5":"0.60473866","6":"1","7":"198"},{"1":"-0.642851689","2":"TRUE","3":"0.918977372","4":"0.67577576","5":"0.67577576","6":"1","7":"59"},{"1":"0.240808983","2":"TRUE","3":"0.782136301","4":"0.64663437","5":"0.64663437","6":"1","7":"64"},{"1":"0.788734650","2":"FALSE","3":"0.074564983","4":"0.48283509","5":"0.48283509","6":"1","7":"183"},{"1":"0.663778496","2":"FALSE","3":"-1.989351696","4":"0.11591889","5":"0.11591889","6":"1","7":"77"},{"1":"3.445310537","2":"TRUE","3":"0.619825748","4":"0.61061681","5":"0.61061681","6":"1","7":"78"},{"1":"0.530474164","2":"TRUE","3":"-0.056128740","4":"0.45190214","5":"0.45190214","6":"1","7":"83"},{"1":"-1.017293528","2":"FALSE","3":"-0.155795507","4":"0.42854738","5":"0.42854738","6":"1","7":"194"},{"1":"-1.332261015","2":"FALSE","3":"-0.478150055","4":"0.35563312","5":"0.35563312","6":"1","7":"403"},{"1":"0.548437175","2":"FALSE","3":"0.417941560","4":"0.56411890","5":"0.56411890","6":"1","7":"23"},{"1":"0.390547578","2":"TRUE","3":"1.358679552","4":"0.75998960","5":"0.75998960","6":"1","7":"105"},{"1":"0.503249732","2":"TRUE","3":"-0.102787727","4":"0.44093578","5":"0.44093578","6":"1","7":"112"},{"1":"0.685727716","2":"TRUE","3":"0.387671612","4":"0.55702730","5":"0.55702730","6":"1","7":"120"},{"1":"0.932318972","2":"TRUE","3":"-0.053805041","4":"0.45244960","5":"0.45244960","6":"1","7":"126"},{"1":"2.481909154","2":"TRUE","3":"-1.377059557","4":"0.19010734","5":"0.19010734","6":"1","7":"132"},{"1":"0.432983449","2":"FALSE","3":"-0.414994563","4":"0.36951407","5":"0.36951407","6":"1","7":"232"},{"1":"2.969160960","2":"TRUE","3":"-0.394289954","4":"0.37411344","5":"0.37411344","6":"1","7":"142"},{"1":"0.867039855","2":"FALSE","3":"-0.059313397","4":"0.45115204","5":"0.45115204","6":"1","7":"4"},{"1":"0.647288155","2":"TRUE","3":"1.100025372","4":"0.71230780","5":"0.71230780","6":"1","7":"154"},{"1":"2.119421408","2":"TRUE","3":"0.763175748","4":"0.64250300","5":"0.64250300","6":"1","7":"159"},{"1":"0.462263273","2":"FALSE","3":"-0.164523596","4":"0.42651567","5":"0.42651567","6":"1","7":"157"},{"1":"1.292744532","2":"TRUE","3":"-0.253361680","4":"0.40598833","5":"0.40598833","6":"1","7":"169"},{"1":"-0.943054772","2":"FALSE","3":"0.696963375","4":"0.62791221","5":"0.62791221","6":"1","7":"45"},{"1":"-0.813238024","2":"TRUE","3":"0.556663199","4":"0.59624235","5":"0.59624235","6":"1","7":"179"},{"1":"1.885332678","2":"FALSE","3":"-0.688755695","4":"0.31116603","5":"0.31116603","6":"1","7":"176"},{"1":"0.845903030","2":"FALSE","3":"-0.707495157","4":"0.30735875","5":"0.30735875","6":"1","7":"126"},{"1":"0.774872637","2":"TRUE","3":"0.364581962","4":"0.55160205","5":"0.55160205","6":"1","7":"196"},{"1":"2.864835009","2":"TRUE","3":"0.768532925","4":"0.64367247","5":"0.64367247","6":"1","7":"200"},{"1":"0.479771254","2":"FALSE","3":"-0.112346212","4":"0.43869597","5":"0.43869597","6":"1","7":"344"},{"1":"1.790691711","2":"TRUE","3":"0.881107726","4":"0.66783482","5":"0.66783482","6":"1","7":"212"},{"1":"2.663342828","2":"TRUE","3":"0.398105880","4":"0.55947460","5":"0.55947460","6":"1","7":"218"},{"1":"0.192820992","2":"FALSE","3":"-0.612026393","4":"0.32701937","5":"0.32701937","6":"1","7":"297"},{"1":"0.424120755","2":"TRUE","3":"0.341119691","4":"0.54607665","5":"0.54607665","6":"1","7":"228"},{"1":"2.344753947","2":"FALSE","3":"-1.129363096","4":"0.22904153","5":"0.22904153","6":"1","7":"173"},{"1":"0.221172602","2":"TRUE","3":"1.433023702","4":"0.77264912","5":"0.77264912","6":"1","7":"240"},{"1":"-0.152187964","2":"FALSE","3":"1.980399899","4":"0.85118617","5":"0.85118617","6":"1","7":"271"},{"1":"-1.119576785","2":"TRUE","3":"-0.367221476","4":"0.38016086","5":"0.38016086","6":"1","7":"249"},{"1":"-0.679464817","2":"FALSE","3":"-1.044134626","4":"0.24366849","5":"0.24366849","6":"1","7":"280"},{"1":"1.667752972","2":"TRUE","3":"0.569719627","4":"0.59922818","5":"0.59922818","6":"1","7":"261"},{"1":"1.228015338","2":"TRUE","3":"-0.135054604","4":"0.43338494","5":"0.43338494","6":"1","7":"266"},{"1":"2.544126599","2":"TRUE","3":"2.401617761","4":"0.89515850","5":"0.89515850","6":"1","7":"271"},{"1":"0.661547422","2":"TRUE","3":"-0.039240003","4":"0.45588365","5":"0.45588365","6":"1","7":"275"},{"1":"0.684434041","2":"TRUE","3":"0.689739362","4":"0.62630555","5":"0.62630555","6":"1","7":"278"},{"1":"0.581632004","2":"TRUE","3":"0.028002159","4":"0.47178698","5":"0.47178698","6":"1","7":"284"},{"1":"-1.447538626","2":"FALSE","3":"-0.743273209","4":"0.30016238","5":"0.30016238","6":"1","7":"359"},{"1":"-1.825087966","2":"FALSE","3":"0.188792300","4":"0.50998714","5":"0.50998714","6":"1","7":"92"},{"1":"1.642148769","2":"TRUE","3":"1.465554862","4":"0.77803824","5":"0.77803824","6":"1","7":"303"},{"1":"0.837621028","2":"TRUE","3":"0.153253338","4":"0.50153827","5":"0.50153827","6":"1","7":"310"},{"1":"1.991995103","2":"TRUE","3":"2.172611670","4":"0.87288877","5":"0.87288877","6":"1","7":"315"},{"1":"2.295497329","2":"TRUE","3":"0.475509529","4":"0.57753145","5":"0.57753145","6":"1","7":"320"},{"1":"-0.855460448","2":"FALSE","3":"-0.709946431","4":"0.30686264","5":"0.30686264","6":"1","7":"143"},{"1":"0.631354700","2":"TRUE","3":"0.610726353","4":"0.60855716","5":"0.60855716","6":"1","7":"332"},{"1":"0.208243354","2":"FALSE","3":"-0.934097632","4":"0.26346892","5":"0.26346892","6":"1","7":"63"},{"1":"1.656244668","2":"FALSE","3":"-1.253633400","4":"0.20884138","5":"0.20884138","6":"1","7":"393"},{"1":"-0.943971216","2":"FALSE","3":"0.291446236","4":"0.53434261","5":"0.53434261","6":"1","7":"216"},{"1":"-1.626474855","2":"FALSE","3":"-0.443291873","4":"0.36326630","5":"0.36326630","6":"1","7":"34"},{"1":"-1.845554154","2":"FALSE","3":"0.001105352","4":"0.46541696","5":"0.46541696","6":"1","7":"115"},{"1":"0.559454251","2":"FALSE","3":"0.074341324","4":"0.48278197","5":"0.48278197","6":"1","7":"250"},{"1":"2.356736074","2":"TRUE","3":"-0.589520946","4":"0.33174740","5":"0.33174740","6":"1","7":"367"},{"1":"0.743652868","2":"FALSE","3":"-0.568668733","4":"0.33615863","5":"0.33615863","6":"1","7":"463"},{"1":"-1.691562454","2":"TRUE","3":"-0.135178615","4":"0.43335598","5":"0.43335598","6":"1","7":"377"},{"1":"1.726989171","2":"TRUE","3":"1.178086997","4":"0.72727935","5":"0.72727935","6":"1","7":"382"},{"1":"0.148040234","2":"FALSE","3":"-1.523566800","4":"0.16957328","5":"0.16957328","6":"1","7":"318"},{"1":"0.053239295","2":"FALSE","3":"0.593946188","4":"0.60474885","5":"0.60474885","6":"1","7":"105"},{"1":"-0.606315141","2":"FALSE","3":"0.332950371","4":"0.54415003","5":"0.54415003","6":"1","7":"73"},{"1":"1.011838076","2":"TRUE","3":"1.063099837","4":"0.70505761","5":"0.70505761","6":"1","7":"400"},{"1":"0.415604914","2":"TRUE","3":"-0.304183924","4":"0.39438638","5":"0.39438638","6":"1","7":"405"},{"1":"0.791242305","2":"TRUE","3":"0.370018810","4":"0.55288067","5":"0.55288067","6":"1","7":"409"},{"1":"0.371924270","2":"TRUE","3":"0.267098791","4":"0.52857643","5":"0.52857643","6":"1","7":"413"},{"1":"1.754398473","2":"FALSE","3":"-0.542520031","4":"0.34173088","5":"0.34173088","6":"1","7":"229"},{"1":"1.317194241","2":"TRUE","3":"1.207867806","4":"0.73286099","5":"0.73286099","6":"1","7":"425"},{"1":"-0.279671025","2":"FALSE","3":"1.160402616","4":"0.72393059","5":"0.72393059","6":"1","7":"291"},{"1":"0.784978501","2":"TRUE","3":"0.700213650","4":"0.62863417","5":"0.62863417","6":"1","7":"441"},{"1":"0.858337281","2":"TRUE","3":"1.586833455","4":"0.79731835","5":"0.79731835","6":"1","7":"448"},{"1":"-2.062921776","2":"FALSE","3":"0.558486426","4":"0.59665973","5":"0.59665973","6":"1","7":"233"},{"1":"1.633564284","2":"FALSE","3":"-1.276592208","4":"0.20525644","5":"0.20525644","6":"1","7":"206"},{"1":"1.035217884","2":"FALSE","3":"-0.573265414","4":"0.33518372","5":"0.33518372","6":"1","7":"469"},{"1":"0.908723230","2":"TRUE","3":"-1.224612615","4":"0.21343852","5":"0.21343852","6":"1","7":"466"},{"1":"0.358337527","2":"FALSE","3":"-0.473400636","4":"0.35666893","5":"0.35666893","6":"1","7":"407"},{"1":"-0.403087616","2":"TRUE","3":"-0.620366677","4":"0.32527604","5":"0.32527604","6":"1","7":"1"},{"1":"-1.130653617","2":"FALSE","3":"0.042115873","4":"0.47513337","5":"0.47513337","6":"1","7":"347"},{"1":"1.444361331","2":"FALSE","3":"-0.910921649","4":"0.26776857","5":"0.26776857","6":"1","7":"169"},{"1":"2.437898673","2":"TRUE","3":"0.158028772","4":"0.50267372","5":"0.50267372","6":"1","7":"2"},{"1":"0.150854476","2":"FALSE","3":"-0.654584644","4":"0.31817448","5":"0.31817448","6":"1","7":"292"},{"1":"0.523795889","2":"TRUE","3":"1.767287269","4":"0.82364570","5":"0.82364570","6":"1","7":"3"},{"1":"3.114230064","2":"TRUE","3":"0.716707476","4":"0.63228893","5":"0.63228893","6":"1","7":"4"},{"1":"0.856526228","2":"TRUE","3":"0.910174229","4":"0.67393861","5":"0.67393861","6":"1","7":"5"},{"1":"0.146993769","2":"TRUE","3":"0.384185358","4":"0.55620899","5":"0.55620899","6":"1","7":"6"},{"1":"-0.189252697","2":"TRUE","3":"1.682176081","4":"0.81157809","5":"0.81157809","6":"1","7":"7"},{"1":"0.042043709","2":"FALSE","3":"-0.635736454","4":"0.32207602","5":"0.32207602","6":"1","7":"238"},{"1":"0.682863335","2":"FALSE","3":"-0.461644730","4":"0.35923855","5":"0.35923855","6":"1","7":"184"},{"1":"2.228971580","2":"TRUE","3":"1.432282239","4":"0.77252522","5":"0.77252522","6":"1","7":"8"},{"1":"0.512852988","2":"FALSE","3":"-0.650696353","4":"0.31897729","5":"0.31897729","6":"1","7":"193"},{"1":"-0.657570893","2":"TRUE","3":"-0.207380744","4":"0.41657667","5":"0.41657667","6":"1","7":"9"},{"1":"0.657413494","2":"FALSE","3":"-0.392807929","4":"0.37444354","5":"0.37444354","6":"1","7":"211"},{"1":"-0.805800090","2":"FALSE","3":"-0.319992869","4":"0.39080092","5":"0.39080092","6":"1","7":"260"},{"1":"0.658335409","2":"TRUE","3":"-0.279113303","4":"0.40009563","5":"0.40009563","6":"1","7":"10"},{"1":"-0.080142649","2":"FALSE","3":"0.494188331","4":"0.58185990","5":"0.58185990","6":"1","7":"226"},{"1":"1.034347638","2":"TRUE","3":"-0.177330482","4":"0.42353902","5":"0.42353902","6":"1","7":"12"},{"1":"-0.124834825","2":"FALSE","3":"-0.505957462","4":"0.34959589","5":"0.34959589","6":"1","7":"272"},{"1":"0.779595568","2":"TRUE","3":"1.343038825","4":"0.75726570","5":"0.75726570","6":"1","7":"13"},{"1":"3.373575401","2":"TRUE","3":"-0.214579409","4":"0.41491363","5":"0.41491363","6":"1","7":"14"},{"1":"-0.563575423","2":"FALSE","3":"-0.179556530","4":"0.42302219","5":"0.42302219","6":"1","7":"177"},{"1":"1.240479640","2":"FALSE","3":"-0.100190741","4":"0.44154475","5":"0.44154475","6":"1","7":"121"},{"1":"1.120736783","2":"TRUE","3":"0.712666307","4":"0.63139486","5":"0.63139486","6":"1","7":"15"},{"1":"0.537094744","2":"TRUE","3":"-0.073564404","4":"0.44779815","5":"0.44779815","6":"1","7":"16"},{"1":"-2.473843419","2":"FALSE","3":"-0.037634171","4":"0.45626253","5":"0.45626253","6":"1","7":"91"},{"1":"-0.708252344","2":"FALSE","3":"-0.681660479","4":"0.31261429","5":"0.31261429","6":"1","7":"456"},{"1":"-0.517510699","2":"FALSE","3":"-0.324270272","4":"0.38983281","5":"0.38983281","6":"1","7":"462"},{"1":"1.545333810","2":"FALSE","3":"0.060160440","4":"0.47941498","5":"0.47941498","6":"1","7":"48"},{"1":"-2.081192662","2":"TRUE","3":"-0.588894486","4":"0.33187950","5":"0.33187950","6":"1","7":"17"},{"1":"0.184054080","2":"TRUE","3":"0.531496193","4":"0.59046701","5":"0.59046701","6":"1","7":"18"},{"1":"0.195133060","2":"FALSE","3":"0.306557861","4":"0.53791696","5":"0.53791696","6":"1","7":"346"},{"1":"-1.213582416","2":"FALSE","3":"-0.300976127","4":"0.39511531","5":"0.39511531","6":"1","7":"241"},{"1":"-0.452138397","2":"FALSE","3":"-0.528279904","4":"0.34478404","5":"0.34478404","6":"1","7":"419"},{"1":"1.333703870","2":"FALSE","3":"-0.652094781","4":"0.31868843","5":"0.31868843","6":"1","7":"125"},{"1":"-0.687142234","2":"FALSE","3":"-0.056896778","4":"0.45172122","5":"0.45172122","6":"1","7":"373"},{"1":"0.589794237","2":"FALSE","3":"-1.914359426","4":"0.12343094","5":"0.12343094","6":"1","7":"153"},{"1":"-0.738506183","2":"TRUE","3":"1.176583312","4":"0.72699560","5":"0.72699560","6":"1","7":"19"},{"1":"3.517425674","2":"TRUE","3":"-1.664972436","4":"0.15146663","5":"0.15146663","6":"1","7":"20"},{"1":"1.193711491","2":"FALSE","3":"-0.463530401","4":"0.35882583","5":"0.35882583","6":"1","7":"402"},{"1":"0.739378013","2":"FALSE","3":"-1.115920105","4":"0.23130704","5":"0.23130704","6":"1","7":"421"},{"1":"-0.525743459","2":"FALSE","3":"-0.750819001","4":"0.29865697","5":"0.29865697","6":"1","7":"453"},{"1":"2.504383962","2":"TRUE","3":"2.087166546","4":"0.86359547","5":"0.86359547","6":"1","7":"21"},{"1":"1.523868035","2":"TRUE","3":"0.017395620","4":"0.46927380","5":"0.46927380","6":"1","7":"22"},{"1":"0.749748389","2":"FALSE","3":"-1.286300530","4":"0.20375432","5":"0.20375432","6":"1","7":"334"},{"1":"0.645387202","2":"TRUE","3":"0.450187101","4":"0.57164454","5":"0.57164454","6":"1","7":"24"},{"1":"2.284845379","2":"TRUE","3":"-0.018559833","4":"0.46076663","5":"0.46076663","6":"1","7":"25"},{"1":"0.756000591","2":"FALSE","3":"-0.318068375","4":"0.39123677","5":"0.39123677","6":"1","7":"320"},{"1":"-1.205586038","2":"FALSE","3":"-0.929362147","4":"0.26434384","5":"0.26434384","6":"1","7":"214"},{"1":"-1.275952941","2":"FALSE","3":"-1.075192297","4":"0.23826598","5":"0.23826598","6":"1","7":"367"},{"1":"0.166807653","2":"FALSE","3":"1.000028804","4":"0.69243186","5":"0.69243186","6":"1","7":"277"},{"1":"-0.163562963","2":"FALSE","3":"-0.621266695","4":"0.32508820","5":"0.32508820","6":"1","7":"438"},{"1":"0.363559216","2":"TRUE","3":"-1.384426847","4":"0.18903084","5":"0.18903084","6":"1","7":"26"},{"1":"-0.208989155","2":"TRUE","3":"1.869290622","4":"0.83729801","5":"0.83729801","6":"1","7":"27"},{"1":"0.618132829","2":"TRUE","3":"0.425100377","4":"0.56579235","5":"0.56579235","6":"1","7":"28"},{"1":"0.611247959","2":"TRUE","3":"-0.238647101","4":"0.40936776","5":"0.40936776","6":"1","7":"29"},{"1":"0.887767607","2":"TRUE","3":"1.058483049","4":"0.70414367","5":"0.70414367","6":"1","7":"30"},{"1":"3.587994053","2":"TRUE","3":"0.886422651","4":"0.66895522","5":"0.66895522","6":"1","7":"31"},{"1":"1.083249585","2":"TRUE","3":"-0.619243048","4":"0.32551062","5":"0.32551062","6":"1","7":"32"},{"1":"-0.257193197","2":"TRUE","3":"2.206102465","4":"0.87638118","5":"0.87638118","6":"1","7":"33"},{"1":"0.750154966","2":"FALSE","3":"-0.255027030","4":"0.40560641","5":"0.40560641","6":"1","7":"189"},{"1":"-1.215537764","2":"FALSE","3":"-0.144399602","4":"0.43120370","5":"0.43120370","6":"1","7":"180"},{"1":"1.074521835","2":"TRUE","3":"0.207538339","4":"0.51444175","5":"0.51444175","6":"1","7":"34"},{"1":"-0.260181826","2":"FALSE","3":"2.307978399","4":"0.88650134","5":"0.88650134","6":"1","7":"388"},{"1":"0.993353113","2":"TRUE","3":"0.105802368","4":"0.49025697","5":"0.49025697","6":"1","7":"35"},{"1":"0.503060830","2":"TRUE","3":"0.456998805","4":"0.57323018","5":"0.57323018","6":"1","7":"36"},{"1":"2.970977366","2":"TRUE","3":"-0.077152935","4":"0.44695435","5":"0.44695435","6":"1","7":"37"},{"1":"0.971391786","2":"FALSE","3":"-0.334000842","4":"0.38763373","5":"0.38763373","6":"1","7":"24"},{"1":"1.244386233","2":"FALSE","3":"-0.034726028","4":"0.45694880","5":"0.45694880","6":"1","7":"148"},{"1":"-0.290485347","2":"FALSE","3":"0.787639606","4":"0.64782944","5":"0.64782944","6":"1","7":"256"},{"1":"2.400496185","2":"TRUE","3":"2.075245009","4":"0.86225431","5":"0.86225431","6":"1","7":"38"},{"1":"1.543698874","2":"TRUE","3":"1.027392439","4":"0.69794654","5":"0.69794654","6":"1","7":"39"},{"1":"0.691693280","2":"TRUE","3":"1.207908398","4":"0.73286855","5":"0.73286855","6":"1","7":"40"},{"1":"0.499203392","2":"TRUE","3":"-1.231323422","4":"0.21236896","5":"0.21236896","6":"1","7":"41"},{"1":"1.987089615","2":"TRUE","3":"0.983895570","4":"0.68915440","5":"0.68915440","6":"1","7":"42"},{"1":"-0.043013631","2":"TRUE","3":"0.219924804","4":"0.51738392","5":"0.51738392","6":"1","7":"43"},{"1":"-0.657575962","2":"FALSE","3":"-1.467250029","4":"0.17724986","5":"0.17724986","6":"1","7":"418"},{"1":"0.797319639","2":"FALSE","3":"0.521022743","4":"0.58805608","5":"0.58805608","6":"1","7":"40"},{"1":"1.734396213","2":"TRUE","3":"-0.158754605","4":"0.42785829","5":"0.42785829","6":"1","7":"44"},{"1":"-0.568544441","2":"TRUE","3":"1.464587312","4":"0.77787928","5":"0.77787928","6":"1","7":"45"},{"1":"-0.299568978","2":"FALSE","3":"-0.766082000","4":"0.29562524","5":"0.29562524","6":"1","7":"146"},{"1":"2.052273058","2":"FALSE","3":"-0.430211754","4":"0.36614867","5":"0.36614867","6":"1","7":"43"},{"1":"-0.825135698","2":"FALSE","3":"-0.926109497","4":"0.26494587","5":"0.26494587","6":"1","7":"163"},{"1":"2.294728791","2":"TRUE","3":"-0.177103961","4":"0.42359162","5":"0.42359162","6":"1","7":"46"},{"1":"2.041741272","2":"TRUE","3":"0.402011779","4":"0.56038998","5":"0.56038998","6":"1","7":"47"},{"1":"-1.058334779","2":"FALSE","3":"-0.731748173","4":"0.30247001","5":"0.30247001","6":"1","7":"329"},{"1":"0.149860497","2":"TRUE","3":"0.830373168","4":"0.65704546","5":"0.65704546","6":"1","7":"48"},{"1":"-1.860164814","2":"FALSE","3":"-1.208082786","4":"0.21608975","5":"0.21608975","6":"1","7":"460"},{"1":"2.478523272","2":"TRUE","3":"-1.047984413","4":"0.24299433","5":"0.24299433","6":"1","7":"49"},{"1":"2.050264946","2":"TRUE","3":"1.441157707","4":"0.77400521","5":"0.77400521","6":"1","7":"50"},{"1":"1.299558084","2":"TRUE","3":"-1.015847465","4":"0.24866080","5":"0.24866080","6":"1","7":"51"},{"1":"1.116894913","2":"TRUE","3":"0.411974712","4":"0.56272298","5":"0.56272298","6":"1","7":"52"},{"1":"-0.660454959","2":"FALSE","3":"-0.381076051","4":"0.37706080","5":"0.37706080","6":"1","7":"222"},{"1":"-1.536565652","2":"FALSE","3":"0.409401840","4":"0.56212075","5":"0.56212075","6":"1","7":"166"},{"1":"1.978160406","2":"TRUE","3":"1.688873286","4":"0.81255020","5":"0.81255020","6":"1","7":"53"},{"1":"0.447036565","2":"TRUE","3":"1.586588433","4":"0.79728068","5":"0.79728068","6":"1","7":"54"},{"1":"-1.722675959","2":"TRUE","3":"-0.330907801","4":"0.38833226","5":"0.38833226","6":"1","7":"55"},{"1":"2.548964992","2":"TRUE","3":"2.497661590","4":"0.90342712","5":"0.90342712","6":"1","7":"56"},{"1":"0.876415072","2":"TRUE","3":"0.667066167","4":"0.62124491","5":"0.62124491","6":"1","7":"57"},{"1":"-0.179754121","2":"FALSE","3":"0.541327336","4":"0.59272613","5":"0.59272613","6":"1","7":"411"},{"1":"-1.036723834","2":"TRUE","3":"-0.013399523","4":"0.46198629","5":"0.46198629","6":"1","7":"58"},{"1":"0.446638487","2":"TRUE","3":"0.510108423","4":"0.58553916","5":"0.58553916","6":"1","7":"60"},{"1":"-1.598773941","2":"FALSE","3":"-0.164375832","4":"0.42655005","5":"0.42655005","6":"1","7":"349"},{"1":"1.325531809","2":"FALSE","3":"0.420694643","4":"0.56476264","5":"0.56476264","6":"1","7":"90"},{"1":"0.175999396","2":"FALSE","3":"-0.400246744","4":"0.37278781","5":"0.37278781","6":"1","7":"273"},{"1":"-0.407853839","2":"FALSE","3":"-1.370207878","4":"0.19111270","5":"0.19111270","6":"1","7":"41"},{"1":"2.361310722","2":"TRUE","3":"0.987838267","4":"0.68995713","5":"0.68995713","6":"1","7":"61"},{"1":"-0.411823589","2":"TRUE","3":"1.519745025","4":"0.78681123","5":"0.78681123","6":"1","7":"62"},{"1":"-0.524345580","2":"TRUE","3":"-0.308740569","4":"0.39335175","5":"0.39335175","6":"1","7":"63"},{"1":"-0.353824631","2":"FALSE","3":"-1.253289756","4":"0.20889539","5":"0.20889539","6":"1","7":"104"},{"1":"0.808284515","2":"FALSE","3":"0.642241306","4":"0.61567363","5":"0.61567363","6":"1","7":"279"},{"1":"3.169214006","2":"TRUE","3":"-0.044709137","4":"0.45459367","5":"0.45459367","6":"1","7":"65"},{"1":"0.621832524","2":"TRUE","3":"0.002131860","4":"0.46565988","5":"0.46565988","6":"1","7":"66"},{"1":"0.130211802","2":"FALSE","3":"-0.630300334","4":"0.32320594","5":"0.32320594","6":"1","7":"284"},{"1":"-0.071732805","2":"FALSE","3":"-0.340968580","4":"0.38606184","5":"0.38606184","6":"1","7":"52"},{"1":"0.471142983","2":"FALSE","3":"-1.156572363","4":"0.22450395","5":"0.22450395","6":"1","7":"262"},{"1":"0.479891617","2":"FALSE","3":"1.803141908","4":"0.82854444","5":"0.82854444","6":"1","7":"381"},{"1":"-0.722328017","2":"FALSE","3":"-0.331132036","4":"0.38828160","5":"0.38828160","6":"1","7":"458"},{"1":"2.026747225","2":"TRUE","3":"-1.605513412","4":"0.15887893","5":"0.15887893","6":"1","7":"67"},{"1":"0.914061650","2":"TRUE","3":"0.197193439","4":"0.51198374","5":"0.51198374","6":"1","7":"68"},{"1":"-0.059434322","2":"FALSE","3":"0.263175646","4":"0.52764657","5":"0.52764657","6":"1","7":"455"},{"1":"-0.345563226","2":"FALSE","3":"-0.985826700","4":"0.25403341","5":"0.25403341","6":"1","7":"307"},{"1":"0.168965553","2":"TRUE","3":"-2.888920672","4":"0.05278847","5":"0.05278847","6":"1","7":"69"},{"1":"-1.090580317","2":"TRUE","3":"-0.640481703","4":"0.32109140","5":"0.32109140","6":"1","7":"70"},{"1":"-0.509775694","2":"FALSE","3":"0.570507636","4":"0.59940816","5":"0.59940816","6":"1","7":"156"},{"1":"-1.085708975","2":"FALSE","3":"-0.059723276","4":"0.45105551","5":"0.45105551","6":"1","7":"282"},{"1":"0.842892470","2":"FALSE","3":"-0.098178744","4":"0.44201666","5":"0.44201666","6":"1","7":"227"},{"1":"1.720095265","2":"TRUE","3":"0.560820729","4":"0.59719391","5":"0.59719391","6":"1","7":"71"},{"1":"0.422924291","2":"FALSE","3":"-1.186458639","4":"0.21959396","5":"0.21959396","6":"1","7":"213"},{"1":"-0.236485953","2":"FALSE","3":"1.096777044","4":"0.71167428","5":"0.71167428","6":"1","7":"420"},{"1":"-1.652377473","2":"FALSE","3":"-0.005344028","4":"0.46389114","5":"0.46389114","6":"1","7":"433"},{"1":"0.685762505","2":"TRUE","3":"0.707310667","4":"0.63020859","5":"0.63020859","6":"1","7":"72"},{"1":"1.945786077","2":"TRUE","3":"1.034107735","4":"0.69929129","5":"0.69929129","6":"1","7":"73"},{"1":"1.975364347","2":"TRUE","3":"0.223480415","4":"0.51822827","5":"0.51822827","6":"1","7":"74"},{"1":"0.501497423","2":"TRUE","3":"-0.878707613","4":"0.27381838","5":"0.27381838","6":"1","7":"75"},{"1":"1.217104732","2":"TRUE","3":"1.162964556","4":"0.72441730","5":"0.72441730","6":"1","7":"76"},{"1":"1.720739199","2":"TRUE","3":"-2.000164945","4":"0.11486909","5":"0.11486909","6":"1","7":"77"},{"1":"1.354214711","2":"FALSE","3":"-0.544790740","4":"0.34124524","5":"0.34124524","6":"1","7":"326"},{"1":"-0.166100791","2":"FALSE","3":"-0.255670709","4":"0.40545883","5":"0.40545883","6":"1","7":"452"},{"1":"-0.263877686","2":"FALSE","3":"-0.166121037","4":"0.42614409","5":"0.42614409","6":"1","7":"332"},{"1":"0.785827259","2":"TRUE","3":"1.020463909","4":"0.69655552","5":"0.69655552","6":"1","7":"79"},{"1":"2.223626137","2":"TRUE","3":"0.136221893","4":"0.49748869","5":"0.49748869","6":"1","7":"80"},{"1":"1.055684802","2":"FALSE","3":"0.407167603","4":"0.56159765","5":"0.56159765","6":"1","7":"149"},{"1":"0.343767275","2":"TRUE","3":"-0.069654813","4":"0.44871779","5":"0.44871779","6":"1","7":"81"},{"1":"1.302313058","2":"FALSE","3":"-0.247664342","4":"0.40729577","5":"0.40729577","6":"1","7":"239"},{"1":"-0.835245805","2":"FALSE","3":"0.695550807","4":"0.62759827","5":"0.62759827","6":"1","7":"50"},{"1":"-0.445818618","2":"FALSE","3":"1.146228357","4":"0.72122822","5":"0.72122822","6":"1","7":"383"},{"1":"1.117148865","2":"TRUE","3":"0.572739555","4":"0.59991776","5":"0.59991776","6":"1","7":"82"},{"1":"0.294066520","2":"FALSE","3":"0.374724407","4":"0.55398676","5":"0.55398676","6":"1","7":"111"},{"1":"-1.333562169","2":"FALSE","3":"-0.425267722","4":"0.36724067","5":"0.36724067","6":"1","7":"221"},{"1":"-0.378979227","2":"FALSE","3":"0.951012808","4":"0.68241545","5":"0.68241545","6":"1","7":"321"},{"1":"-0.945866107","2":"FALSE","3":"-0.389237182","4":"0.37523937","5":"0.37523937","6":"1","7":"372"},{"1":"-0.942774458","2":"FALSE","3":"-0.284330662","4":"0.39890520","5":"0.39890520","6":"1","7":"60"},{"1":"1.892728079","2":"TRUE","3":"0.857409778","4":"0.66281621","5":"0.66281621","6":"1","7":"84"},{"1":"-0.328809205","2":"FALSE","3":"1.719627299","4":"0.81696464","5":"0.81696464","6":"1","7":"446"},{"1":"0.007834852","2":"FALSE","3":"0.270054901","4":"0.52927696","5":"0.52927696","6":"1","7":"42"},{"1":"1.499679371","2":"TRUE","3":"-0.422184010","4":"0.36792246","5":"0.36792246","6":"1","7":"85"},{"1":"-0.568636438","2":"FALSE","3":"-1.189113295","4":"0.21916158","5":"0.21916158","6":"1","7":"75"},{"1":"-0.873560268","2":"FALSE","3":"-0.331032979","4":"0.38830398","5":"0.38830398","6":"1","7":"116"},{"1":"1.569176110","2":"FALSE","3":"-0.939829327","4":"0.26241243","5":"0.26241243","6":"1","7":"55"},{"1":"0.980919778","2":"FALSE","3":"-0.258932583","4":"0.40471119","5":"0.40471119","6":"1","7":"167"},{"1":"0.884549636","2":"TRUE","3":"0.394379168","4":"0.55860085","5":"0.55860085","6":"1","7":"86"},{"1":"-0.212299159","2":"TRUE","3":"-0.851857092","4":"0.27892548","5":"0.27892548","6":"1","7":"87"},{"1":"-0.755200348","2":"TRUE","3":"2.649166881","4":"0.91528887","5":"0.91528887","6":"1","7":"88"},{"1":"1.238228171","2":"TRUE","3":"0.156011676","4":"0.50219412","5":"0.50219412","6":"1","7":"89"},{"1":"0.985117605","2":"TRUE","3":"1.130207267","4":"0.71815430","5":"0.71815430","6":"1","7":"90"},{"1":"0.794421237","2":"TRUE","3":"0.741001157","4":"0.63764434","5":"0.63764434","6":"1","7":"91"},{"1":"-0.004470816","2":"FALSE","3":"-1.316245160","4":"0.19917272","5":"0.19917272","6":"1","7":"207"},{"1":"1.734865305","2":"TRUE","3":"0.919803678","4":"0.67594793","5":"0.67594793","6":"1","7":"92"},{"1":"-1.556327052","2":"FALSE","3":"0.398130155","4":"0.55948029","5":"0.55948029","6":"1","7":"154"},{"1":"0.722213417","2":"FALSE","3":"-0.407528579","4":"0.37116990","5":"0.37116990","6":"1","7":"404"},{"1":"2.208536330","2":"FALSE","3":"1.324258630","4":"0.75396740","5":"0.75396740","6":"1","7":"387"},{"1":"2.054711373","2":"FALSE","3":"-0.701231669","4":"0.30862841","5":"0.30862841","6":"1","7":"465"},{"1":"0.828539648","2":"TRUE","3":"-0.580614304","4":"0.33362802","5":"0.33362802","6":"1","7":"93"},{"1":"-0.157931398","2":"FALSE","3":"-1.001072181","4":"0.25129549","5":"0.25129549","6":"1","7":"230"},{"1":"1.185773303","2":"TRUE","3":"-0.668178607","4":"0.31537627","5":"0.31537627","6":"1","7":"94"},{"1":"2.017063918","2":"TRUE","3":"0.945184953","4":"0.68121297","5":"0.68121297","6":"1","7":"95"},{"1":"1.498983930","2":"FALSE","3":"0.433702150","4":"0.56780111","5":"0.56780111","6":"1","7":"151"},{"1":"0.659077254","2":"TRUE","3":"1.005159218","4":"0.69347007","5":"0.69347007","6":"1","7":"96"},{"1":"1.094772802","2":"FALSE","3":"-0.390118664","4":"0.37504285","5":"0.37504285","6":"1","7":"428"},{"1":"-0.008257329","2":"FALSE","3":"0.376370292","4":"0.55437351","5":"0.55437351","6":"1","7":"197"},{"1":"0.509930450","2":"FALSE","3":"0.244164924","4":"0.52313803","5":"0.52313803","6":"1","7":"308"},{"1":"0.923506400","2":"TRUE","3":"1.778429287","4":"0.82517968","5":"0.82517968","6":"1","7":"97"},{"1":"-0.047280213","2":"FALSE","3":"0.134447661","4":"0.49706684","5":"0.49706684","6":"1","7":"31"},{"1":"-0.629867367","2":"FALSE","3":"0.765598999","4":"0.64303220","5":"0.64303220","6":"1","7":"322"},{"1":"0.145889376","2":"TRUE","3":"0.955136677","4":"0.68326487","5":"0.68326487","6":"1","7":"98"},{"1":"1.010452102","2":"TRUE","3":"-0.050565701","4":"0.45321297","5":"0.45321297","6":"1","7":"99"},{"1":"0.619992374","2":"FALSE","3":"-0.305815420","4":"0.39401582","5":"0.39401582","6":"1","7":"378"},{"1":"0.777678210","2":"TRUE","3":"0.893673702","4":"0.67048067","5":"0.67048067","6":"1","7":"100"},{"1":"1.263802256","2":"FALSE","3":"-1.047298149","4":"0.24311441","5":"0.24311441","6":"1","7":"201"},{"1":"0.543146814","2":"TRUE","3":"1.971337386","4":"0.85009107","5":"0.85009107","6":"1","7":"101"},{"1":"-1.224756817","2":"FALSE","3":"-0.383632106","4":"0.37648996","5":"0.37648996","6":"1","7":"409"},{"1":"1.692905449","2":"TRUE","3":"1.654145302","4":"0.80746739","5":"0.80746739","6":"1","7":"102"},{"1":"0.300896434","2":"FALSE","3":"1.512212694","4":"0.78560709","5":"0.78560709","6":"1","7":"21"},{"1":"1.189927129","2":"TRUE","3":"0.082965734","4":"0.48483047","5":"0.48483047","6":"1","7":"103"},{"1":"-1.045411365","2":"FALSE","3":"0.567220915","4":"0.59865732","5":"0.59865732","6":"1","7":"323"},{"1":"0.603079766","2":"TRUE","3":"-1.024548480","4":"0.24711793","5":"0.24711793","6":"1","7":"104"},{"1":"2.446330986","2":"TRUE","3":"0.323006503","4":"0.54180312","5":"0.54180312","6":"1","7":"106"},{"1":"2.204358976","2":"TRUE","3":"1.043612458","4":"0.70118879","5":"0.70118879","6":"1","7":"107"},{"1":"2.414319090","2":"TRUE","3":"0.099078487","4":"0.48865893","5":"0.48865893","6":"1","7":"108"},{"1":"1.577718587","2":"TRUE","3":"-0.454136909","4":"0.36088387","5":"0.36088387","6":"1","7":"109"},{"1":"0.163091697","2":"FALSE","3":"-0.655781852","4":"0.31792751","5":"0.31792751","6":"1","7":"66"},{"1":"1.496053551","2":"TRUE","3":"-0.035922423","4":"0.45666645","5":"0.45666645","6":"1","7":"110"},{"1":"1.370257630","2":"TRUE","3":"1.069161461","4":"0.70625506","5":"0.70625506","6":"1","7":"111"},{"1":"-0.191877894","2":"FALSE","3":"-0.483974930","4":"0.35436460","5":"0.35436460","6":"1","7":"454"},{"1":"1.150428074","2":"FALSE","3":"-0.121010111","4":"0.43666794","5":"0.43666794","6":"1","7":"392"},{"1":"-1.403471009","2":"FALSE","3":"-1.294140004","4":"0.20254733","5":"0.20254733","6":"1","7":"369"},{"1":"2.001736978","2":"TRUE","3":"0.494312836","4":"0.58188871","5":"0.58188871","6":"1","7":"113"},{"1":"-0.285289121","2":"FALSE","3":"1.307901520","4":"0.75107016","5":"0.75107016","6":"1","7":"316"},{"1":"0.255857745","2":"TRUE","3":"1.497041009","4":"0.78316671","5":"0.78316671","6":"1","7":"114"},{"1":"0.372559290","2":"TRUE","3":"0.814702731","4":"0.65367923","5":"0.65367923","6":"1","7":"115"},{"1":"0.371006744","2":"FALSE","3":"0.482029504","4":"0.57904372","5":"0.57904372","6":"1","7":"382"},{"1":"0.196384131","2":"TRUE","3":"0.456135603","4":"0.57302932","5":"0.57302932","6":"1","7":"116"},{"1":"1.121523330","2":"TRUE","3":"-0.353400286","4":"0.38326322","5":"0.38326322","6":"1","7":"117"},{"1":"3.034464056","2":"TRUE","3":"0.170489471","4":"0.50563632","5":"0.50563632","6":"1","7":"118"},{"1":"1.651189025","2":"TRUE","3":"-0.864035954","4":"0.27660178","5":"0.27660178","6":"1","7":"119"},{"1":"-0.623666147","2":"TRUE","3":"0.679230774","4":"0.62396340","5":"0.62396340","6":"1","7":"121"},{"1":"-0.588377773","2":"FALSE","3":"-0.327101015","4":"0.38919261","5":"0.38919261","6":"1","7":"312"},{"1":"-0.255956632","2":"FALSE","3":"-0.367450756","4":"0.38010948","5":"0.38010948","6":"1","7":"6"},{"1":"1.641590876","2":"TRUE","3":"1.364434929","4":"0.76098664","5":"0.76098664","6":"1","7":"122"},{"1":"-0.427456263","2":"FALSE","3":"-0.334281365","4":"0.38757040","5":"0.38757040","6":"1","7":"28"},{"1":"-0.189196539","2":"TRUE","3":"0.732750042","4":"0.63582918","5":"0.63582918","6":"1","7":"123"},{"1":"1.141448202","2":"TRUE","3":"0.946585640","4":"0.68150220","5":"0.68150220","6":"1","7":"124"},{"1":"2.190410636","2":"TRUE","3":"0.004398704","4":"0.46619637","5":"0.46619637","6":"1","7":"125"},{"1":"-0.020171951","2":"FALSE","3":"-0.352322306","4":"0.38350559","5":"0.38350559","6":"1","7":"358"},{"1":"-0.064712546","2":"FALSE","3":"-0.529695509","4":"0.34447995","5":"0.34447995","6":"1","7":"313"},{"1":"2.058483955","2":"TRUE","3":"0.739589226","4":"0.63733401","5":"0.63733401","6":"1","7":"127"},{"1":"-0.354401950","2":"FALSE","3":"-1.063457415","4":"0.24029755","5":"0.24029755","6":"1","7":"93"},{"1":"0.735076429","2":"TRUE","3":"0.246210844","4":"0.52362343","5":"0.52362343","6":"1","7":"128"},{"1":"0.832820447","2":"FALSE","3":"-0.289499367","4":"0.39772706","5":"0.39772706","6":"1","7":"293"},{"1":"1.160803692","2":"FALSE","3":"-1.408850456","4":"0.18549556","5":"0.18549556","6":"1","7":"26"},{"1":"1.150225182","2":"TRUE","3":"0.916019329","4":"0.67515904","5":"0.67515904","6":"1","7":"129"},{"1":"1.239528319","2":"TRUE","3":"-0.191278951","4":"0.42030335","5":"0.42030335","6":"1","7":"130"},{"1":"2.711733905","2":"TRUE","3":"0.803283216","4":"0.65121640","5":"0.65121640","6":"1","7":"131"},{"1":"2.058116043","2":"TRUE","3":"1.887474463","4":"0.83964032","5":"0.83964032","6":"1","7":"133"},{"1":"2.364432535","2":"TRUE","3":"1.473881181","4":"0.77940282","5":"0.77940282","6":"1","7":"134"},{"1":"0.825214091","2":"FALSE","3":"0.677268492","4":"0.62352540","5":"0.62352540","6":"1","7":"353"},{"1":"0.725218842","2":"TRUE","3":"0.379962687","4":"0.55521742","5":"0.55521742","6":"1","7":"135"},{"1":"0.878535454","2":"TRUE","3":"-0.192798426","4":"0.41995128","5":"0.41995128","6":"1","7":"136"},{"1":"1.324993651","2":"TRUE","3":"1.577891795","4":"0.79594056","5":"0.79594056","6":"1","7":"137"},{"1":"1.516230844","2":"TRUE","3":"0.596234109","4":"0.60526887","5":"0.60526887","6":"1","7":"138"},{"1":"-1.229927481","2":"FALSE","3":"-1.173576941","4":"0.22170076","5":"0.22170076","6":"1","7":"87"},{"1":"-0.837196894","2":"FALSE","3":"-0.155642535","4":"0.42858301","5":"0.42858301","6":"1","7":"406"},{"1":"1.333961512","2":"TRUE","3":"-0.195258846","4":"0.41938136","5":"0.41938136","6":"1","7":"139"},{"1":"0.899047213","2":"TRUE","3":"1.314002167","4":"0.75215339","5":"0.75215339","6":"1","7":"140"},{"1":"-1.465998922","2":"FALSE","3":"-0.635543001","4":"0.32211620","5":"0.32211620","6":"1","7":"281"},{"1":"-0.884346875","2":"FALSE","3":"-0.429978839","4":"0.36620009","5":"0.36620009","6":"1","7":"410"},{"1":"1.695333287","2":"FALSE","3":"-0.169318332","4":"0.42540062","5":"0.42540062","6":"1","7":"234"},{"1":"-0.625021688","2":"FALSE","3":"0.612218174","4":"0.60889510","5":"0.60889510","6":"1","7":"319"},{"1":"-1.079251617","2":"FALSE","3":"0.678340177","4":"0.62376464","5":"0.62376464","6":"1","7":"8"},{"1":"1.158780940","2":"TRUE","3":"0.567951972","4":"0.59882437","5":"0.59882437","6":"1","7":"141"},{"1":"-0.179270817","2":"FALSE","3":"-0.572542604","4":"0.33533693","5":"0.33533693","6":"1","7":"145"},{"1":"-0.462171475","2":"FALSE","3":"-1.363291256","4":"0.19213170","5":"0.19213170","6":"1","7":"466"},{"1":"0.232633208","2":"FALSE","3":"-0.388722244","4":"0.37535419","5":"0.37535419","6":"1","7":"391"},{"1":"-0.268810731","2":"FALSE","3":"0.277914132","4":"0.53113885","5":"0.53113885","6":"1","7":"397"},{"1":"0.826513556","2":"FALSE","3":"-0.823081122","4":"0.28446317","5":"0.28446317","6":"1","7":"9"},{"1":"1.360359259","2":"TRUE","3":"-0.068840934","4":"0.44890928","5":"0.44890928","6":"1","7":"143"},{"1":"0.877367810","2":"TRUE","3":"-1.167662326","4":"0.22267293","5":"0.22267293","6":"1","7":"144"},{"1":"0.243086610","2":"FALSE","3":"-0.008309014","4":"0.46318990","5":"0.46318990","6":"1","7":"444"},{"1":"0.565501316","2":"TRUE","3":"0.128855402","4":"0.49573722","5":"0.49573722","6":"1","7":"145"},{"1":"-0.225620005","2":"TRUE","3":"-0.145875628","4":"0.43085942","5":"0.43085942","6":"1","7":"146"},{"1":"0.924729506","2":"FALSE","3":"-0.163910957","4":"0.42665820","5":"0.42665820","6":"1","7":"78"},{"1":"1.265364070","2":"TRUE","3":"1.763552003","4":"0.82312908","5":"0.82312908","6":"1","7":"147"},{"1":"0.977341058","2":"TRUE","3":"0.762586512","4":"0.64237426","5":"0.64237426","6":"1","7":"148"},{"1":"-0.204581652","2":"TRUE","3":"1.111431081","4":"0.71452567","5":"0.71452567","6":"1","7":"149"},{"1":"-0.755073339","2":"FALSE","3":"-0.923206953","4":"0.26548385","5":"0.26548385","6":"1","7":"389"},{"1":"1.498814941","2":"TRUE","3":"0.164341838","4":"0.50417472","5":"0.50417472","6":"1","7":"150"},{"1":"0.163852307","2":"TRUE","3":"1.154825187","4":"0.72286917","5":"0.72286917","6":"1","7":"151"},{"1":"-0.054925535","2":"FALSE","3":"-0.056521425","4":"0.45180964","5":"0.45180964","6":"1","7":"123"},{"1":"1.981764405","2":"TRUE","3":"0.344845762","4":"0.54695494","5":"0.54695494","6":"1","7":"152"},{"1":"-0.519244347","2":"TRUE","3":"-1.904955446","4":"0.12440191","5":"0.12440191","6":"1","7":"153"},{"1":"1.045839772","2":"TRUE","3":"-0.811170153","4":"0.28677462","5":"0.28677462","6":"1","7":"155"},{"1":"1.142315815","2":"TRUE","3":"1.324004321","4":"0.75392253","5":"0.75392253","6":"1","7":"156"},{"1":"1.966525603","2":"TRUE","3":"0.615636849","4":"0.60966914","5":"0.60966914","6":"1","7":"157"},{"1":"0.147882884","2":"FALSE","3":"1.091668956","4":"0.71067637","5":"0.71067637","6":"1","7":"181"},{"1":"0.848371332","2":"FALSE","3":"0.306604862","4":"0.53792807","5":"0.53792807","6":"1","7":"384"},{"1":"-0.090440416","2":"FALSE","3":"-0.110158762","4":"0.43920833","5":"0.43920833","6":"1","7":"374"},{"1":"0.065637400","2":"FALSE","3":"-0.924312773","4":"0.26527881","5":"0.26527881","6":"1","7":"10"},{"1":"-0.959790255","2":"FALSE","3":"1.592913754","4":"0.79825127","5":"0.79825127","6":"1","7":"437"},{"1":"0.798673343","2":"FALSE","3":"0.045010598","4":"0.47582000","5":"0.47582000","6":"1","7":"362"},{"1":"0.064146956","2":"FALSE","3":"-0.715128401","4":"0.30581536","5":"0.30581536","6":"1","7":"16"},{"1":"0.780220908","2":"FALSE","3":"0.865223100","4":"0.66447500","5":"0.66447500","6":"1","7":"172"},{"1":"0.733115173","2":"TRUE","3":"1.074440958","4":"0.70729569","5":"0.70729569","6":"1","7":"160"},{"1":"2.184919306","2":"TRUE","3":"1.895654774","4":"0.84068511","5":"0.84068511","6":"1","7":"161"},{"1":"-0.312696457","2":"FALSE","3":"-0.602997304","4":"0.32891208","5":"0.32891208","6":"1","7":"108"},{"1":"2.443856946","2":"TRUE","3":"-0.390867821","4":"0.37487586","5":"0.37487586","6":"1","7":"162"},{"1":"-0.597215342","2":"FALSE","3":"-0.416222032","4":"0.36924213","5":"0.36924213","6":"1","7":"413"},{"1":"-0.933638711","2":"FALSE","3":"-0.375657423","4":"0.37827208","5":"0.37827208","6":"1","7":"135"},{"1":"0.351579414","2":"FALSE","3":"-0.366630946","4":"0.38029321","5":"0.38029321","6":"1","7":"11"},{"1":"1.488830055","2":"TRUE","3":"-0.295677453","4":"0.39632039","5":"0.39632039","6":"1","7":"163"},{"1":"-1.673270958","2":"FALSE","3":"1.441820410","4":"0.77411545","5":"0.77411545","6":"1","7":"254"},{"1":"-0.702258719","2":"FALSE","3":"-0.697538292","4":"0.30937845","5":"0.30937845","6":"1","7":"287"},{"1":"0.796138099","2":"TRUE","3":"-0.388167506","4":"0.37547790","5":"0.37547790","6":"1","7":"164"},{"1":"0.344218594","2":"TRUE","3":"0.652536452","4":"0.61798788","5":"0.61798788","6":"1","7":"165"},{"1":"-0.169352978","2":"TRUE","3":"1.124772447","4":"0.71710687","5":"0.71710687","6":"1","7":"166"},{"1":"0.630982644","2":"FALSE","3":"-0.772110803","4":"0.29443266","5":"0.29443266","6":"1","7":"248"},{"1":"-0.376883164","2":"FALSE","3":"-0.508086216","4":"0.34913567","5":"0.34913567","6":"1","7":"150"},{"1":"2.879989892","2":"TRUE","3":"0.523620590","4":"0.58865449","5":"0.58865449","6":"1","7":"167"},{"1":"0.123874653","2":"FALSE","3":"1.017754227","4":"0.69601052","5":"0.69601052","6":"1","7":"3"},{"1":"0.618572396","2":"TRUE","3":"-0.251164588","4":"0.40649237","5":"0.40649237","6":"1","7":"168"},{"1":"1.221069066","2":"FALSE","3":"-1.429993447","4":"0.18247657","5":"0.18247657","6":"1","7":"301"},{"1":"0.085572891","2":"TRUE","3":"1.709121032","4":"0.81546570","5":"0.81546570","6":"1","7":"170"},{"1":"1.263313394","2":"TRUE","3":"1.435069572","4":"0.77299075","5":"0.77299075","6":"1","7":"171"},{"1":"0.293951226","2":"FALSE","3":"-0.710371146","4":"0.30677673","5":"0.30677673","6":"1","7":"81"},{"1":"1.876382339","2":"FALSE","3":"-0.065067574","4":"0.44979728","5":"0.44979728","6":"1","7":"441"},{"1":"1.357062521","2":"FALSE","3":"0.569722972","4":"0.59922895","5":"0.59922895","6":"1","7":"140"},{"1":"-0.649221792","2":"TRUE","3":"1.612346798","4":"0.80121142","5":"0.80121142","6":"1","7":"172"},{"1":"0.153971357","2":"FALSE","3":"-0.779568513","4":"0.29296131","5":"0.29296131","6":"1","7":"435"},{"1":"-0.587295099","2":"FALSE","3":"-0.641176934","4":"0.32094727","5":"0.32094727","6":"1","7":"22"},{"1":"1.757690922","2":"TRUE","3":"-0.681131394","4":"0.31272243","5":"0.31272243","6":"1","7":"173"},{"1":"0.235112666","2":"TRUE","3":"-2.033285596","4":"0.11170492","5":"0.11170492","6":"1","7":"174"},{"1":"-0.176720928","2":"TRUE","3":"0.500963559","4":"0.58342685","5":"0.58342685","6":"1","7":"175"},{"1":"1.003674751","2":"TRUE","3":"-0.024997639","4":"0.45924569","5":"0.45924569","6":"1","7":"176"},{"1":"1.305857953","2":"TRUE","3":"0.592984721","4":"0.60453026","5":"0.60453026","6":"1","7":"177"},{"1":"0.027446794","2":"FALSE","3":"-0.198195421","4":"0.41870143","5":"0.41870143","6":"1","7":"300"},{"1":"0.844182902","2":"TRUE","3":"0.892008392","4":"0.67013064","5":"0.67013064","6":"1","7":"178"},{"1":"-0.080870957","2":"FALSE","3":"-0.025715071","4":"0.45907624","5":"0.45907624","6":"1","7":"264"},{"1":"1.343912006","2":"FALSE","3":"-0.647660451","4":"0.31960485","5":"0.31960485","6":"1","7":"215"},{"1":"2.645386302","2":"TRUE","3":"0.646359415","4":"0.61659998","5":"0.61659998","6":"1","7":"180"},{"1":"0.138685341","2":"FALSE","3":"-0.433832740","4":"0.36534977","5":"0.36534977","6":"1","7":"306"},{"1":"1.668472771","2":"TRUE","3":"1.772611185","4":"0.82437999","5":"0.82437999","6":"1","7":"181"},{"1":"1.016751006","2":"TRUE","3":"-0.018259711","4":"0.46083755","5":"0.46083755","6":"1","7":"182"},{"1":"2.406229685","2":"TRUE","3":"0.852814994","4":"0.66183885","5":"0.66183885","6":"1","7":"183"},{"1":"1.950747027","2":"TRUE","3":"0.205162903","4":"0.51387739","5":"0.51387739","6":"1","7":"184"},{"1":"0.838074135","2":"FALSE","3":"-1.366111931","4":"0.19171564","5":"0.19171564","6":"1","7":"365"},{"1":"-2.817166608","2":"FALSE","3":"-0.424102260","4":"0.36749828","5":"0.36749828","6":"1","7":"199"},{"1":"0.245400755","2":"FALSE","3":"0.236803664","4":"0.52139119","5":"0.52139119","6":"1","7":"98"},{"1":"0.164083929","2":"TRUE","3":"0.961696633","4":"0.68461355","5":"0.68461355","6":"1","7":"185"},{"1":"2.313164622","2":"TRUE","3":"-0.604425734","4":"0.32861228","5":"0.32861228","6":"1","7":"186"},{"1":"0.463659427","2":"TRUE","3":"-0.752877279","4":"0.29824709","5":"0.29824709","6":"1","7":"187"},{"1":"0.051340861","2":"FALSE","3":"-1.453893738","4":"0.17910998","5":"0.17910998","6":"1","7":"343"},{"1":"-0.065357674","2":"TRUE","3":"0.056331836","4":"0.47850625","5":"0.47850625","6":"1","7":"188"},{"1":"0.283951062","2":"FALSE","3":"0.509369407","4":"0.58536858","5":"0.58536858","6":"1","7":"450"},{"1":"0.616952347","2":"FALSE","3":"-1.004361979","4":"0.25070726","5":"0.25070726","6":"1","7":"190"},{"1":"-2.486008789","2":"TRUE","3":"0.535771722","4":"0.59144997","5":"0.59144997","6":"1","7":"189"},{"1":"2.166093893","2":"TRUE","3":"-0.453037085","4":"0.36112517","5":"0.36112517","6":"1","7":"190"},{"1":"0.691344268","2":"FALSE","3":"2.165368502","4":"0.87212245","5":"0.87212245","6":"1","7":"204"},{"1":"1.939345545","2":"TRUE","3":"1.245746673","4":"0.73985463","5":"0.73985463","6":"1","7":"191"},{"1":"0.837209191","2":"TRUE","3":"0.595498034","4":"0.60510159","5":"0.60510159","6":"1","7":"192"},{"1":"2.435319288","2":"TRUE","3":"0.004884450","4":"0.46631134","5":"0.46631134","6":"1","7":"193"},{"1":"1.884251720","2":"FALSE","3":"0.279360782","4":"0.53148148","5":"0.53148148","6":"1","7":"253"},{"1":"-0.862548350","2":"FALSE","3":"-0.705906125","4":"0.30768058","5":"0.30768058","6":"1","7":"99"},{"1":"0.984500541","2":"TRUE","3":"0.628017153","4":"0.61246757","5":"0.61246757","6":"1","7":"194"},{"1":"2.048763156","2":"TRUE","3":"1.480213960","4":"0.78043664","5":"0.78043664","6":"1","7":"195"},{"1":"-0.337761795","2":"TRUE","3":"1.083429910","4":"0.70906249","5":"0.70906249","6":"1","7":"197"},{"1":"-1.574879756","2":"FALSE","3":"-0.813244257","4":"0.28637131","5":"0.28637131","6":"1","7":"139"},{"1":"-1.287253702","2":"FALSE","3":"-1.618876849","4":"0.15718779","5":"0.15718779","6":"1","7":"67"},{"1":"-1.955508058","2":"FALSE","3":"-0.109655699","4":"0.43932618","5":"0.43932618","6":"1","7":"467"},{"1":"-0.861995561","2":"FALSE","3":"0.440889371","4":"0.56947782","5":"0.56947782","6":"1","7":"76"},{"1":"1.302445497","2":"TRUE","3":"1.350993980","4":"0.75865374","5":"0.75865374","6":"1","7":"198"},{"1":"-0.646901790","2":"FALSE","3":"-1.318609485","4":"0.19881429","5":"0.19881429","6":"1","7":"219"},{"1":"1.754986611","2":"FALSE","3":"0.364384593","4":"0.55155562","5":"0.55155562","6":"1","7":"400"},{"1":"-0.557897807","2":"TRUE","3":"0.233499835","4":"0.52060702","5":"0.52060702","6":"1","7":"199"},{"1":"-0.878294769","2":"FALSE","3":"1.193955261","4":"0.73026250","5":"0.73026250","6":"1","7":"426"},{"1":"-0.285989158","2":"FALSE","3":"-0.027909972","4":"0.45855790","5":"0.45855790","6":"1","7":"159"},{"1":"-0.606883044","2":"FALSE","3":"-0.357298855","4":"0.38238716","5":"0.38238716","6":"1","7":"86"},{"1":"-0.501272133","2":"FALSE","3":"-1.146814136","4":"0.22612391","5":"0.22612391","6":"1","7":"311"},{"1":"2.464085060","2":"TRUE","3":"-0.517420484","4":"0.34712101","5":"0.34712101","6":"1","7":"201"},{"1":"2.462913352","2":"TRUE","3":"-0.362123773","4":"0.38130399","5":"0.38130399","6":"1","7":"202"},{"1":"2.049632402","2":"TRUE","3":"2.350554326","4":"0.89051234","5":"0.89051234","6":"1","7":"203"},{"1":"2.910301678","2":"TRUE","3":"2.446531376","4":"0.89910033","5":"0.89910033","6":"1","7":"204"},{"1":"1.998298370","2":"TRUE","3":"-0.166703279","4":"0.42600868","5":"0.42600868","6":"1","7":"205"},{"1":"1.422789402","2":"TRUE","3":"-1.043667439","4":"0.24375038","5":"0.24375038","6":"1","7":"206"},{"1":"0.475083667","2":"FALSE","3":"0.514671633","4":"0.58659202","5":"0.58659202","6":"1","7":"425"},{"1":"0.967274060","2":"TRUE","3":"-1.090573584","4":"0.23562106","5":"0.23562106","6":"1","7":"207"},{"1":"0.390966313","2":"TRUE","3":"2.284659326","4":"0.88425060","5":"0.88425060","6":"1","7":"208"},{"1":"-0.432369156","2":"FALSE","3":"-0.885617573","4":"0.27251354","5":"0.27251354","6":"1","7":"168"},{"1":"0.014897110","2":"TRUE","3":"0.111106430","4":"0.49151771","5":"0.49151771","6":"1","7":"209"},{"1":"2.597627801","2":"TRUE","3":"3.810276681","4":"0.97023812","5":"0.97023812","6":"1","7":"210"},{"1":"0.058960047","2":"FALSE","3":"-1.108909998","4":"0.23249462","5":"0.23249462","6":"1","7":"1"},{"1":"-0.376886289","2":"FALSE","3":"0.307566624","4":"0.53815543","5":"0.53815543","6":"1","7":"79"},{"1":"1.597013120","2":"FALSE","3":"-1.106894472","4":"0.23283686","5":"0.23283686","6":"1","7":"32"},{"1":"-0.256645691","2":"TRUE","3":"0.347653649","4":"0.54761661","5":"0.54761661","6":"1","7":"211"},{"1":"-0.419813648","2":"TRUE","3":"-0.873264535","4":"0.27484896","5":"0.27484896","6":"1","7":"213"},{"1":"0.853908628","2":"FALSE","3":"0.077303123","4":"0.48348541","5":"0.48348541","6":"1","7":"442"},{"1":"0.292272454","2":"TRUE","3":"-0.296868642","4":"0.39604936","5":"0.39604936","6":"1","7":"214"},{"1":"0.834419102","2":"FALSE","3":"-1.183242240","4":"0.22011865","5":"0.22011865","6":"1","7":"119"},{"1":"2.028546347","2":"TRUE","3":"0.011292688","4":"0.46782843","5":"0.46782843","6":"1","7":"215"},{"1":"0.501772535","2":"TRUE","3":"0.991601036","4":"0.69072216","5":"0.69072216","6":"1","7":"216"},{"1":"-0.102276025","2":"FALSE","3":"1.593967454","4":"0.79841262","5":"0.79841262","6":"1","7":"315"},{"1":"0.823132031","2":"FALSE","3":"-1.372711271","4":"0.19074490","5":"0.19074490","6":"1","7":"357"},{"1":"0.049283245","2":"TRUE","3":"-0.249610933","4":"0.40684891","5":"0.40684891","6":"1","7":"217"},{"1":"-0.045494899","2":"FALSE","3":"1.159424527","4":"0.72374463","5":"0.72374463","6":"1","7":"341"},{"1":"-0.562538730","2":"TRUE","3":"-1.114222348","4":"0.23159426","5":"0.23159426","6":"1","7":"219"},{"1":"-0.309500270","2":"FALSE","3":"-0.935902559","4":"0.26313594","5":"0.26313594","6":"1","7":"290"},{"1":"-1.258503850","2":"FALSE","3":"-0.967239458","4":"0.25739797","5":"0.25739797","6":"1","7":"440"},{"1":"1.008049117","2":"TRUE","3":"0.047488592","4":"0.47640785","5":"0.47640785","6":"1","7":"220"},{"1":"-0.034180944","2":"FALSE","3":"-0.403736793","4":"0.37201201","5":"0.37201201","6":"1","7":"106"},{"1":"1.976659002","2":"TRUE","3":"0.231496128","4":"0.52013138","5":"0.52013138","6":"1","7":"221"},{"1":"-0.209437275","2":"FALSE","3":"-0.422372408","4":"0.36788079","5":"0.36788079","6":"1","7":"417"},{"1":"1.330810625","2":"TRUE","3":"0.374118395","4":"0.55384434","5":"0.55384434","6":"1","7":"222"},{"1":"-0.172315075","2":"FALSE","3":"-0.366005775","4":"0.38043335","5":"0.38043335","6":"1","7":"356"},{"1":"1.913749577","2":"FALSE","3":"1.190101447","4":"0.72953990","5":"0.72953990","6":"1","7":"161"},{"1":"-1.941033731","2":"FALSE","3":"-0.737327525","4":"0.30135162","5":"0.30135162","6":"1","7":"112"},{"1":"0.373833034","2":"FALSE","3":"0.290666645","4":"0.53415811","5":"0.53415811","6":"1","7":"61"},{"1":"2.070292468","2":"FALSE","3":"-0.884849568","4":"0.27265837","5":"0.27265837","6":"1","7":"217"},{"1":"1.142678016","2":"TRUE","3":"0.208006479","4":"0.51455297","5":"0.51455297","6":"1","7":"223"},{"1":"1.060581038","2":"TRUE","3":"-0.047730172","4":"0.45388136","5":"0.45388136","6":"1","7":"224"},{"1":"-0.481795482","2":"FALSE","3":"-1.684520646","4":"0.14909254","5":"0.14909254","6":"1","7":"20"},{"1":"0.049990714","2":"TRUE","3":"-0.144226557","4":"0.43124407","5":"0.43124407","6":"1","7":"225"},{"1":"2.416675665","2":"TRUE","3":"1.180213666","4":"0.72768035","5":"0.72768035","6":"1","7":"226"},{"1":"0.478156341","2":"TRUE","3":"0.681399923","4":"0.62444734","5":"0.62444734","6":"1","7":"227"},{"1":"1.569617742","2":"TRUE","3":"0.143247631","4":"0.49915920","5":"0.49915920","6":"1","7":"229"},{"1":"0.062438993","2":"FALSE","3":"-1.192316444","4":"0.21864068","5":"0.21864068","6":"1","7":"431"},{"1":"1.150512009","2":"FALSE","3":"1.169228653","4":"0.72560509","5":"0.72560509","6":"1","7":"133"},{"1":"-2.968297390","2":"FALSE","3":"0.079201709","4":"0.48393636","5":"0.48393636","6":"1","7":"459"},{"1":"1.122969457","2":"TRUE","3":"-0.451773753","4":"0.36140243","5":"0.36140243","6":"1","7":"230"},{"1":"1.969749550","2":"TRUE","3":"1.642028213","4":"0.80566941","5":"0.80566941","6":"1","7":"231"},{"1":"-0.521087589","2":"FALSE","3":"-0.769592322","4":"0.29493051","5":"0.29493051","6":"1","7":"44"},{"1":"0.177906694","2":"TRUE","3":"0.303360961","4":"0.53716111","5":"0.53716111","6":"1","7":"232"},{"1":"-0.168501073","2":"TRUE","3":"1.281737421","4":"0.74638867","5":"0.74638867","6":"1","7":"233"},{"1":"-1.484438666","2":"TRUE","3":"0.602222795","4":"0.60662887","5":"0.60662887","6":"1","7":"234"},{"1":"1.505555785","2":"TRUE","3":"-0.307022265","4":"0.39374180","5":"0.39374180","6":"1","7":"235"},{"1":"0.981623855","2":"TRUE","3":"-0.418418103","4":"0.36875580","5":"0.36875580","6":"1","7":"236"},{"1":"-0.140542801","2":"FALSE","3":"0.355135530","4":"0.54937886","5":"0.54937886","6":"1","7":"30"},{"1":"0.544943251","2":"TRUE","3":"0.513481115","4":"0.58631741","5":"0.58631741","6":"1","7":"237"},{"1":"1.649822715","2":"TRUE","3":"0.018607400","4":"0.46956085","5":"0.46956085","6":"1","7":"238"},{"1":"-2.072395577","2":"FALSE","3":"1.318448972","4":"0.75294098","5":"0.75294098","6":"1","7":"270"},{"1":"-0.025791705","2":"FALSE","3":"-0.065832000","4":"0.44961735","5":"0.44961735","6":"1","7":"338"},{"1":"0.234756150","2":"FALSE","3":"-0.700296078","4":"0.30881832","5":"0.30881832","6":"1","7":"275"},{"1":"2.640592374","2":"TRUE","3":"0.537326132","4":"0.59180715","5":"0.59180715","6":"1","7":"239"},{"1":"0.494163896","2":"FALSE","3":"0.391973744","4":"0.55803668","5":"0.55803668","6":"1","7":"246"},{"1":"1.707110615","2":"TRUE","3":"0.496960952","4":"0.58250134","5":"0.58250134","6":"1","7":"241"},{"1":"0.038357824","2":"FALSE","3":"-0.224874715","4":"0.41253858","5":"0.41253858","6":"1","7":"141"},{"1":"1.633964359","2":"TRUE","3":"-1.117143165","4":"0.23110027","5":"0.23110027","6":"1","7":"242"},{"1":"0.294874475","2":"FALSE","3":"-0.394994603","4":"0.37395653","5":"0.37395653","6":"1","7":"152"},{"1":"0.319823952","2":"TRUE","3":"1.549830342","4":"0.79157151","5":"0.79157151","6":"1","7":"243"},{"1":"0.448883172","2":"FALSE","3":"-0.743514480","4":"0.30011418","5":"0.30011418","6":"1","7":"451"},{"1":"1.547909459","2":"TRUE","3":"0.812245442","4":"0.65314996","5":"0.65314996","6":"1","7":"244"},{"1":"-0.156553658","2":"TRUE","3":"-0.501310657","4":"0.35060146","5":"0.35060146","6":"1","7":"245"},{"1":"-0.485985537","2":"FALSE","3":"-0.510886566","4":"0.34853069","5":"0.34853069","6":"1","7":"2"},{"1":"0.176893290","2":"FALSE","3":"-1.215364041","4":"0.21491898","5":"0.21491898","6":"1","7":"339"},{"1":"-0.270525196","2":"FALSE","3":"-0.022558628","4":"0.45982182","5":"0.45982182","6":"1","7":"200"},{"1":"-0.134492105","2":"FALSE","3":"0.701239300","4":"0.62886187","5":"0.62886187","6":"1","7":"303"},{"1":"0.635494872","2":"FALSE","3":"-0.587482026","4":"0.33217744","5":"0.33217744","6":"1","7":"209"},{"1":"-0.805887312","2":"FALSE","3":"-0.606727941","4":"0.32812938","5":"0.32812938","6":"1","7":"103"},{"1":"0.548327511","2":"TRUE","3":"1.096640215","4":"0.71164757","5":"0.71164757","6":"1","7":"246"},{"1":"-0.307649627","2":"TRUE","3":"-0.247509677","4":"0.40733128","5":"0.40733128","6":"1","7":"247"},{"1":"2.970647594","2":"TRUE","3":"-0.159901713","4":"0.42759124","5":"0.42759124","6":"1","7":"248"},{"1":"1.018879920","2":"FALSE","3":"-0.625778251","4":"0.32414746","5":"0.32414746","6":"1","7":"220"},{"1":"-0.267093109","2":"FALSE","3":"0.900434636","4":"0.67189979","5":"0.67189979","6":"1","7":"102"},{"1":"0.043907936","2":"FALSE","3":"-0.994193629","4":"0.25252837","5":"0.25252837","6":"1","7":"335"},{"1":"0.691703260","2":"TRUE","3":"0.849250386","4":"0.66107966","5":"0.66107966","6":"1","7":"250"},{"1":"0.398278185","2":"FALSE","3":"0.805702289","4":"0.65173880","5":"0.65173880","6":"1","7":"54"},{"1":"0.759928012","2":"TRUE","3":"-0.467600936","4":"0.35793562","5":"0.35793562","6":"1","7":"251"},{"1":"0.452545796","2":"TRUE","3":"0.848420314","4":"0.66090276","5":"0.66090276","6":"1","7":"252"},{"1":"0.726993001","2":"TRUE","3":"0.986769864","4":"0.68973972","5":"0.68973972","6":"1","7":"253"},{"1":"1.372357731","2":"FALSE","3":"0.575620289","4":"0.60057519","5":"0.60057519","6":"1","7":"13"},{"1":"0.389196328","2":"TRUE","3":"2.024842045","4":"0.85646116","5":"0.85646116","6":"1","7":"254"},{"1":"0.310857669","2":"FALSE","3":"-1.164920931","4":"0.22312456","5":"0.22312456","6":"1","7":"265"},{"1":"-1.415533151","2":"FALSE","3":"-1.376519214","4":"0.19018648","5":"0.19018648","6":"1","7":"439"},{"1":"1.142814057","2":"TRUE","3":"0.167679934","4":"0.50496837","5":"0.50496837","6":"1","7":"255"},{"1":"2.036078161","2":"TRUE","3":"1.584629079","4":"0.79697933","5":"0.79697933","6":"1","7":"256"},{"1":"0.690324351","2":"TRUE","3":"1.677888953","4":"0.81095378","5":"0.81095378","6":"1","7":"257"},{"1":"-1.194101496","2":"TRUE","3":"0.488296698","4":"0.58049595","5":"0.58049595","6":"1","7":"258"},{"1":"1.103486094","2":"TRUE","3":"0.878673263","4":"0.66732099","5":"0.66732099","6":"1","7":"259"},{"1":"-1.740003661","2":"FALSE","3":"-0.144874874","4":"0.43109284","5":"0.43109284","6":"1","7":"350"},{"1":"0.971492015","2":"TRUE","3":"0.468971760","4":"0.57601360","5":"0.57601360","6":"1","7":"260"},{"1":"0.360462088","2":"FALSE","3":"0.376235477","4":"0.55434183","5":"0.55434183","6":"1","7":"160"},{"1":"1.183974361","2":"TRUE","3":"-0.761040275","4":"0.29662472","5":"0.29662472","6":"1","7":"262"},{"1":"-0.640829766","2":"FALSE","3":"-0.293294934","4":"0.39686265","5":"0.39686265","6":"1","7":"331"},{"1":"-0.862713273","2":"FALSE","3":"-0.134841264","4":"0.43343477","5":"0.43343477","6":"1","7":"165"},{"1":"2.796692205","2":"TRUE","3":"1.393845816","4":"0.76603723","5":"0.76603723","6":"1","7":"263"},{"1":"1.154523259","2":"FALSE","3":"-1.036988690","4":"0.24492321","5":"0.24492321","6":"1","7":"447"},{"1":"-0.258755721","2":"TRUE","3":"0.768278218","4":"0.64361690","5":"0.64361690","6":"1","7":"264"},{"1":"1.597066086","2":"FALSE","3":"-0.816160621","4":"0.28580480","5":"0.28580480","6":"1","7":"422"},{"1":"-1.229139527","2":"FALSE","3":"-0.436106923","4":"0.36484840","5":"0.36484840","6":"1","7":"302"},{"1":"-2.580919833","2":"FALSE","3":"0.904705031","4":"0.67279453","5":"0.67279453","6":"1","7":"325"},{"1":"-0.020691047","2":"FALSE","3":"-0.763086265","4":"0.29621888","5":"0.29621888","6":"1","7":"377"},{"1":"1.906230104","2":"TRUE","3":"-0.341066980","4":"0.38603966","5":"0.38603966","6":"1","7":"267"},{"1":"1.938097644","2":"TRUE","3":"1.502424534","4":"0.78403494","5":"0.78403494","6":"1","7":"268"},{"1":"1.139772709","2":"TRUE","3":"0.528307712","4":"0.58973349","5":"0.58973349","6":"1","7":"269"},{"1":"0.369909852","2":"FALSE","3":"0.542191355","4":"0.59292449","5":"0.59292449","6":"1","7":"191"},{"1":"-0.184221422","2":"FALSE","3":"-0.136673356","4":"0.43300692","5":"0.43300692","6":"1","7":"415"},{"1":"0.864596562","2":"FALSE","3":"-1.136733853","4":"0.22780601","5":"0.22780601","6":"1","7":"187"},{"1":"0.682217471","2":"FALSE","3":"-0.223385644","4":"0.41288184","5":"0.41288184","6":"1","7":"261"},{"1":"-0.545671773","2":"TRUE","3":"2.001719228","4":"0.85373632","5":"0.85373632","6":"1","7":"270"},{"1":"0.419136214","2":"FALSE","3":"0.221703816","4":"0.51780640","5":"0.51780640","6":"1","7":"95"},{"1":"0.876771110","2":"TRUE","3":"0.164372909","4":"0.50418211","5":"0.50418211","6":"1","7":"272"},{"1":"0.575024392","2":"TRUE","3":"0.332623609","4":"0.54407294","5":"0.54407294","6":"1","7":"273"},{"1":"0.498577862","2":"FALSE","3":"-0.385207999","4":"0.37613818","5":"0.37613818","6":"1","7":"196"},{"1":"-1.417173960","2":"FALSE","3":"-1.398754027","4":"0.18695078","5":"0.18695078","6":"1","7":"132"},{"1":"0.496946899","2":"FALSE","3":"2.675740796","4":"0.91722805","5":"0.91722805","6":"1","7":"210"},{"1":"1.293568260","2":"FALSE","3":"-0.423686089","4":"0.36759029","5":"0.36759029","6":"1","7":"443"},{"1":"-0.463235987","2":"FALSE","3":"-0.298601512","4":"0.39565521","5":"0.39565521","6":"1","7":"175"},{"1":"0.727932039","2":"TRUE","3":"-0.248008225","4":"0.40721682","5":"0.40721682","6":"1","7":"274"},{"1":"2.629341540","2":"TRUE","3":"-0.247303918","4":"0.40737853","5":"0.40737853","6":"1","7":"276"},{"1":"0.088281929","2":"FALSE","3":"-0.255510379","4":"0.40549559","5":"0.40549559","6":"1","7":"269"},{"1":"-0.457201527","2":"FALSE","3":"1.784662816","4":"0.82603329","5":"0.82603329","6":"1","7":"427"},{"1":"1.303395692","2":"TRUE","3":"1.763586348","4":"0.82313383","5":"0.82313383","6":"1","7":"277"},{"1":"-0.105391548","2":"FALSE","3":"0.689600222","4":"0.62627457","5":"0.62627457","6":"1","7":"171"},{"1":"-1.644448447","2":"FALSE","3":"-1.100740644","4":"0.23388395","5":"0.23388395","6":"1","7":"186"},{"1":"1.269829634","2":"FALSE","3":"0.714509357","4":"0.63180273","5":"0.63180273","6":"1","7":"114"},{"1":"-0.347778364","2":"FALSE","3":"-0.246470317","4":"0.40756995","5":"0.40756995","6":"1","7":"179"},{"1":"-2.016991815","2":"FALSE","3":"-0.319786166","4":"0.39084773","5":"0.39084773","6":"1","7":"449"},{"1":"0.313716740","2":"TRUE","3":"1.362644293","4":"0.76067674","5":"0.76067674","6":"1","7":"279"},{"1":"-0.302361025","2":"FALSE","3":"-1.227882590","4":"0.21291687","5":"0.21291687","6":"1","7":"304"},{"1":"0.386068441","2":"TRUE","3":"-0.511219233","4":"0.34845885","5":"0.34845885","6":"1","7":"280"},{"1":"2.013131761","2":"FALSE","3":"-0.731194999","4":"0.30258102","5":"0.30258102","6":"1","7":"37"},{"1":"0.354408457","2":"TRUE","3":"0.019752007","4":"0.46983201","5":"0.46983201","6":"1","7":"281"},{"1":"-1.432192741","2":"FALSE","3":"-1.572863915","4":"0.16307278","5":"0.16307278","6":"1","7":"288"},{"1":"0.416135648","2":"FALSE","3":"-0.703333270","4":"0.30820208","5":"0.30820208","6":"1","7":"65"},{"1":"2.200137574","2":"TRUE","3":"0.715932089","4":"0.63211746","5":"0.63211746","6":"1","7":"282"},{"1":"0.662694690","2":"TRUE","3":"0.465214906","4":"0.57514073","5":"0.57514073","6":"1","7":"283"},{"1":"0.178615271","2":"FALSE","3":"-0.973902306","4":"0.25618855","5":"0.25618855","6":"1","7":"164"},{"1":"-1.074238863","2":"FALSE","3":"0.559217730","4":"0.59682711","5":"0.59682711","6":"1","7":"351"},{"1":"0.274043752","2":"TRUE","3":"-2.432639745","4":"0.07920010","5":"0.07920010","6":"1","7":"285"},{"1":"2.636996907","2":"TRUE","3":"-0.340484927","4":"0.38617088","5":"0.38617088","6":"1","7":"286"},{"1":"0.136657373","2":"FALSE","3":"0.713033195","4":"0.63147607","5":"0.63147607","6":"1","7":"195"},{"1":"0.715163545","2":"FALSE","3":"-0.659037386","4":"0.31725646","5":"0.31725646","6":"1","7":"182"},{"1":"1.298450784","2":"TRUE","3":"-0.036402623","4":"0.45655313","5":"0.45655313","6":"1","7":"287"},{"1":"1.098327577","2":"TRUE","3":"-1.593286302","4":"0.16043917","5":"0.16043917","6":"1","7":"288"},{"1":"2.209754904","2":"TRUE","3":"0.847792797","4":"0.66076899","5":"0.66076899","6":"1","7":"289"},{"1":"1.792226823","2":"TRUE","3":"-0.323650632","4":"0.38997300","5":"0.38997300","6":"1","7":"290"},{"1":"0.443974194","2":"FALSE","3":"-0.255248113","4":"0.40555572","5":"0.40555572","6":"1","7":"18"},{"1":"-0.032769382","2":"FALSE","3":"0.060921227","4":"0.47959557","5":"0.47959557","6":"1","7":"289"},{"1":"-0.531617288","2":"FALSE","3":"-0.823491629","4":"0.28438371","5":"0.28438371","6":"1","7":"14"},{"1":"1.254141315","2":"TRUE","3":"1.829730485","4":"0.83210705","5":"0.83210705","6":"1","7":"291"},{"1":"0.076177329","2":"FALSE","3":"0.254137143","4":"0.52550353","5":"0.52550353","6":"1","7":"185"},{"1":"0.436537248","2":"FALSE","3":"-2.939773695","4":"0.05042175","5":"0.05042175","6":"1","7":"69"},{"1":"2.375562014","2":"TRUE","3":"0.002415809","4":"0.46572707","5":"0.46572707","6":"1","7":"292"},{"1":"1.937547644","2":"TRUE","3":"0.509665571","4":"0.58543694","5":"0.58543694","6":"1","7":"293"},{"1":"0.909042791","2":"TRUE","3":"-1.084720001","4":"0.23662523","5":"0.23662523","6":"1","7":"294"},{"1":"0.604147355","2":"FALSE","3":"0.704832977","4":"0.62965924","5":"0.62965924","6":"1","7":"134"},{"1":"0.350332124","2":"FALSE","3":"0.330976350","4":"0.54368428","5":"0.54368428","6":"1","7":"340"},{"1":"2.227272797","2":"TRUE","3":"0.976327473","4":"0.68761036","5":"0.68761036","6":"1","7":"295"},{"1":"-0.593264924","2":"FALSE","3":"-0.843339880","4":"0.28055765","5":"0.28055765","6":"1","7":"29"},{"1":"-1.405112910","2":"TRUE","3":"-0.970579905","4":"0.25679116","5":"0.25679116","6":"1","7":"296"},{"1":"-1.488877666","2":"FALSE","3":"-0.322470342","4":"0.39024009","5":"0.39024009","6":"1","7":"283"},{"1":"-1.512149710","2":"FALSE","3":"-1.338800742","4":"0.19577307","5":"0.19577307","6":"1","7":"429"},{"1":"-0.326880623","2":"FALSE","3":"0.688156028","4":"0.62595303","5":"0.62595303","6":"1","7":"240"},{"1":"-0.178202187","2":"TRUE","3":"0.071280652","4":"0.48205513","5":"0.48205513","6":"1","7":"297"},{"1":"1.043390841","2":"TRUE","3":"2.189752359","4":"0.87468661","5":"0.87468661","6":"1","7":"298"},{"1":"-0.623038897","2":"FALSE","3":"-1.157707599","4":"0.22431602","5":"0.22431602","6":"1","7":"155"},{"1":"0.897073658","2":"TRUE","3":"1.181688064","4":"0.72795814","5":"0.72795814","6":"1","7":"299"},{"1":"-1.172125199","2":"FALSE","3":"-0.527368362","4":"0.34497992","5":"0.34497992","6":"1","7":"310"},{"1":"0.489676217","2":"TRUE","3":"0.572967370","4":"0.59996976","5":"0.59996976","6":"1","7":"300"},{"1":"2.674385103","2":"TRUE","3":"-1.433377705","4":"0.18199689","5":"0.18199689","6":"1","7":"301"},{"1":"-1.803952210","2":"FALSE","3":"-1.055185019","4":"0.24173679","5":"0.24173679","6":"1","7":"385"},{"1":"1.148175273","2":"FALSE","3":"-0.733111877","4":"0.30219644","5":"0.30219644","6":"1","7":"317"},{"1":"2.739050503","2":"TRUE","3":"0.210907264","4":"0.51524208","5":"0.51524208","6":"1","7":"302"},{"1":"0.007441505","2":"TRUE","3":"-0.998920727","4":"0.25168068","5":"0.25168068","6":"1","7":"304"},{"1":"-0.028099228","2":"FALSE","3":"1.077850323","4":"0.70796655","5":"0.70796655","6":"1","7":"342"},{"1":"-0.132253793","2":"TRUE","3":"-1.198974383","4":"0.21756082","5":"0.21756082","6":"1","7":"305"},{"1":"0.539638306","2":"TRUE","3":"0.216637035","4":"0.51660308","5":"0.51660308","6":"1","7":"306"},{"1":"0.966003014","2":"FALSE","3":"0.143087030","4":"0.49912101","5":"0.49912101","6":"1","7":"5"},{"1":"0.124504867","2":"FALSE","3":"-1.065750091","4":"0.23989971","5":"0.23989971","6":"1","7":"17"},{"1":"0.474494052","2":"TRUE","3":"-0.428623411","4":"0.36649934","5":"0.36649934","6":"1","7":"307"},{"1":"-2.146149658","2":"FALSE","3":"-0.656179477","4":"0.31784551","5":"0.31784551","6":"1","7":"364"},{"1":"2.690161893","2":"TRUE","3":"0.959394327","4":"0.68414057","5":"0.68414057","6":"1","7":"308"},{"1":"0.424735475","2":"TRUE","3":"1.556052636","4":"0.79254620","5":"0.79254620","6":"1","7":"309"},{"1":"0.049229820","2":"FALSE","3":"-1.040796434","4":"0.24425408","5":"0.24425408","6":"1","7":"245"},{"1":"-1.172178751","2":"FALSE","3":"0.930572409","4":"0.67818731","5":"0.67818731","6":"1","7":"53"},{"1":"-0.962149089","2":"FALSE","3":"-0.075445931","4":"0.44735569","5":"0.44735569","6":"1","7":"278"},{"1":"1.860490118","2":"TRUE","3":"-0.755903643","4":"0.29764501","5":"0.29764501","6":"1","7":"311"},{"1":"1.429299093","2":"TRUE","3":"0.461149161","4":"0.57419557","5":"0.57419557","6":"1","7":"312"},{"1":"0.712775984","2":"TRUE","3":"0.145106631","4":"0.49960122","5":"0.49960122","6":"1","7":"313"},{"1":"-1.872854903","2":"FALSE","3":"0.580318685","4":"0.60164665","5":"0.60164665","6":"1","7":"445"},{"1":"1.255002876","2":"FALSE","3":"0.655051998","4":"0.61855255","5":"0.61855255","6":"1","7":"122"},{"1":"-0.866445883","2":"FALSE","3":"-0.304508837","4":"0.39431257","5":"0.39431257","6":"1","7":"337"},{"1":"1.585824471","2":"FALSE","3":"-0.707568233","4":"0.30734395","5":"0.30734395","6":"1","7":"83"},{"1":"3.137828713","2":"TRUE","3":"1.971572014","4":"0.85011951","5":"0.85011951","6":"1","7":"316"},{"1":"1.475965393","2":"TRUE","3":"-0.089998681","4":"0.44393635","5":"0.44393635","6":"1","7":"317"},{"1":"2.192297137","2":"FALSE","3":"-0.014017252","4":"0.46184026","5":"0.46184026","6":"1","7":"396"},{"1":"-1.138652823","2":"FALSE","3":"-1.123456937","4":"0.23003495","5":"0.23003495","6":"1","7":"94"},{"1":"-0.573567474","2":"FALSE","3":"-1.344130123","4":"0.19497625","5":"0.19497625","6":"1","7":"144"},{"1":"1.607478259","2":"TRUE","3":"-1.523155771","4":"0.16962834","5":"0.16962834","6":"1","7":"318"},{"1":"-0.141263668","2":"FALSE","3":"-0.421968210","4":"0.36797019","5":"0.36797019","6":"1","7":"128"},{"1":"0.681356186","2":"TRUE","3":"1.360924464","4":"0.76037884","5":"0.76037884","6":"1","7":"319"},{"1":"0.254782701","2":"TRUE","3":"1.753794845","4":"0.82177398","5":"0.82177398","6":"1","7":"321"},{"1":"1.049129230","2":"TRUE","3":"1.568364734","4":"0.79446491","5":"0.79446491","6":"1","7":"322"},{"1":"-0.073986911","2":"TRUE","3":"1.296755570","4":"0.74908292","5":"0.74908292","6":"1","7":"323"},{"1":"3.651111234","2":"TRUE","3":"-0.237596251","4":"0.40960943","5":"0.40960943","6":"1","7":"324"},{"1":"1.646548330","2":"FALSE","3":"-1.224150136","4":"0.21351238","5":"0.21351238","6":"1","7":"296"},{"1":"-0.795557191","2":"FALSE","3":"-0.327812680","4":"0.38903171","5":"0.38903171","6":"1","7":"36"},{"1":"-2.008592154","2":"FALSE","3":"-0.313792873","4":"0.39220569","5":"0.39220569","6":"1","7":"314"},{"1":"3.012221163","2":"TRUE","3":"1.659878705","4":"0.80831371","5":"0.80831371","6":"1","7":"325"},{"1":"-0.278299721","2":"TRUE","3":"0.130953101","4":"0.49623596","5":"0.49623596","6":"1","7":"326"},{"1":"2.070324428","2":"TRUE","3":"1.095888683","4":"0.71150088","5":"0.71150088","6":"1","7":"327"},{"1":"1.281474987","2":"TRUE","3":"0.489340957","4":"0.58073780","5":"0.58073780","6":"1","7":"328"},{"1":"0.703012645","2":"FALSE","3":"-0.778910295","4":"0.29309100","5":"0.29309100","6":"1","7":"205"},{"1":"1.698153964","2":"FALSE","3":"1.743559353","4":"0.82034373","5":"0.82034373","6":"1","7":"208"},{"1":"0.979146423","2":"TRUE","3":"-0.078387285","4":"0.44666418","5":"0.44666418","6":"1","7":"329"},{"1":"-0.449293364","2":"FALSE","3":"-0.975553793","4":"0.25588936","5":"0.25588936","6":"1","7":"162"},{"1":"-1.778948747","2":"TRUE","3":"0.070659825","4":"0.48190771","5":"0.48190771","6":"1","7":"330"},{"1":"0.734676385","2":"FALSE","3":"0.863779033","4":"0.66416872","5":"0.66416872","6":"1","7":"158"},{"1":"3.238688352","2":"TRUE","3":"0.501568385","4":"0.58356665","5":"0.58356665","6":"1","7":"331"},{"1":"1.186605786","2":"FALSE","3":"-0.354781330","4":"0.38295279","5":"0.38295279","6":"1","7":"218"},{"1":"1.274093519","2":"FALSE","3":"-0.488428888","4":"0.35339602","5":"0.35339602","6":"1","7":"255"},{"1":"1.116277752","2":"TRUE","3":"0.936293947","4":"0.67937381","5":"0.67937381","6":"1","7":"333"},{"1":"2.272888751","2":"TRUE","3":"-1.062408386","4":"0.24047974","5":"0.24047974","6":"1","7":"334"},{"1":"0.914075711","2":"FALSE","3":"-0.983820872","4":"0.25439509","5":"0.25439509","6":"1","7":"85"},{"1":"0.714423622","2":"FALSE","3":"0.424247877","4":"0.56559314","5":"0.56559314","6":"1","7":"355"},{"1":"-0.008134175","2":"TRUE","3":"-0.451313481","4":"0.36150347","5":"0.36150347","6":"1","7":"335"},{"1":"3.200225657","2":"FALSE","3":"0.925084797","4":"0.67704717","5":"0.67704717","6":"1","7":"7"},{"1":"-2.559037936","2":"FALSE","3":"-0.198620810","4":"0.41860296","5":"0.41860296","6":"1","7":"82"},{"1":"0.962410703","2":"TRUE","3":"1.194851017","4":"0.73043028","5":"0.73043028","6":"1","7":"336"},{"1":"0.448833465","2":"TRUE","3":"0.495544705","4":"0.58217373","5":"0.58217373","6":"1","7":"337"},{"1":"0.909076441","2":"FALSE","3":"-1.335371360","4":"0.19628712","5":"0.19628712","6":"1","7":"242"},{"1":"0.212489054","2":"FALSE","3":"1.282775206","4":"0.74657546","5":"0.74657546","6":"1","7":"101"},{"1":"0.497409577","2":"TRUE","3":"0.690795904","4":"0.62654070","5":"0.62654070","6":"1","7":"338"},{"1":"0.867835042","2":"TRUE","3":"-0.967062668","4":"0.25743011","5":"0.25743011","6":"1","7":"339"},{"1":"-0.094684077","2":"FALSE","3":"-1.345793685","4":"0.19472803","5":"0.19472803","6":"1","7":"305"},{"1":"1.818101266","2":"TRUE","3":"1.033665389","4":"0.69920282","5":"0.69920282","6":"1","7":"340"},{"1":"1.175654648","2":"FALSE","3":"-0.811776460","4":"0.28665669","5":"0.28665669","6":"1","7":"136"},{"1":"0.823386216","2":"TRUE","3":"1.801725479","4":"0.82835299","5":"0.82835299","6":"1","7":"341"},{"1":"0.151831239","2":"TRUE","3":"1.771541960","4":"0.82423271","5":"0.82423271","6":"1","7":"342"},{"1":"1.264247437","2":"TRUE","3":"-1.454691370","4":"0.17899846","5":"0.17899846","6":"1","7":"343"},{"1":"-0.030784730","2":"FALSE","3":"-0.845654313","4":"0.28011355","5":"0.28011355","6":"1","7":"276"},{"1":"-2.038307945","2":"FALSE","3":"-1.250479659","4":"0.20933741","5":"0.20933741","6":"1","7":"51"},{"1":"1.748478200","2":"TRUE","3":"0.667288068","4":"0.62129457","5":"0.62129457","6":"1","7":"344"},{"1":"0.547764076","2":"FALSE","3":"-1.290769688","4":"0.20306558","5":"0.20306558","6":"1","7":"294"},{"1":"1.129063932","2":"FALSE","3":"-2.035003538","4":"0.11154290","5":"0.11154290","6":"1","7":"174"},{"1":"1.812731184","2":"TRUE","3":"2.021346994","4":"0.85605202","5":"0.85605202","6":"1","7":"345"},{"1":"-0.095691096","2":"TRUE","3":"1.005973488","4":"0.69363467","5":"0.69363467","6":"1","7":"346"},{"1":"2.404319577","2":"TRUE","3":"0.817123601","4":"0.65420028","5":"0.65420028","6":"1","7":"347"},{"1":"1.307896741","2":"TRUE","3":"-0.663988284","4":"0.31623740","5":"0.31623740","6":"1","7":"348"},{"1":"0.004549467","2":"FALSE","3":"-0.011281231","4":"0.46248709","5":"0.46248709","6":"1","7":"244"},{"1":"0.966373907","2":"TRUE","3":"0.619677256","4":"0.61058323","5":"0.61058323","6":"1","7":"349"},{"1":"-0.627253474","2":"FALSE","3":"-1.281238742","4":"0.20453648","5":"0.20453648","6":"1","7":"49"},{"1":"0.207613136","2":"FALSE","3":"-0.124261326","4":"0.43590744","5":"0.43590744","6":"1","7":"416"},{"1":"0.985869747","2":"FALSE","3":"0.175741655","4":"0.50688495","5":"0.50688495","6":"1","7":"129"},{"1":"-0.149522413","2":"FALSE","3":"1.692773794","4":"0.81311458","5":"0.81311458","6":"1","7":"33"},{"1":"0.084281373","2":"TRUE","3":"0.642132717","4":"0.61564920","5":"0.61564920","6":"1","7":"350"},{"1":"1.430651205","2":"TRUE","3":"1.282233032","4":"0.74647789","5":"0.74647789","6":"1","7":"351"},{"1":"-1.583542678","2":"FALSE","3":"0.140546974","4":"0.49851706","5":"0.49851706","6":"1","7":"100"},{"1":"0.253797999","2":"FALSE","3":"-1.112502683","4":"0.23188545","5":"0.23188545","6":"1","7":"70"},{"1":"-2.502966038","2":"FALSE","3":"-0.339676972","4":"0.38635304","5":"0.38635304","6":"1","7":"430"},{"1":"-0.361677339","2":"FALSE","3":"-1.664764639","4":"0.15149203","5":"0.15149203","6":"1","7":"376"},{"1":"1.447296407","2":"TRUE","3":"0.928851762","4":"0.67783005","5":"0.67783005","6":"1","7":"352"},{"1":"0.792704292","2":"TRUE","3":"1.416826835","4":"0.76993174","5":"0.76993174","6":"1","7":"353"},{"1":"0.290347656","2":"FALSE","3":"-0.062720778","4":"0.45034972","5":"0.45034972","6":"1","7":"72"},{"1":"-0.646267164","2":"FALSE","3":"-0.980902336","4":"0.25492196","5":"0.25492196","6":"1","7":"142"},{"1":"-0.102846091","2":"FALSE","3":"1.087150251","4":"0.70979190","5":"0.70979190","6":"1","7":"401"},{"1":"0.191151412","2":"FALSE","3":"0.139327027","4":"0.49822699","5":"0.49822699","6":"1","7":"178"},{"1":"-1.032345619","2":"FALSE","3":"-0.386272098","4":"0.37590072","5":"0.37590072","6":"1","7":"398"},{"1":"-0.460772609","2":"TRUE","3":"1.123585423","4":"0.71687778","5":"0.71687778","6":"1","7":"354"},{"1":"-1.280685897","2":"FALSE","3":"-0.759845657","4":"0.29686183","5":"0.29686183","6":"1","7":"266"},{"1":"0.861560544","2":"TRUE","3":"1.148959103","4":"0.72175011","5":"0.72175011","6":"1","7":"355"},{"1":"-0.566663826","2":"FALSE","3":"-0.842476259","4":"0.28072347","5":"0.28072347","6":"1","7":"324"},{"1":"3.262185795","2":"TRUE","3":"0.391413340","4":"0.55790523","5":"0.55790523","6":"1","7":"356"},{"1":"-1.523578309","2":"FALSE","3":"0.891377242","4":"0.66999794","5":"0.66999794","6":"1","7":"231"},{"1":"1.294975810","2":"TRUE","3":"-1.335258713","4":"0.19630402","5":"0.19630402","6":"1","7":"357"},{"1":"2.096150830","2":"TRUE","3":"0.398123478","4":"0.55947873","5":"0.55947873","6":"1","7":"358"},{"1":"2.510542525","2":"TRUE","3":"-0.111586803","4":"0.43887383","5":"0.43887383","6":"1","7":"359"},{"1":"0.176338200","2":"FALSE","3":"0.675743917","4":"0.62318496","5":"0.62318496","6":"1","7":"263"},{"1":"-0.413464617","2":"FALSE","3":"-0.788597935","4":"0.29118564","5":"0.29118564","6":"1","7":"46"},{"1":"-1.949275693","2":"FALSE","3":"-0.086986334","4":"0.44464371","5":"0.44464371","6":"1","7":"423"},{"1":"0.834143129","2":"TRUE","3":"1.382284008","4":"0.76406066","5":"0.76406066","6":"1","7":"360"},{"1":"2.915976386","2":"TRUE","3":"0.168490164","4":"0.50516100","5":"0.50516100","6":"1","7":"361"},{"1":"1.224158965","2":"TRUE","3":"0.823190948","4":"0.65550456","5":"0.65550456","6":"1","7":"362"},{"1":"1.070233814","2":"TRUE","3":"-0.220894598","4":"0.41345628","5":"0.41345628","6":"1","7":"363"},{"1":"1.884927728","2":"FALSE","3":"-1.029391655","4":"0.24626192","5":"0.24626192","6":"1","7":"390"},{"1":"1.591878702","2":"TRUE","3":"-0.010925691","4":"0.46257115","5":"0.46257115","6":"1","7":"364"},{"1":"2.152343309","2":"TRUE","3":"-1.224991155","4":"0.21337809","5":"0.21337809","6":"1","7":"365"},{"1":"-1.244917405","2":"TRUE","3":"1.169122592","4":"0.72558500","5":"0.72558500","6":"1","7":"368"},{"1":"-1.212751049","2":"TRUE","3":"-1.086908817","4":"0.23624940","5":"0.23624940","6":"1","7":"369"},{"1":"1.855857600","2":"TRUE","3":"0.995281807","4":"0.69146951","5":"0.69146951","6":"1","7":"370"},{"1":"1.506388688","2":"FALSE","3":"-0.011861781","4":"0.46234983","5":"0.46234983","6":"1","7":"131"},{"1":"-0.309514063","2":"FALSE","3":"-0.599628395","4":"0.32961972","5":"0.32961972","6":"1","7":"35"},{"1":"2.018841334","2":"FALSE","3":"-0.177947987","4":"0.42339564","5":"0.42339564","6":"1","7":"192"},{"1":"-1.217039263","2":"FALSE","3":"-0.425981342","4":"0.36708297","5":"0.36708297","6":"1","7":"74"},{"1":"1.097981060","2":"TRUE","3":"0.996658776","4":"0.69174883","5":"0.69174883","6":"1","7":"371"},{"1":"-0.487624477","2":"FALSE","3":"0.727660709","4":"0.63470765","5":"0.63470765","6":"1","7":"62"},{"1":"1.753614356","2":"TRUE","3":"0.353398496","4":"0.54896983","5":"0.54896983","6":"1","7":"372"},{"1":"3.934824114","2":"TRUE","3":"0.726813666","4":"0.63452084","5":"0.63452084","6":"1","7":"373"},{"1":"1.784812244","2":"TRUE","3":"0.668260976","4":"0.62151226","5":"0.62151226","6":"1","7":"374"},{"1":"0.796573066","2":"FALSE","3":"-2.424317309","4":"0.07977928","5":"0.07977928","6":"1","7":"285"},{"1":"0.019671393","2":"FALSE","3":"-0.235357425","4":"0.41012446","5":"0.41012446","6":"1","7":"71"},{"1":"1.457912248","2":"FALSE","3":"1.979633321","4":"0.85109379","5":"0.85109379","6":"1","7":"203"},{"1":"-0.202080847","2":"TRUE","3":"0.796794539","4":"0.64981338","5":"0.64981338","6":"1","7":"375"},{"1":"0.834196344","2":"TRUE","3":"-1.663668712","4":"0.15162606","5":"0.15162606","6":"1","7":"376"},{"1":"2.593112564","2":"TRUE","3":"0.491109552","4":"0.58114730","5":"0.58114730","6":"1","7":"378"},{"1":"0.199208778","2":"FALSE","3":"-0.174055486","4":"0.42429970","5":"0.42429970","6":"1","7":"138"},{"1":"1.040987446","2":"FALSE","3":"0.961290564","4":"0.68453016","5":"0.68453016","6":"1","7":"147"},{"1":"0.828549222","2":"FALSE","3":"0.293826662","4":"0.53490589","5":"0.53490589","6":"1","7":"370"},{"1":"1.000055552","2":"FALSE","3":"0.080999364","4":"0.48436336","5":"0.48436336","6":"1","7":"259"},{"1":"1.602708117","2":"TRUE","3":"0.183661843","4":"0.50876769","5":"0.50876769","6":"1","7":"379"},{"1":"1.531617892","2":"TRUE","3":"0.166255035","4":"0.50462959","5":"0.50462959","6":"1","7":"380"},{"1":"0.092246381","2":"FALSE","3":"-1.269599066","4":"0.20634354","5":"0.20634354","6":"1","7":"386"},{"1":"2.276151448","2":"TRUE","3":"2.349493321","4":"0.89041391","5":"0.89041391","6":"1","7":"381"},{"1":"-1.009066833","2":"FALSE","3":"-0.016961493","4":"0.46114436","5":"0.46114436","6":"1","7":"64"},{"1":"-0.920111491","2":"FALSE","3":"-0.544319353","4":"0.34134603","5":"0.34134603","6":"1","7":"80"},{"1":"3.153661315","2":"TRUE","3":"1.800112333","4":"0.82813473","5":"0.82813473","6":"1","7":"383"},{"1":"1.404627279","2":"TRUE","3":"1.011440176","4":"0.69473844","5":"0.69473844","6":"1","7":"384"},{"1":"2.933191600","2":"TRUE","3":"-0.563716556","4":"0.33721049","5":"0.33721049","6":"1","7":"385"},{"1":"-0.583614626","2":"FALSE","3":"0.205420795","4":"0.51393866","5":"0.51393866","6":"1","7":"432"},{"1":"1.177244896","2":"FALSE","3":"1.165461950","4":"0.72489123","5":"0.72489123","6":"1","7":"27"},{"1":"2.495897705","2":"FALSE","3":"2.236322840","4":"0.87946151","5":"0.87946151","6":"1","7":"88"},{"1":"-0.388173240","2":"FALSE","3":"0.302265076","4":"0.53690197","5":"0.53690197","6":"1","7":"371"},{"1":"-0.251611399","2":"TRUE","3":"-1.042506602","4":"0.24395396","5":"0.24395396","6":"1","7":"386"},{"1":"-0.624470129","2":"FALSE","3":"-0.983542313","4":"0.25444535","5":"0.25444535","6":"1","7":"236"},{"1":"0.100257185","2":"TRUE","3":"2.005718580","4":"0.85421066","5":"0.85421066","6":"1","7":"387"},{"1":"1.257231026","2":"TRUE","3":"3.055742369","4":"0.94084864","5":"0.94084864","6":"1","7":"388"},{"1":"0.375974818","2":"TRUE","3":"-0.261350594","4":"0.40415726","5":"0.40415726","6":"1","7":"389"},{"1":"3.371899956","2":"TRUE","3":"-0.454393259","4":"0.36082764","5":"0.36082764","6":"1","7":"390"},{"1":"1.032559255","2":"FALSE","3":"0.157560555","4":"0.50256240","5":"0.50256240","6":"1","7":"434"},{"1":"0.659644492","2":"FALSE","3":"0.933388728","4":"0.67877163","5":"0.67877163","6":"1","7":"170"},{"1":"0.623331495","2":"FALSE","3":"0.302828276","4":"0.53703515","5":"0.53703515","6":"1","7":"96"},{"1":"1.690042959","2":"TRUE","3":"0.353536709","4":"0.54900238","5":"0.54900238","6":"1","7":"391"},{"1":"-0.352191081","2":"FALSE","3":"0.450424514","4":"0.57169983","5":"0.57169983","6":"1","7":"368"},{"1":"1.836673696","2":"TRUE","3":"0.659550871","4":"0.61956160","5":"0.61956160","6":"1","7":"392"},{"1":"1.889983593","2":"TRUE","3":"-1.031420728","4":"0.24590388","5":"0.24590388","6":"1","7":"393"},{"1":"1.025366151","2":"TRUE","3":"-0.324576308","4":"0.38976358","5":"0.38976358","6":"1","7":"394"},{"1":"-1.374678720","2":"FALSE","3":"-0.944298751","4":"0.26159051","5":"0.26159051","6":"1","7":"267"},{"1":"-1.014955198","2":"FALSE","3":"-0.765889998","4":"0.29566327","5":"0.29566327","6":"1","7":"225"},{"1":"-0.634764835","2":"FALSE","3":"-0.953779267","4":"0.25985256","5":"0.25985256","6":"1","7":"117"},{"1":"-0.587913038","2":"FALSE","3":"-0.398004450","4":"0.37328659","5":"0.37328659","6":"1","7":"228"},{"1":"0.650817101","2":"TRUE","3":"-0.311217063","4":"0.39278984","5":"0.39278984","6":"1","7":"395"},{"1":"0.836951983","2":"TRUE","3":"0.796092713","4":"0.64966147","5":"0.64966147","6":"1","7":"396"},{"1":"1.391383732","2":"TRUE","3":"0.986428344","4":"0.68967020","5":"0.68967020","6":"1","7":"397"},{"1":"1.149835976","2":"FALSE","3":"-0.794531662","4":"0.29002222","5":"0.29002222","6":"1","7":"12"},{"1":"-2.124382102","2":"FALSE","3":"-0.308817972","4":"0.39333418","5":"0.39333418","6":"1","7":"328"},{"1":"1.954818142","2":"TRUE","3":"0.361444766","4":"0.55086395","5":"0.55086395","6":"1","7":"398"},{"1":"1.372193956","2":"TRUE","3":"1.398791105","4":"0.76687914","5":"0.76687914","6":"1","7":"399"},{"1":"1.071903940","2":"FALSE","3":"-0.056070420","4":"0.45191588","5":"0.45191588","6":"1","7":"366"},{"1":"-0.422021205","2":"FALSE","3":"0.231852545","4":"0.52021599","5":"0.52021599","6":"1","7":"124"},{"1":"-0.188178318","2":"FALSE","3":"-0.119090671","4":"0.43711706","5":"0.43711706","6":"1","7":"57"},{"1":"2.363913841","2":"TRUE","3":"1.772492853","4":"0.82436369","5":"0.82436369","6":"1","7":"401"},{"1":"-0.407438502","2":"FALSE","3":"0.343422165","4":"0.54661941","5":"0.54661941","6":"1","7":"107"},{"1":"-1.384972166","2":"FALSE","3":"-0.623049782","4":"0.32471622","5":"0.32471622","6":"1","7":"188"},{"1":"-0.218571064","2":"FALSE","3":"-0.439522294","4":"0.36409598","5":"0.36409598","6":"1","7":"223"},{"1":"0.208851297","2":"FALSE","3":"-0.505296790","4":"0.34973878","5":"0.34973878","6":"1","7":"380"},{"1":"-0.548701057","2":"TRUE","3":"0.186035137","4":"0.50933181","5":"0.50933181","6":"1","7":"402"},{"1":"0.849622082","2":"TRUE","3":"0.176417798","4":"0.50704569","5":"0.50704569","6":"1","7":"403"},{"1":"-1.584843016","2":"FALSE","3":"0.915848207","4":"0.67512335","5":"0.67512335","6":"1","7":"257"},{"1":"1.435114609","2":"TRUE","3":"0.320176726","4":"0.54113491","5":"0.54113491","6":"1","7":"404"},{"1":"1.704297652","2":"FALSE","3":"-0.366687297","4":"0.38028058","5":"0.38028058","6":"1","7":"120"},{"1":"-0.605530865","2":"FALSE","3":"-0.940611295","4":"0.26226851","5":"0.26226851","6":"1","7":"286"},{"1":"2.919018611","2":"TRUE","3":"0.634702931","4":"0.61397575","5":"0.61397575","6":"1","7":"406"},{"1":"2.778262710","2":"FALSE","3":"-0.062488482","4":"0.45040440","5":"0.45040440","6":"1","7":"15"},{"1":"0.376080485","2":"TRUE","3":"0.182837868","4":"0.50857183","5":"0.50857183","6":"1","7":"407"},{"1":"0.197709947","2":"FALSE","3":"1.103641018","4":"0.71301199","5":"0.71301199","6":"1","7":"97"},{"1":"-0.124206794","2":"TRUE","3":"1.752035619","4":"0.82152879","5":"0.82152879","6":"1","7":"408"},{"1":"-0.526318315","2":"FALSE","3":"-0.953816460","4":"0.25984575","5":"0.25984575","6":"1","7":"202"},{"1":"1.265893606","2":"FALSE","3":"1.644080457","4":"0.80597482","5":"0.80597482","6":"1","7":"298"},{"1":"0.762100615","2":"FALSE","3":"-0.866733529","4":"0.27608870","5":"0.27608870","6":"1","7":"247"},{"1":"0.066635368","2":"FALSE","3":"0.266352192","4":"0.52839949","5":"0.52839949","6":"1","7":"295"},{"1":"-0.175929121","2":"TRUE","3":"0.222370495","4":"0.51796471","5":"0.51796471","6":"1","7":"410"},{"1":"0.309504730","2":"FALSE","3":"-0.276908510","4":"0.40059904","5":"0.40059904","6":"1","7":"237"},{"1":"-0.251070370","2":"FALSE","3":"1.394253041","4":"0.76610664","5":"0.76610664","6":"1","7":"345"},{"1":"-0.918895864","2":"FALSE","3":"-0.658912000","4":"0.31728229","5":"0.31728229","6":"1","7":"58"},{"1":"0.184304736","2":"FALSE","3":"0.660531281","4":"0.61978136","5":"0.61978136","6":"1","7":"360"},{"1":"0.578700687","2":"FALSE","3":"-0.013255700","4":"0.46202029","5":"0.46202029","6":"1","7":"375"},{"1":"-0.125740841","2":"FALSE","3":"-0.931480299","4":"0.26395227","5":"0.26395227","6":"1","7":"405"},{"1":"-0.400492206","2":"TRUE","3":"1.214689143","4":"0.73412921","5":"0.73412921","6":"1","7":"411"},{"1":"0.712169491","2":"FALSE","3":"-0.526152469","4":"0.34524128","5":"0.34524128","6":"1","7":"89"},{"1":"0.296255070","2":"FALSE","3":"0.194321070","4":"0.51130114","5":"0.51130114","6":"1","7":"352"},{"1":"1.122208186","2":"TRUE","3":"0.264422549","4":"0.52794213","5":"0.52794213","6":"1","7":"414"},{"1":"0.083621944","2":"FALSE","3":"-1.118735169","4":"0.23083133","5":"0.23083133","6":"1","7":"348"},{"1":"1.613881202","2":"TRUE","3":"0.650952956","4":"0.61763227","5":"0.61763227","6":"1","7":"415"},{"1":"-2.681804329","2":"FALSE","3":"-1.032900239","4":"0.24564304","5":"0.24564304","6":"1","7":"251"},{"1":"1.270194518","2":"TRUE","3":"0.659201499","4":"0.61948328","5":"0.61948328","6":"1","7":"416"},{"1":"1.431821926","2":"TRUE","3":"0.237829400","4":"0.52163463","5":"0.52163463","6":"1","7":"417"},{"1":"-1.380169127","2":"FALSE","3":"0.715275947","4":"0.63197232","5":"0.63197232","6":"1","7":"268"},{"1":"-0.159306814","2":"FALSE","3":"-0.938483039","4":"0.26266034","5":"0.26266034","6":"1","7":"394"},{"1":"0.308799707","2":"FALSE","3":"0.095354010","4":"0.48777384","5":"0.48777384","6":"1","7":"212"},{"1":"-0.377153776","2":"FALSE","3":"-0.462819420","4":"0.35898142","5":"0.35898142","6":"1","7":"68"},{"1":"2.455433663","2":"TRUE","3":"-1.468882156","4":"0.17702360","5":"0.17702360","6":"1","7":"418"},{"1":"0.579835296","2":"TRUE","3":"0.152686506","4":"0.50140350","5":"0.50140350","6":"1","7":"419"},{"1":"3.824496299","2":"TRUE","3":"1.773762611","4":"0.82453848","5":"0.82453848","6":"1","7":"420"},{"1":"0.261443575","2":"TRUE","3":"-0.648070934","4":"0.31951996","5":"0.31951996","6":"1","7":"421"},{"1":"-0.198795216","2":"TRUE","3":"-0.199817476","4":"0.41832599","5":"0.41832599","6":"1","7":"422"},{"1":"1.782474978","2":"TRUE","3":"0.689243733","4":"0.62619521","5":"0.62619521","6":"1","7":"423"},{"1":"0.991513486","2":"TRUE","3":"0.036145510","4":"0.47371749","5":"0.47371749","6":"1","7":"424"},{"1":"2.454223283","2":"TRUE","3":"1.943536312","4":"0.84669020","5":"0.84669020","6":"1","7":"426"},{"1":"0.897044742","2":"FALSE","3":"0.737213734","4":"0.63681163","5":"0.63681163","6":"1","7":"243"},{"1":"0.289412347","2":"TRUE","3":"2.321333933","4":"0.88777314","5":"0.88777314","6":"1","7":"427"},{"1":"1.795566483","2":"TRUE","3":"0.348909346","4":"0.54791246","5":"0.54791246","6":"1","7":"428"},{"1":"0.636656910","2":"TRUE","3":"-1.133916661","4":"0.22827768","5":"0.22827768","6":"1","7":"429"},{"1":"2.120996718","2":"TRUE","3":"0.421335268","4":"0.56491240","5":"0.56491240","6":"1","7":"430"},{"1":"1.550388607","2":"TRUE","3":"-0.924556257","4":"0.26523367","5":"0.26523367","6":"1","7":"431"},{"1":"-2.034263014","2":"FALSE","3":"-1.007062366","4":"0.25022511","5":"0.25022511","6":"1","7":"109"},{"1":"0.021266502","2":"FALSE","3":"-0.189474330","4":"0.42072159","5":"0.42072159","6":"1","7":"412"},{"1":"1.462011479","2":"TRUE","3":"0.933916700","4":"0.67888111","5":"0.67888111","6":"1","7":"432"},{"1":"-1.206817718","2":"FALSE","3":"0.343910000","4":"0.54673440","5":"0.54673440","6":"1","7":"468"},{"1":"0.501969493","2":"TRUE","3":"0.814020276","4":"0.65353227","5":"0.65353227","6":"1","7":"433"},{"1":"1.388873861","2":"TRUE","3":"0.915341002","4":"0.67501753","5":"0.67501753","6":"1","7":"434"},{"1":"2.835263109","2":"TRUE","3":"-0.171852130","4":"0.42481167","5":"0.42481167","6":"1","7":"435"},{"1":"1.567778143","2":"TRUE","3":"0.795906852","4":"0.64962124","5":"0.64962124","6":"1","7":"436"},{"1":"2.143412930","2":"TRUE","3":"2.169115869","4":"0.87251941","5":"0.87251941","6":"1","7":"437"},{"1":"1.464148245","2":"TRUE","3":"0.058383499","4":"0.47899320","5":"0.47899320","6":"1","7":"438"},{"1":"0.212565197","2":"TRUE","3":"-1.354914450","4":"0.19337136","5":"0.19337136","6":"1","7":"439"},{"1":"2.179049388","2":"TRUE","3":"-0.367550766","4":"0.38008706","5":"0.38008706","6":"1","7":"440"},{"1":"1.013710888","2":"FALSE","3":"-0.934517579","4":"0.26339142","5":"0.26339142","6":"1","7":"395"},{"1":"-0.617829850","2":"FALSE","3":"-0.041639220","4":"0.45531768","5":"0.45531768","6":"1","7":"127"},{"1":"0.386660482","2":"FALSE","3":"0.676112006","4":"0.62326717","5":"0.62326717","6":"1","7":"399"},{"1":"2.778176606","2":"TRUE","3":"0.866436147","4":"0.66473217","5":"0.66473217","6":"1","7":"442"},{"1":"0.451129978","2":"TRUE","3":"0.235175025","4":"0.52100464","5":"0.52100464","6":"1","7":"443"},{"1":"-1.230257661","2":"FALSE","3":"-0.933970133","4":"0.26349245","5":"0.26349245","6":"1","7":"235"},{"1":"0.900070439","2":"TRUE","3":"0.813252167","4":"0.65336684","5":"0.65336684","6":"1","7":"444"},{"1":"1.620478891","2":"TRUE","3":"1.348318555","4":"0.75818753","5":"0.75818753","6":"1","7":"445"},{"1":"-0.210744542","2":"TRUE","3":"2.251882776","4":"0.88102153","5":"0.88102153","6":"1","7":"446"},{"1":"-0.111306301","2":"TRUE","3":"-0.493652434","4":"0.35226161","5":"0.35226161","6":"1","7":"447"},{"1":"2.940015901","2":"TRUE","3":"0.474092599","4":"0.57720261","5":"0.57720261","6":"1","7":"449"},{"1":"1.143859863","2":"TRUE","3":"1.193691666","4":"0.73021311","5":"0.73021311","6":"1","7":"450"},{"1":"1.056214178","2":"TRUE","3":"-0.116395472","4":"0.43774787","5":"0.43774787","6":"1","7":"451"},{"1":"-1.519930666","2":"TRUE","3":"0.524858556","4":"0.58893956","5":"0.58893956","6":"1","7":"452"},{"1":"-0.211853497","2":"FALSE","3":"0.214421481","4":"0.51607684","5":"0.51607684","6":"1","7":"333"},{"1":"0.852856096","2":"TRUE","3":"-0.134449535","4":"0.43352626","5":"0.43352626","6":"1","7":"453"},{"1":"1.471473975","2":"TRUE","3":"0.168509103","4":"0.50516550","5":"0.50516550","6":"1","7":"454"},{"1":"1.458153672","2":"TRUE","3":"0.964732770","4":"0.68523671","5":"0.68523671","6":"1","7":"455"},{"1":"0.724645451","2":"FALSE","3":"0.408778914","4":"0.56197492","5":"0.56197492","6":"1","7":"354"},{"1":"1.457697413","2":"FALSE","3":"-0.466438215","4":"0.35818980","5":"0.35818980","6":"1","7":"379"},{"1":"-0.369710995","2":"FALSE","3":"-0.795063185","4":"0.28991813","5":"0.28991813","6":"1","7":"130"},{"1":"0.828865379","2":"TRUE","3":"-0.019955117","4":"0.46043693","5":"0.46043693","6":"1","7":"456"},{"1":"1.004325346","2":"FALSE","3":"2.210952032","4":"0.87688001","5":"0.87688001","6":"1","7":"56"},{"1":"0.882471926","2":"FALSE","3":"-1.160751876","4":"0.22381263","5":"0.22381263","6":"1","7":"464"},{"1":"-1.798270680","2":"FALSE","3":"1.457738225","4":"0.77675172","5":"0.77675172","6":"1","7":"461"},{"1":"0.858013193","2":"TRUE","3":"0.739062681","4":"0.63721825","5":"0.63721825","6":"1","7":"457"},{"1":"1.408697930","2":"FALSE","3":"-0.344008769","4":"0.38537673","5":"0.38537673","6":"1","7":"47"},{"1":"3.212513064","2":"TRUE","3":"0.455876742","4":"0.57296908","5":"0.57296908","6":"1","7":"458"},{"1":"1.733215992","2":"TRUE","3":"0.878110263","4":"0.66720211","5":"0.66720211","6":"1","7":"459"},{"1":"0.706820957","2":"TRUE","3":"-0.958463923","4":"0.25899655","5":"0.25899655","6":"1","7":"460"},{"1":"-0.093538977","2":"FALSE","3":"-0.705844846","4":"0.30769300","5":"0.30769300","6":"1","7":"224"},{"1":"-0.942673377","2":"FALSE","3":"-0.961052324","4":"0.25852436","5":"0.25852436","6":"1","7":"249"},{"1":"2.429069628","2":"FALSE","3":"0.380188254","4":"0.55527040","5":"0.55527040","6":"1","7":"327"},{"1":"-0.924393871","2":"FALSE","3":"0.505067590","4":"0.58437520","5":"0.58437520","6":"1","7":"299"},{"1":"-0.699242582","2":"TRUE","3":"2.027056004","4":"0.85671982","5":"0.85671982","6":"1","7":"461"},{"1":"-0.208183338","2":"FALSE","3":"0.064627029","4":"0.48047530","5":"0.48047530","6":"1","7":"252"},{"1":"-0.994671869","2":"FALSE","3":"0.463658648","4":"0.57477902","5":"0.57477902","6":"1","7":"19"},{"1":"-1.386452073","2":"FALSE","3":"0.074778333","4":"0.48288576","5":"0.48288576","6":"1","7":"84"},{"1":"-1.512971121","2":"FALSE","3":"-0.486836236","4":"0.35374223","5":"0.35374223","6":"1","7":"361"},{"1":"-1.368599092","2":"FALSE","3":"0.748910821","4":"0.63938071","5":"0.63938071","6":"1","7":"309"},{"1":"1.116327938","2":"TRUE","3":"0.464234581","4":"0.57491289","5":"0.57491289","6":"1","7":"462"},{"1":"-1.612941092","2":"TRUE","3":"0.129420458","4":"0.49587157","5":"0.49587157","6":"1","7":"463"},{"1":"1.634867769","2":"TRUE","3":"-0.815460652","4":"0.28594071","5":"0.28594071","6":"1","7":"464"},{"1":"0.391373233","2":"TRUE","3":"-0.040150452","4":"0.45566887","5":"0.45566887","6":"1","7":"465"},{"1":"0.672309532","2":"FALSE","3":"0.781416978","4":"0.64647803","5":"0.64647803","6":"1","7":"137"},{"1":"0.533976913","2":"TRUE","3":"0.676452747","4":"0.62334326","5":"0.62334326","6":"1","7":"467"},{"1":"0.478586017","2":"FALSE","3":"-0.482652526","4":"0.35465241","5":"0.35465241","6":"1","7":"118"},{"1":"0.812011739","2":"FALSE","3":"-0.669113468","4":"0.31518432","5":"0.31518432","6":"1","7":"25"},{"1":"0.492887462","2":"FALSE","3":"0.512801322","4":"0.58616058","5":"0.58616058","6":"1","7":"336"},{"1":"1.651404349","2":"TRUE","3":"1.048909929","4":"0.70224337","5":"0.70224337","6":"1","7":"468"},{"1":"1.781032225","2":"TRUE","3":"0.121058163","4":"0.49388345","5":"0.49388345","6":"1","7":"469"},{"1":"-0.023720285","2":"FALSE","3":"-0.313292885","4":"0.39231906","5":"0.39231906","6":"1","7":"258"},{"1":"0.989750701","2":"FALSE","3":"-0.880670730","4":"0.27344728","5":"0.27344728","6":"1","7":"274"},{"1":"-0.820091326","2":"FALSE","3":"-0.419286891","4":"0.36856348","5":"0.36856348","6":"1","7":"414"},{"1":"-0.346839266","2":"FALSE","3":"-0.697318199","4":"0.30942318","5":"0.30942318","6":"1","7":"110"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<pre class="r"><code>matched_observed %&gt;%
+  dplyr::group_by(subclass) %&gt;%
+  dplyr::summarise(y = sum(y * z) - sum(y * (1 - z))) %&gt;%
+  dplyr::ungroup() %&gt;%
+  dplyr::summarise(y = mean(y))</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["y"],"name":[1],"type":["dbl"],"align":["right"]}],"data":[{"1":"1.145497"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
 </div>
 
 

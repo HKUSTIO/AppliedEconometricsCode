@@ -3086,64 +3086,113 @@ border-radius: 0px;
 
 
 <h1 class="title toc-ignore">Randomized Experiment</h1>
-<h3 class="subtitle">Fisher’s p-value</h3>
+<h3 class="subtitle">Clustered Randomized Experiments</h3>
 <h4 class="date">Last Update: 2024-02-17</h4>
 
 </div>
 
 
-<p>Here we implement the method of “5 Fisher’s p-value”. The functions
-called from <code>AppliedEconometricsCode</code> are defined in
-<code>R/functions_randomized.R</code>. First, we generate the potential
-outcomes of the sample, and then we generate the treatment vector and
-the realized outcomes. Based on the realized treatment vector and
-outcomes, we calculate the test statistic based on the difference in
-means, and finally, we numerically calculate Fisher’s p-value using the
-bootstrap method.</p>
-<div id="generating-simulation-data" class="section level1" number="1">
-<h1><span class="header-section-number">1</span> Generating simulation
+<p>Translate: Here, we implement the clustered randomized experiment.
+The functions called from <code>AppliedEconometricsCode</code> are
+defined in <code>R/functions_randomized.R</code>. First, we generate the
+potential outcomes of the sample, and then we generate the treatment
+vector and the realized outcomes. We consider two methods for estimating
+the average treatment effect: one that treats each cluster as an
+individual and calculates the average treatment effect (<span class="math inline">\(\hat{\tau}_c\)</span>), and one that calculates
+the average treatment effect for the entire sample (<span class="math inline">\(\hat{\tau}\)</span>). Finally, we calculate the
+cluster-robust standard error when estimating the average treatment
+effect using the data from the clustered randomized experiment.</p>
+<div id="generating-simulated-data" class="section level1" number="1">
+<h1><span class="header-section-number">1</span> Generating simulated
 data</h1>
-<div id="setting-constants-and-parameters" class="section level2" number="1.1">
-<h2><span class="header-section-number">1.1</span> Setting constants and
-parameters</h2>
-<p>First, we set the seed, the number of individuals <code>N</code>, the
-number of draws in the Monte Carlo simulation <code>R</code>, and the
-size of the treatment group <code>N_1</code>.</p>
+<div id="calculating-the-constants-and-parameters" class="section level2" number="1.1">
+<h2><span class="header-section-number">1.1</span> Calculating the
+constants and parameters</h2>
+<p>We consider a clustered randomized experiment with two clusters.
+First, we fix the seed and set the number of clusters <code>G</code> and
+draw the number of individuals in each cluster <code>N_g</code> from a
+Poisson distribution. We set the total number of individuals
+<code>N</code>. We specify the number of clusters to which the treatment
+is assigned as <code>G_1</code>.</p>
 <pre class="r"><code>set.seed(1)
-N &lt;- 1000
-R &lt;- 1000
-N_1 &lt;- 500</code></pre>
-<p>Next, we set the average treatment effect in the population
-<code>tau_population</code>.</p>
-<pre class="r"><code>tau_population &lt;- 0.2</code></pre>
+G &lt;- 100
+N_g &lt;- 
+  rpois(
+    G, 
+    99
+  ) + 
+  1
+N &lt;- sum(N_g)
+G_1 &lt;- 50</code></pre>
+<p>Next, we draw the average treatment effect
+<code>tau_g_population</code> in each cluster from the absolute value of
+a standard normal distribution.</p>
+<pre class="r"><code>tau_g_population &lt;- 
+  abs(
+    rnorm(G)
+  )
+tau_g_population</code></pre>
+<pre><code>##   [1] 0.118792026 0.197684262 1.068692711 0.803213217 1.113765136 1.580091684
+##   [7] 1.497818761 0.262645459 1.232901200 0.003723534 1.511672283 0.475698284
+##  [13] 0.797916438 0.974002561 0.689372698 0.955839103 1.231707058 0.956891881
+##  [19] 0.869782874 0.910680682 0.741276305 0.068511533 0.323750755 1.086503047
+##  [25] 1.015928947 0.767790185 1.119720061 0.448174237 0.471736374 1.180490683
+##  [31] 1.470256997 1.311420592 0.096524923 2.369719908 0.890626476 0.252183161
+##  [37] 0.865763755 0.582586000 0.012529347 0.374854762 0.317885735 0.488805635
+##  [43] 2.658658027 1.680278205 0.779584009 0.713240520 0.542881937 0.885778374
+##  [49] 0.348594685 1.008054578 1.883182542 0.928971079 0.294196454 0.614950271
+##  [55] 0.947075792 0.598975150 1.523614882 0.206189002 0.574295414 1.390166037
+##  [61] 0.070417383 0.430879530 0.592225373 0.981116160 0.532409357 0.090456124
+##  [67] 0.156490492 0.737311691 0.201341206 1.102176595 0.016748256 0.161788634
+##  [73] 2.024761390 0.703694254 0.960792384 1.790485054 1.064165163 0.017636546
+##  [79] 0.389908629 0.490832752 1.045717652 0.896211264 1.269387164 0.593840949
+##  [85] 0.775634319 1.557370376 0.365401797 0.816556449 0.060634778 0.501378318
+##  [91] 0.926062725 0.036937691 1.066200174 0.238456353 1.495223444 1.172158547
+##  [97] 1.457707210 0.095056227 0.847664964 1.624364530</code></pre>
+<p>The average treatment effect <code>tau_population</code> in the
+population is defined as the weighted average of
+<code>tau_g_population</code> using the number of individuals in each
+cluster.</p>
+<pre class="r"><code>tau_population &lt;- 
+  sum(
+    tau_g_population * N_g / 
+    N
+  )
+tau_population</code></pre>
+<pre><code>## [1] 0.7998756</code></pre>
+<p>The population average treatment effect <code>tau_c_population</code>
+when each cluster is considered as an individual is defined as the
+simple average of <code>tau_g_population</code>.</p>
+<pre class="r"><code>tau_c_population &lt;- mean(tau_g_population)
+tau_c_population</code></pre>
+<pre><code>## [1] 0.8044622</code></pre>
 </div>
 <div id="generating-data" class="section level2" number="1.2">
 <h2><span class="header-section-number">1.2</span> Generating data</h2>
-<p>We generate the potential outcomes of the sample based on the above
-constants and parameters. This operation corresponds to one random draw.
-We also calculate the average treatment effect <code>tau</code> in the
-sample.</p>
+<p>Based on the above constants and parameters, we generate the
+potential outcomes of the sample. This operation corresponds to one
+random draw.</p>
 <pre class="r"><code>outcome_potential &lt;-
-  tibble::tibble(
-    y_0 = 
-      rnorm(
-        N, 
-        mean = 0, 
-        sd = 1
-      ),
-    y_1 = 
-      rnorm(
-        N, 
-        mean = tau_population, 
-        sd = 1
-      )
-  )
-tau &lt;-
-  outcome_potential %&gt;%
-  dplyr::summarise(
-    tau = mean(y_1 - y_0)
+  1:G %&gt;%
+  purrr::map(
+    .,
+    ~ tibble::tibble(
+      g = .,
+      y_0 = 
+        rnorm(
+          N_g[.], 
+          mean = 0, 
+          sd = 1
+        ),
+      y_1 = 
+        rnorm(
+          N_g[.], 
+          mean = tau_g_population[.], 
+          sd = 1
+        )
+    )
   ) %&gt;%
-  dplyr::pull(tau)
+  dplyr::bind_rows()
 
 outcome_potential %&gt;%
   head() %&gt;%
@@ -3152,6 +3201,9 @@ outcome_potential %&gt;%
 <table class="table" style="margin-left: auto; margin-right: auto;">
 <thead>
 <tr>
+<th style="text-align:right;">
+g
+</th>
 <th style="text-align:right;">
 y_0
 </th>
@@ -3163,50 +3215,68 @@ y_1
 <tbody>
 <tr>
 <td style="text-align:right;">
--0.6264538
+1
 </td>
 <td style="text-align:right;">
-1.3349651
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-0.1836433
+1.4085634
 </td>
 <td style="text-align:right;">
-1.3119318
+0.4271008
 </td>
 </tr>
 <tr>
 <td style="text-align:right;">
--0.8356286
+1
 </td>
 <td style="text-align:right;">
--0.6707776
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-1.5952808
+-0.5417604
 </td>
 <td style="text-align:right;">
-0.4107316
+0.4635871
 </td>
 </tr>
 <tr>
 <td style="text-align:right;">
-0.3295078
+1
 </td>
 <td style="text-align:right;">
-0.2693956
+0.2786647
+</td>
+<td style="text-align:right;">
+1.6584401
 </td>
 </tr>
 <tr>
 <td style="text-align:right;">
--0.8204684
+1
 </td>
 <td style="text-align:right;">
--1.4626489
+-0.1939727
+</td>
+<td style="text-align:right;">
+-0.2107222
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1.5761582
+</td>
+<td style="text-align:right;">
+1.0671814
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+-1.4755476
+</td>
+<td style="text-align:right;">
+-0.3604636
 </td>
 </tr>
 </tbody>
@@ -3246,28 +3316,28 @@ Max
 <tbody>
 <tr>
 <td style="text-align:left;">
-y_0
+g
 </td>
 <td style="text-align:right;">
-1000
+100
 </td>
 <td style="text-align:right;">
 0
 </td>
 <td style="text-align:right;">
-−0.0
+50.7
+</td>
+<td style="text-align:right;">
+28.8
 </td>
 <td style="text-align:right;">
 1.0
 </td>
 <td style="text-align:right;">
-−3.0
+51.0
 </td>
 <td style="text-align:right;">
-−0.0
-</td>
-<td style="text-align:right;">
-3.8
+100.0
 </td>
 <td style="text-align:right;">
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" class="svglite" width="48.00pt" height="12.00pt" viewBox="0 0 48.00 12.00">
@@ -3285,7 +3355,52 @@ white-space: pre;
 }
 </style>
 </defs><rect width="100%" height="100%" style="stroke: none; fill: none;"></rect><defs><clipPath id="cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw"><rect x="0.00" y="0.00" width="48.00" height="12.00"></rect></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw)">
-</g><defs><clipPath id="cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw"><rect x="0.00" y="2.88" width="48.00" height="9.12"></rect></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw)"><rect x="-1.43" y="11.62" width="3.26" height="0.040" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="1.83" y="11.38" width="3.26" height="0.28" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="5.09" y="10.67" width="3.26" height="0.99" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="8.35" y="10.12" width="3.26" height="1.55" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="11.61" y="7.86" width="3.26" height="3.81" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="14.87" y="6.23" width="3.26" height="5.43" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="18.13" y="3.22" width="3.26" height="8.44" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="21.39" y="5.04" width="3.26" height="6.62" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="24.64" y="5.44" width="3.26" height="6.22" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="27.90" y="8.41" width="3.26" height="3.25" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="31.16" y="9.72" width="3.26" height="1.94" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="34.42" y="10.75" width="3.26" height="0.91" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="37.68" y="11.58" width="3.26" height="0.079" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="40.94" y="11.62" width="3.26" height="0.040" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="44.20" y="11.62" width="3.26" height="0.040" style="stroke-width: 0.38; fill: #000000;"></rect></g>
+</g><defs><clipPath id="cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw"><rect x="0.00" y="2.88" width="48.00" height="9.12"></rect></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw)"><rect x="1.33" y="3.66" width="2.24" height="8.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="3.57" y="3.69" width="2.24" height="7.97" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="5.82" y="3.80" width="2.24" height="7.86" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="8.06" y="3.30" width="2.24" height="8.37" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="10.31" y="4.02" width="2.24" height="7.64" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="12.55" y="4.02" width="2.24" height="7.64" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="14.80" y="3.45" width="2.24" height="8.21" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="17.04" y="4.20" width="2.24" height="7.46" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="19.29" y="3.85" width="2.24" height="7.81" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="21.53" y="3.22" width="2.24" height="8.44" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="23.78" y="3.80" width="2.24" height="7.86" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="26.02" y="3.50" width="2.24" height="8.16" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="28.26" y="3.68" width="2.24" height="7.99" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="30.51" y="3.52" width="2.24" height="8.14" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="32.75" y="3.33" width="2.24" height="8.33" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="35.00" y="3.31" width="2.24" height="8.35" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="37.24" y="3.80" width="2.24" height="7.86" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="39.49" y="3.58" width="2.24" height="8.08" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="41.73" y="3.57" width="2.24" height="8.10" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="43.98" y="3.96" width="2.24" height="7.70" style="stroke-width: 0.38; fill: #000000;"></rect></g>
+</svg>
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+y_0
+</td>
+<td style="text-align:right;">
+10116
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0.0
+</td>
+<td style="text-align:right;">
+1.0
+</td>
+<td style="text-align:right;">
+−3.5
+</td>
+<td style="text-align:right;">
+0.0
+</td>
+<td style="text-align:right;">
+3.5
+</td>
+<td style="text-align:right;">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" class="svglite" width="48.00pt" height="12.00pt" viewBox="0 0 48.00 12.00">
+<defs>
+<style type="text/css">
+.svglite line, .svglite polyline, .svglite polygon, .svglite path, .svglite rect, .svglite circle {
+fill: none;
+stroke: #000000;
+stroke-linecap: round;
+stroke-linejoin: round;
+stroke-miterlimit: 10.00;
+}
+.svglite text {
+white-space: pre;
+}
+</style>
+</defs><rect width="100%" height="100%" style="stroke: none; fill: none;"></rect><defs><clipPath id="cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw"><rect x="0.00" y="0.00" width="48.00" height="12.00"></rect></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw)">
+</g><defs><clipPath id="cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw"><rect x="0.00" y="2.88" width="48.00" height="9.12"></rect></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw)"><rect x="-1.28" y="11.66" width="3.16" height="0.0044" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="1.87" y="11.61" width="3.16" height="0.052" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="5.03" y="11.49" width="3.16" height="0.17" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="8.19" y="10.92" width="3.16" height="0.75" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="11.34" y="9.68" width="3.16" height="1.98" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="14.50" y="7.62" width="3.16" height="4.04" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="17.66" y="5.07" width="3.16" height="6.59" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="20.81" y="3.34" width="3.16" height="8.32" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="23.97" y="3.22" width="3.16" height="8.44" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="27.13" y="4.85" width="3.16" height="6.81" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="30.28" y="7.64" width="3.16" height="4.02" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="33.44" y="9.67" width="3.16" height="1.99" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="36.60" y="10.96" width="3.16" height="0.70" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="39.75" y="11.40" width="3.16" height="0.26" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="42.91" y="11.61" width="3.16" height="0.048" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="46.06" y="11.66" width="3.16" height="0.0044" style="stroke-width: 0.38; fill: #000000;"></rect></g>
 </svg>
 </td>
 </tr>
@@ -3294,25 +3409,25 @@ white-space: pre;
 y_1
 </td>
 <td style="text-align:right;">
-1000
+10116
 </td>
 <td style="text-align:right;">
 0
 </td>
 <td style="text-align:right;">
-0.2
+0.8
 </td>
 <td style="text-align:right;">
-1.0
+1.1
 </td>
 <td style="text-align:right;">
-−3.1
+−3.0
 </td>
 <td style="text-align:right;">
-0.2
+0.8
 </td>
 <td style="text-align:right;">
-3.8
+5.3
 </td>
 <td style="text-align:right;">
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" class="svglite" width="48.00pt" height="12.00pt" viewBox="0 0 48.00 12.00">
@@ -3330,23 +3445,74 @@ white-space: pre;
 }
 </style>
 </defs><rect width="100%" height="100%" style="stroke: none; fill: none;"></rect><defs><clipPath id="cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw"><rect x="0.00" y="0.00" width="48.00" height="12.00"></rect></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw)">
-</g><defs><clipPath id="cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw"><rect x="0.00" y="2.88" width="48.00" height="9.12"></rect></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw)"><rect x="-1.10" y="11.57" width="3.22" height="0.088" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="2.12" y="11.57" width="3.22" height="0.088" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="5.34" y="11.09" width="3.22" height="0.57" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="8.57" y="10.08" width="3.22" height="1.58" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="11.79" y="8.10" width="3.22" height="3.56" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="15.02" y="6.56" width="3.22" height="5.10" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="18.24" y="3.48" width="3.22" height="8.18" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="21.46" y="3.22" width="3.22" height="8.44" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="24.69" y="5.15" width="3.22" height="6.51" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="27.91" y="6.25" width="3.22" height="5.41" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="31.14" y="8.89" width="3.22" height="2.77" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="34.36" y="10.47" width="3.22" height="1.19" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="37.58" y="11.35" width="3.22" height="0.31" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="40.81" y="11.53" width="3.22" height="0.13" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="44.03" y="11.62" width="3.22" height="0.044" style="stroke-width: 0.38; fill: #000000;"></rect></g>
+</g><defs><clipPath id="cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw"><rect x="0.00" y="2.88" width="48.00" height="9.12"></rect></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw)"><rect x="1.62" y="11.61" width="2.69" height="0.054" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="4.31" y="11.44" width="2.69" height="0.23" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="7.01" y="10.95" width="2.69" height="0.71" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="9.70" y="9.91" width="2.69" height="1.76" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="12.40" y="8.14" width="2.69" height="3.53" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="15.09" y="5.73" width="2.69" height="5.93" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="17.78" y="4.01" width="2.69" height="7.65" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="20.48" y="3.22" width="2.69" height="8.44" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="23.17" y="3.62" width="2.69" height="8.04" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="25.87" y="5.56" width="2.69" height="6.10" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="28.56" y="7.87" width="2.69" height="3.79" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="31.26" y="9.74" width="2.69" height="1.92" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="33.95" y="10.74" width="2.69" height="0.92" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="36.64" y="11.31" width="2.69" height="0.35" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="39.34" y="11.52" width="2.69" height="0.15" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="42.03" y="11.63" width="2.69" height="0.029" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="44.73" y="11.65" width="2.69" height="0.0098" style="stroke-width: 0.38; fill: #000000;"></rect></g>
 </svg>
 </td>
 </tr>
 </tbody>
 </table>
-<pre class="r"><code>tau</code></pre>
-<pre><code>## [1] 0.1953862</code></pre>
-<p>Next, we generate the observed data. To do this, we first generate
-the treatment vector <code>z</code>. This operation corresponds to one
-randomized experiment. Furthermore, we calculate the realized outcomes
-from the realized treatment vector and potential outcomes. The resulting
+<p>We also calculate the average treatment effect <code>tau_g</code> in
+each cluster in the sample.</p>
+<pre class="r"><code>tau_g &lt;-
+  outcome_potential %&gt;%
+  dplyr::group_by(g) %&gt;%
+  dplyr::summarise(
+    tau = 
+      mean(
+        y_1 - y_0
+      )
+  ) %&gt;%
+  dplyr::pull(tau)
+
+tau_g</code></pre>
+<pre><code>##   [1]  0.101574668  0.002039474  1.213023727  0.773117738  1.369691583
+##   [6]  1.590797473  1.607915561  0.263939932  1.223844275  0.053168542
+##  [11]  1.587090166  0.571237782  0.918174756  0.825600635  0.754736189
+##  [16]  1.088649299  1.126458196  0.860518498  0.866642407  1.042723198
+##  [21]  0.241890716  0.066733255  0.267929611  1.212721344  1.128297907
+##  [26]  0.820550719  1.067973420  0.193279754  0.269017280  1.171357382
+##  [31]  1.244023226  1.241180513 -0.091438672  2.507565671  0.706139123
+##  [36]  0.240291588  1.009180140  0.563651197 -0.178108353  0.560035914
+##  [41]  0.343315110  0.480742843  2.841424990  1.557100514  0.869533845
+##  [46]  0.913741777  0.613246413  0.554918872  0.078269815  1.330750908
+##  [51]  1.973828144  1.015048980  0.442022632  0.425402926  0.962140533
+##  [56]  0.444499818  1.501133297 -0.025104042  0.344077266  1.455974054
+##  [61]  0.219671604  0.547092852  0.768251627  1.253254507  0.337174548
+##  [66]  0.034241031  0.087653057  0.773899682 -0.083725398  1.118691613
+##  [71]  0.095213207  0.201709381  1.870576388  0.719756370  0.914994143
+##  [76]  2.049243060  0.896403506 -0.008733061  0.390127272  0.401169172
+##  [81]  1.021824552  1.085941989  1.282727769  0.784296958  0.540884270
+##  [86]  1.700433899  0.391150165  0.771928827 -0.099581903  0.698656975
+##  [91]  0.909681493 -0.044618175  1.064411493 -0.083461677  1.600216567
+##  [96]  1.111913973  1.498195240  0.133968918  0.895842033  1.368991466</code></pre>
+<p>The average treatment effect <code>tau</code> in the sample is also
+calculated.</p>
+<pre class="r"><code>tau &lt;-
+  outcome_potential %&gt;%
+  dplyr::summarise(
+    tau = 
+      mean(
+        y_1 - y_0
+      )
+  ) %&gt;%
+  dplyr::pull(tau)
+
+tau</code></pre>
+<pre><code>## [1] 0.7909974</code></pre>
+<p>We also calculate the average treatment effect <code>tau_c</code> in
+the sample.</p>
+<pre class="r"><code>tau_c &lt;- mean(tau_g)
+tau_c</code></pre>
+<pre><code>## [1] 0.7942535</code></pre>
+<p>Next, we generate the observed data. First, we generate the treatment
+vector <code>z</code>. This operation corresponds to one random
+experiment. We then calculate the realized outcomes based on the
+realized treatment vector and potential outcomes. The resulting
 <code>data_realized</code> is the observed data.</p>
 <pre class="r"><code>data_realized &lt;-
-  AppliedEconometricsCode::generate_data_randomized(
+  AppliedEconometricsCode::generate_data_cluster(
     outcome_potential = outcome_potential,
-    N_1 = N_1,
+    G_1 = G_1,
     seed = 1
   )
 data_realized %&gt;%
@@ -3357,6 +3523,9 @@ data_realized %&gt;%
 <thead>
 <tr>
 <th style="text-align:right;">
+g
+</th>
+<th style="text-align:right;">
 z
 </th>
 <th style="text-align:right;">
@@ -3370,15 +3539,10 @@ y
 1
 </td>
 <td style="text-align:right;">
-1.3349651
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-0
+1
 </td>
 <td style="text-align:right;">
-0.1836433
+0.4271008
 </td>
 </tr>
 <tr>
@@ -3386,15 +3550,10 @@ y
 1
 </td>
 <td style="text-align:right;">
--0.6707776
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-0
+1
 </td>
 <td style="text-align:right;">
-1.5952808
+0.4635871
 </td>
 </tr>
 <tr>
@@ -3402,140 +3561,43 @@ y
 1
 </td>
 <td style="text-align:right;">
-0.2693956
+1
+</td>
+<td style="text-align:right;">
+1.6584401
 </td>
 </tr>
 <tr>
 <td style="text-align:right;">
-0
+1
 </td>
 <td style="text-align:right;">
--0.8204684
-</td>
-</tr>
-</tbody>
-</table>
-<pre class="r"><code>data_realized %&gt;%
-  modelsummary::datasummary_skim()</code></pre>
-<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
-<thead>
-<tr>
-<th style="text-align:left;">
-</th>
-<th style="text-align:right;">
-Unique (#)
-</th>
-<th style="text-align:right;">
-Missing (%)
-</th>
-<th style="text-align:right;">
-Mean
-</th>
-<th style="text-align:right;">
-SD
-</th>
-<th style="text-align:right;">
-Min
-</th>
-<th style="text-align:right;">
-Median
-</th>
-<th style="text-align:right;">
-Max
-</th>
-<th style="text-align:right;">
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-z
+1
 </td>
 <td style="text-align:right;">
-2
-</td>
-<td style="text-align:right;">
-0
-</td>
-<td style="text-align:right;">
-0.5
-</td>
-<td style="text-align:right;">
-0.5
-</td>
-<td style="text-align:right;">
-0.0
-</td>
-<td style="text-align:right;">
-0.5
-</td>
-<td style="text-align:right;">
-1.0
-</td>
-<td style="text-align:right;">
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" class="svglite" width="48.00pt" height="12.00pt" viewBox="0 0 48.00 12.00">
-<defs>
-<style type="text/css">
-.svglite line, .svglite polyline, .svglite polygon, .svglite path, .svglite rect, .svglite circle {
-fill: none;
-stroke: #000000;
-stroke-linecap: round;
-stroke-linejoin: round;
-stroke-miterlimit: 10.00;
-}
-.svglite text {
-white-space: pre;
-}
-</style>
-</defs><rect width="100%" height="100%" style="stroke: none; fill: none;"></rect><defs><clipPath id="cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw"><rect x="0.00" y="0.00" width="48.00" height="12.00"></rect></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw)">
-</g><defs><clipPath id="cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw"><rect x="0.00" y="2.88" width="48.00" height="9.12"></rect></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw)"><rect x="1.78" y="3.22" width="4.44" height="8.44" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="6.22" y="11.66" width="4.44" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="10.67" y="11.66" width="4.44" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="15.11" y="11.66" width="4.44" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="19.56" y="11.66" width="4.44" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="24.00" y="11.66" width="4.44" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="28.44" y="11.66" width="4.44" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="32.89" y="11.66" width="4.44" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="37.33" y="11.66" width="4.44" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="41.78" y="3.22" width="4.44" height="8.44" style="stroke-width: 0.38; fill: #000000;"></rect></g>
-</svg>
+-0.2107222
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
-y
+<td style="text-align:right;">
+1
 </td>
 <td style="text-align:right;">
-1000
+1
 </td>
 <td style="text-align:right;">
-0
+1.0671814
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+1
 </td>
 <td style="text-align:right;">
-0.1
+1
 </td>
 <td style="text-align:right;">
-1.0
-</td>
-<td style="text-align:right;">
-−3.1
-</td>
-<td style="text-align:right;">
-0.1
-</td>
-<td style="text-align:right;">
-3.8
-</td>
-<td style="text-align:right;">
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" class="svglite" width="48.00pt" height="12.00pt" viewBox="0 0 48.00 12.00">
-<defs>
-<style type="text/css">
-.svglite line, .svglite polyline, .svglite polygon, .svglite path, .svglite rect, .svglite circle {
-fill: none;
-stroke: #000000;
-stroke-linecap: round;
-stroke-linejoin: round;
-stroke-miterlimit: 10.00;
-}
-.svglite text {
-white-space: pre;
-}
-</style>
-</defs><rect width="100%" height="100%" style="stroke: none; fill: none;"></rect><defs><clipPath id="cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw"><rect x="0.00" y="0.00" width="48.00" height="12.00"></rect></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw)">
-</g><defs><clipPath id="cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw"><rect x="0.00" y="2.88" width="48.00" height="9.12"></rect></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw)"><rect x="-1.10" y="11.58" width="3.22" height="0.083" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="2.12" y="11.41" width="3.22" height="0.25" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="5.34" y="11.04" width="3.22" height="0.62" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="8.57" y="10.42" width="3.22" height="1.24" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="11.79" y="8.14" width="3.22" height="3.52" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="15.02" y="6.74" width="3.22" height="4.93" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="18.24" y="3.22" width="3.22" height="8.44" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="21.46" y="3.92" width="3.22" height="7.74" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="24.69" y="5.37" width="3.22" height="6.29" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="27.91" y="7.48" width="3.22" height="4.18" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="31.14" y="9.05" width="3.22" height="2.61" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="34.36" y="10.59" width="3.22" height="1.08" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="37.58" y="11.41" width="3.22" height="0.25" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="40.81" y="11.54" width="3.22" height="0.12" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="44.03" y="11.62" width="3.22" height="0.041" style="stroke-width: 0.38; fill: #000000;"></rect></g>
-</svg>
+-0.3604636
 </td>
 </tr>
 </tbody>
@@ -3544,58 +3606,399 @@ white-space: pre;
 </div>
 <div id="analysis" class="section level1" number="2">
 <h1><span class="header-section-number">2</span> Analysis</h1>
-<div id="calculating-the-test-statistic" class="section level2" number="2.1">
-<h2><span class="header-section-number">2.1</span> Calculating the test
-statistic</h2>
-<p>We calculate the test statistic based on the observed data. This
-operation will also be repeated in the calculation of the p-value, so we
-will make it a function.</p>
-<pre class="r"><code>t &lt;- 
-  AppliedEconometricsCode::calculate_difference_in_means(
-    data_realized = data_realized
+<div id="estimating-hattau_c-using-the-difference-in-means" class="section level2" number="2.1">
+<h2><span class="header-section-number">2.1</span> Estimating <span class="math inline">\(\hat{\tau}_c\)</span> using the difference in
+means</h2>
+<pre class="r"><code>tau_c_hat &lt;-
+  data_realized %&gt;%
+  dplyr::group_by(g) %&gt;%
+  dplyr::summarise(
+    z = mean(z),
+    y = mean(y)
+    ) %&gt;%
+  dplyr::ungroup() %&gt;%
+  dplyr::summarise(
+    tau = 
+      sum(y * z) / 
+      sum(z) - 
+      sum(y * (1 - z)) / 
+      sum(1 - z)
   )
-t</code></pre>
-<pre><code>## [1] 0.2362761</code></pre>
+tau_c_hat</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["tau"],"name":[1],"type":["dbl"],"align":["right"]}],"data":[{"1":"0.8253962"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
 </div>
 </div>
-<div id="calculating-the-p-value" class="section level1" number="3">
-<h1><span class="header-section-number">3</span> Calculating the
-p-value</h1>
-<p>Next, we calculate the p-value by Monte Carlo simulation. First, we
-create a data frame of potential outcomes that holds under the null
-hypothesis <span class="math inline">\(Y_i^\ast(1)=Y_i^\ast(0)\)</span>,
-and estimate the distribution of the test statistic by re-randomizing
-the treatment vector on that data frame.</p>
-<pre class="r"><code>outcome_potential_null &lt;-
+<div id="calculating-the-standard-error-of-hattau_c-manually" class="section level2" number="2.2">
+<h2><span class="header-section-number">2.2</span> Calculating the
+standard error of <span class="math inline">\(\hat{\tau}_c\)</span>
+manually</h2>
+<pre class="r"><code>tau_c_hat_se &lt;-
+  data_realized %&gt;%
+  dplyr::group_by(g) %&gt;%
+  dplyr::summarise(
+    z = mean(z),
+    y = mean(y)
+    ) %&gt;%
+  dplyr::ungroup() %&gt;%
+  dplyr::group_by(z) %&gt;%
+  dplyr::summarise(
+    G_z = length(y),
+    variance = 
+      sum(
+        (y - mean(y))^2 / 
+        (G_z - 1)
+      )
+  ) %&gt;%
+  dplyr::ungroup() %&gt;%
+  dplyr::summarise(
+    se = 
+      sum(
+        variance / 
+        G_z
+      ) %&gt;% 
+      sqrt()
+  )
+  
+tau_c_hat_se</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["se"],"name":[1],"type":["dbl"],"align":["right"]}],"data":[{"1":"0.0903639"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+<div id="estiamting-hattau_c-using-regression-analysis" class="section level2" number="2.3">
+<h2><span class="header-section-number">2.3</span> Estiamting <span class="math inline">\(\hat{\tau}_c\)</span> using regression
+analysis</h2>
+<pre class="r"><code>tau_c_hat_regression &lt;-
+  data_realized %&gt;%
+  dplyr::group_by(g) %&gt;%
+  dplyr::summarise(
+    z = mean(z),
+    y = mean(y)
+    ) %&gt;%
+  dplyr::ungroup() %&gt;%
+  lm(
+    data = .,
+    formula = y ~ z
+  ) </code></pre>
+</div>
+<div id="the-estimate-of-hattau_c" class="section level2" number="2.4">
+<h2><span class="header-section-number">2.4</span> The estimate of <span class="math inline">\(\hat{\tau}_c\)</span></h2>
+<pre class="r"><code>tau_c_hat_regression %&gt;%
+  modelsummary(
+    fmt = 6
+  )</code></pre>
+<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:center;">
+ (1)
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+(Intercept)
+</td>
+<td style="text-align:center;">
+0.000097
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.063897)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+z
+</td>
+<td style="text-align:center;">
+0.825396
+</td>
+</tr>
+<tr>
+<td style="text-align:left;box-shadow: 0px 1.5px">
+</td>
+<td style="text-align:center;box-shadow: 0px 1.5px">
+(0.090364)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Num.Obs.
+</td>
+<td style="text-align:center;">
+100
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+R2
+</td>
+<td style="text-align:center;">
+0.460
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+R2 Adj.
+</td>
+<td style="text-align:center;">
+0.454
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AIC
+</td>
+<td style="text-align:center;">
+128.9
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BIC
+</td>
+<td style="text-align:center;">
+136.7
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Log.Lik.
+</td>
+<td style="text-align:center;">
+−61.436
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+RMSE
+</td>
+<td style="text-align:center;">
+0.45
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="estimating-hattau-using-the-difference-in-means" class="section level2" number="2.5">
+<h2><span class="header-section-number">2.5</span> Estimating <span class="math inline">\(\hat{\tau}\)</span> using the difference in
+means</h2>
+<pre class="r"><code>tau_hat &lt;-
+  data_realized %&gt;%
+  dplyr::summarise(
+    tau = 
+      sum(y * z) / 
+      sum(z) - 
+      sum(y * (1 - z)) / 
+      sum(1 - z)
+  )
+tau_hat</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["tau"],"name":[1],"type":["dbl"],"align":["right"]}],"data":[{"1":"0.8233537"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+<div id="estimating-hattau-using-regression-analysis" class="section level2" number="2.6">
+<h2><span class="header-section-number">2.6</span> Estimating <span class="math inline">\(\hat{\tau}\)</span> using regression analysis</h2>
+<pre class="r"><code>tau_hat_regression &lt;-
   data_realized %&gt;%
   dplyr::mutate(
-    y_0 = y,
-    y_1 = y
-  )
-
-t_distribution &lt;-
-  1:R %&gt;%
+    z = 
+      z %&gt;%
+      as.integer()
+    ) %&gt;%
+  lm(
+    data = .,
+    formula = y ~ z
+  )</code></pre>
+</div>
+<div id="the-estimate-of-hattau" class="section level2" number="2.7">
+<h2><span class="header-section-number">2.7</span> The estimate of <span class="math inline">\(\hat{\tau}\)</span></h2>
+<pre class="r"><code>tau_hat_regression %&gt;%
+  modelsummary(
+    vcov = ~ g, 
+    fmt = 6
+  )</code></pre>
+<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:center;">
+ (1)
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+(Intercept)
+</td>
+<td style="text-align:center;">
+0.001135
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+(0.016369)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+z
+</td>
+<td style="text-align:center;">
+0.823354
+</td>
+</tr>
+<tr>
+<td style="text-align:left;box-shadow: 0px 1.5px">
+</td>
+<td style="text-align:center;box-shadow: 0px 1.5px">
+(0.091533)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Num.Obs.
+</td>
+<td style="text-align:center;">
+10116
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+R2
+</td>
+<td style="text-align:center;">
+0.126
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+R2 Adj.
+</td>
+<td style="text-align:center;">
+0.126
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AIC
+</td>
+<td style="text-align:center;">
+30362.6
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BIC
+</td>
+<td style="text-align:center;">
+30384.3
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Log.Lik.
+</td>
+<td style="text-align:center;">
+−15178.324
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+RMSE
+</td>
+<td style="text-align:center;">
+1.08
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Std.Errors
+</td>
+<td style="text-align:center;">
+by: g
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="calculating-the-standard-error-of-hattau-manually" class="section level2" number="2.8">
+<h2><span class="header-section-number">2.8</span> Calculating the
+standard error of <span class="math inline">\(\hat{\tau}\)</span>
+manually</h2>
+<pre class="r"><code>se_cluster_robust &lt;-
+  data_realized %&gt;%
+  dplyr::mutate(
+    constant = 1,
+    epsilon = tau_hat_regression$residuals
+  ) 
+  
+term_1 &lt;-
+  se_cluster_robust %&gt;%
+  dplyr::select(
+    constant, 
+    z
+  ) %&gt;%
+  as.matrix()
+term_1 &lt;- 
+  crossprod(
+    term_1, 
+    term_1
+  )</code></pre>
+<pre class="r"><code>term_2 &lt;-
+  se_cluster_robust %&gt;%
+  dplyr::group_split(g) %&gt;%
   purrr::map(
     .,
-    ~ AppliedEconometricsCode::generate_data_randomized(
-        outcome_potential = outcome_potential_null,
-        N_1 = N_1,
-        seed = .
-      ) %&gt;%
-      AppliedEconometricsCode::calculate_difference_in_means()
+    function(df) {
+      df &lt;-
+        df %&gt;%
+        dplyr::mutate(
+          z_epsilon = z * epsilon
+        ) %&gt;%
+        dplyr::select(
+          epsilon, 
+          z_epsilon
+        ) %&gt;%
+        dplyr::summarise_all(sum) %&gt;%
+        as.matrix()
+      df &lt;- 
+        crossprod(
+          df, 
+          df
+        )
+    }
   ) %&gt;%
-  purrr::reduce(c)
-
-pvalue &lt;- 
-  mean(
-    abs(t_distribution) &gt; 
-    abs(t)
-  )
-pvalue</code></pre>
-<pre><code>## [1] 0.001</code></pre>
-<p>The relationship between the distribution of the test statistic and
-the realized test statistic is as follows.</p>
-<p><img src="data:image/png;base64,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" width="672" style="display: block; margin: auto;" /></p>
+  purrr::reduce(`+`)</code></pre>
+<pre class="r"><code>se_cluster_robust &lt;-
+  solve(
+    term_1, 
+    term_2
+  ) %*% 
+  solve(term_1)
+se_cluster_robust %&gt;%
+  diag() %&gt;%
+  sqrt() </code></pre>
+<pre><code>##   constant          z 
+## 0.01628632 0.09106931</code></pre>
+</div>
 </div>
 
 

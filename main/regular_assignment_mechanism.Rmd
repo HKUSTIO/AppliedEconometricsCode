@@ -1,0 +1,246 @@
+---
+title: "Observational Study"
+subtitle: "Regular Assignment Mechanism"
+output: 
+  html_document:
+    css: style_do.css
+    number_sections: yes
+    toc: yes
+    toc_depth: '3'
+    toc_float: yes
+    theme: spacelab #"default", "bootstrap", "cerulean", "cosmo", "darkly", "flatly",
+                 # "journal", "lumen", "paper", "readable", "sandstone", "simplex",
+                 # "spacelab", "united", "yeti"
+    df_print: paged
+    code_folding: show
+#date: '2022-03-30'
+date: 'Last Update: `r Sys.Date()`'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(cache = FALSE, echo = TRUE, fig.align = "center")
+library(foreach)
+library(magrittr)
+library(ggplot2)
+library(kableExtra)
+library(modelsummary)
+color_main <- scales::viridis_pal(option = "C")(1)
+```
+
+Here, we implement methods in the observational study with regular assignment mechanism. We consider the following methods: imputing by a linear regression, using a weighing estimator, using a blocking estimator, and using a matching estimator.
+
+# Generating simulation data
+
+## Setting constants and parameters
+
+First, we set the seed and the number of observations `N`, blocks for the blocking estimator `J`, and neighbors for the matching estimator `M`. We also set the true coefficients.
+
+```{r}
+set.seed(1)
+N <- 1000
+J <- 4
+M <- 1
+beta_t <- c(1, 0.1)
+beta_c <- c(0, 0.05)
+```
+
+## Generating data
+
+We generate the data for the observational study. We generate the covariate `x` from a standard normal distribution and the potential outcomes `y_0` and `y_1` from normal distributions with the true coefficients. 
+
+```{r}
+outcome <-
+  tibble::tibble(
+    x = rnorm(N),
+    y_0 = beta_c[1] + beta_c[2] * x + rnorm(N),
+    y_1 = beta_t[1] + beta_t[2] * x + rnorm(N)
+  )
+head(outcome)
+```
+
+We calculate the average treatment effect in the sample.
+
+```{r}
+tau_fs <- 
+  outcome %>%
+  dplyr::summarise(tau = mean(y_1 - y_0)) %>%
+  dplyr::pull(tau)
+tau_fs
+```
+
+We calculate the propensity score and assign the treatment based on the propensity score. Thus, the assignment mechanisms depends on the covariates.
+
+```{r}
+outcome <-
+  outcome %>%
+  dplyr::mutate(
+    e = exp(x) / (1 + exp(x)),
+    z = (runif(N) < e)
+    )
+head(outcome)
+```
+
+## Check the balance in the covariate
+
+We check the balance in the covariate `x` between the treatment and control groups.
+
+```{r, echo = FALSE, message = FALSE}
+outcome %>%
+  ggplot(
+    aes(
+      x = x,
+      fill = z
+    )
+  ) +
+  geom_histogram() +
+  scale_fill_viridis_d() +
+  theme_classic()
+```
+
+
+```{r}
+outcome_observed <-
+  outcome %>%
+  dplyr::mutate(y = y_0 * (1 - z) + y_1 * z) %>%
+  dplyr::select(y, z, x)
+head(outcome_observed)
+```
+
+# Analysis
+
+## Imputing by a linear regression
+
+We estimate the average treatment effect by imputing the potential outcomes by a linear regression.
+
+```{r}
+result <-
+  lm(
+    data = outcome_observed,
+    formula = y ~ z + z:x 
+  )
+result %>%
+  modelsummary(fmt = 6)
+```
+
+```{r}
+result <-
+  c(
+    y ~ z + z:exp(x),
+    y ~ z + z:x^2,
+    y ~ z + z:(x + x^2)
+  ) %>%
+  purrr::map(
+    .,
+    ~ lm(
+      data = outcome_observed,
+      formula = .
+      )
+  )
+```
+
+
+```{r}
+result %>%
+  modelsummary(fmt = 6)
+```
+
+
+## Using a weighing estimator
+
+We first estimate the propensity score by a correctly specified logistic function.
+
+```{r}
+propensity_score <-
+  glm(
+    data = outcome_observed,
+    formula = z ~ x,
+    family = binomial("logit")
+  )
+propensity_score %>%
+  modelsummary(fmt = 6)
+```
+
+```{r, eval = FALSE}
+outcome_observed <-
+  outcome_observed %>%
+  dplyr::mutate(e = predict(propensity_score, type = "response"))
+outcome_observed %>%
+  ggplot(
+    aes(
+      x = x,
+      y = e
+    )
+  ) +
+  geom_line() +
+  theme_classic()
+```
+
+```{r, echo = FALSE}
+outcome_observed <-
+  outcome_observed %>%
+  dplyr::mutate(e = predict(propensity_score, type = "response"))
+outcome_observed %>%
+  ggplot(
+    aes(
+      x = x,
+      y = e
+    )
+  ) +
+  geom_line() +
+  theme_classic()
+```
+
+```{r}
+outcome_observed %>%
+  dplyr::mutate(weight = (z / e + (1 - z) / (1 - e)) / length(z)) %>%
+  dplyr::summarise(y = sum(z * y * weight) - sum((1 - z) * y * weight)) 
+```
+
+## Using a blocking estimator
+
+```{r}
+blocking_estimator <-
+  outcome_observed %>%
+  dplyr::mutate(j = dplyr::ntile(outcome_observed$e, J)) %>%
+  dplyr::group_by(j) %>%
+  dplyr::summarise(
+    N_j = length(y),
+    y = sum(y * z) / sum(z) - sum(y * (1 - z)) / sum(1 - z)
+    ) %>%
+  dplyr::ungroup()
+blocking_estimator
+```
+
+
+```{r}
+blocking_estimator %>%
+  dplyr::summarise(y = sum(y * N_j) / sum(N_j))
+```
+
+## Using a matching estimator
+
+```{r}
+matched <-
+  MatchIt::matchit(
+    data = outcome_observed,
+    formula = z ~ x,
+    method = "nearest",
+    distance = "glm",
+    ratio = M
+  )
+ matched 
+```
+
+```{r}
+matched_observed <-
+  MatchIt::match.data(matched) 
+matched_observed
+```
+
+```{r}
+matched_observed %>%
+  dplyr::group_by(subclass) %>%
+  dplyr::summarise(y = sum(y * z) - sum(y * (1 - z))) %>%
+  dplyr::ungroup() %>%
+  dplyr::summarise(y = mean(y))
+```

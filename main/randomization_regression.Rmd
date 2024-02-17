@@ -4,7 +4,6 @@ subtitle: "Regression Analysis"
 output: 
   html_document:
     css: style_do.css
-    #以下設定追加
     number_sections: yes
     toc: yes
     toc_depth: '3'
@@ -30,7 +29,7 @@ library(modelsummary)
 color_main <- scales::viridis_pal(option = "C")(1)
 ```
 
-Here we implement the method in "7 Controlling for Covariates and Regression Analysis". The functions called from `AppliedEconometrics` are defined in `R/functions_randomized.R`. First, we generate the potential outcomes of the sample, and then we generate the treatment vector and the realized outcomes. We obtain the estimated average treatment effect by regression analysis based on the realized treatment vector and outcomes. Finally, we calculate the standard error of the estimated effect by both the `sandwich` package and manual calculation.
+Here we implement the method in "7 Controlling for Covariates and Regression Analysis". The functions called from `AppliedEconometricsCode` are defined in `R/functions_randomized.R`. First, we generate the potential outcomes of the sample, and then we generate the treatment vector and the realized outcomes. We obtain the estimated average treatment effect by regression analysis based on the realized treatment vector and outcomes. Finally, we calculate the standard error of the estimated effect by both the `sandwich` package and manual calculation.
 
 # Generating Simulated Data
 
@@ -96,12 +95,12 @@ outcome_potential %>%
 tau
 ```
 
-Next, we generate the observed data. To do this, we first generate the treatment vector `z`. This operation corresponds to a single randomization experiment. Furthermore, we calculate the realized outcomes from the realized treatment vector and potential outcomes.
+Next, we generate the observed data. To do this, we first generate the treatment vector `z`. This operation corresponds to a single randomized experiment. Furthermore, we calculate the realized outcomes from the realized treatment vector and potential outcomes.
 
 
 ```{r}
 data_realized <-
-  AppliedEconometrics::generate_data_randomized(
+  AppliedEconometricsCode::generate_data_randomized(
     outcome_potential = outcome_potential,
     N_1 = N_1,
     seed = 1
