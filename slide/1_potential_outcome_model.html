@@ -3069,21 +3069,18 @@ var loadDeck = function(event) {
   });
 };
 
-if (!window.Shiny) {
-  // If Shiny is loaded, the slide deck is initialized in ioslides template
-
-  if (document.readyState !== "loading" &&
-      document.querySelector('slides') === null) {
-    // if the document is done loading but our element hasn't yet appeared, defer
-    // loading of the deck
-    window.setTimeout(function() {
-      loadDeck(null);
-    }, 0);
-  } else {
-    // still loading the DOM, so wait until it's finished
-    document.addEventListener("DOMContentLoaded", loadDeck);
-  }
+if (document.readyState !== "loading" &&
+    document.querySelector('slides') === null) { 
+  // if the document is done loading but our element hasn't yet appeared, defer
+  // loading of the deck
+  window.setTimeout(function() {
+    loadDeck(null);
+  }, 0);
+} else {
+  // still loading the DOM, so wait until it's finished
+  document.addEventListener("DOMContentLoaded", loadDeck);
 }
+
 
 
 </script>
@@ -4213,12 +4210,12 @@ NA
 </article></slide><slide class=""><hgroup><h2>Observationally equivalent and Identification</h2></hgroup><article  id="observationally-equivalent-and-identification">
 
 <ul>
-<li>Parameter \(\theta\) and \(\tilde{\theta\) are said to be <em>observationally equivalent</em> if there exist information \(\theta\) and \(s(\phi, \theta) \neq \emptyset\) and \(s(\phi, \tilde{\theta}) \neq \emptyset\).
+<li>Parameter \(\theta\) and \(\tilde{\theta}\) are said to be <em>observationally equivalent</em> if there exist information \(\phi\) and \(s(\phi, \theta) \neq \emptyset\) and \(s(\phi, \tilde{\theta}) \neq \emptyset\).
 
 <ul>
 <li>If two parameters are observationally equivalent, both can be consistent with the information to the analysis.</li>
 </ul></li>
-<li>The parameter \(\theta\) is said to be _identified if there is no other parameter \(\tilde{\theta}\) that is observationally equivalent to \(\theta\).</li>
+<li>The parameter \(\theta\) is said to be <em>identified</em> if there is no other parameter \(\tilde{\theta}\) that is observationally equivalent to \(\theta\).</li>
 <li>The parameter space \(\Theta\) is said to be <em>globally identified</em> if every parameter in \(\Theta\) is identified.</li>
 </ul>
 
@@ -4819,11 +4816,6 @@ NA
        window.jQuery(document).on('slideenter', function(e) {
          window.jQuery(e.target).trigger('shown');
       });
-    }
-    if (window.Shiny) {
-      // Initialize slides when this script appears on the page, since it
-      // indicates that the <slides> markup has been fully loaded.
-      window.loadDeck();
     }
   })();
 </script>

@@ -72,7 +72,7 @@ where $fs$ represents being the finite-sample parameter.
 
 - The natural estimator is:
 $$
-\hat{\tau}_{fs} \equiv \overline{Y}_1 - \overline{Y}_0 \equiv \frac{1}{N_1} \sum_{i: W_i = 1} Y_i - \frac{1}{N_0} \sum_{i: W_i = 0} Y_i.
+\hat{\tau}_{fs} \equiv \overline{Y}_1 - \overline{Y}_0 \equiv \frac{1}{N_1} \sum_{i: Z_i = 1} Y_i - \frac{1}{N_0} \sum_{i: Z_i = 0} Y_i.
 $$
 
 - Is this estimator unbiased?
@@ -86,7 +86,7 @@ $$
 $$
 where
 $$
-D_i = W_i - \frac{N_1}{N}.
+D_i = Z_i - \frac{N_1}{N}.
 $$
 - Because $\mathbb{E}(D_i) = 0$, by unconfoundedness, $\mathbb{E}(\hat{\tau}_{fs}) = \tau_{fs}$: unbiased.
 
@@ -105,10 +105,10 @@ $$
 $$
 where:
 $$
-S_0^2 \equiv \frac{1}{N - 1} \sum_{i = 1}^N [Y_i^\ast(0) - \overline{Y}(0)]^2, S_1^2 \equiv \frac{1}{N - 1} \sum_{i = 1}^N [Y_i^\ast(1) - \overline{Y}(1)]^2, 
+S_0^2 \equiv \frac{1}{N - 1} \sum_{i = 1}^N [Y_i^\ast(0) - \overline{Y}^\ast(0)]^2, S_1^2 \equiv \frac{1}{N - 1} \sum_{i = 1}^N [Y_i^\ast(1) - \overline{Y}^\ast(1)]^2, 
 $$
 $$
-S_{10}^2 \equiv \frac{1}{N - 1} \sum_{i = 1}^N \{Y_i^\ast(1) - Y_i^\ast(0) - [\overline{Y}(1) - \overline{Y}(0)]\}^2.
+S_{10}^2 \equiv \frac{1}{N - 1} \sum_{i = 1}^N \{Y_i^\ast(1) - Y_i^\ast(0) - [\overline{Y}^\ast(1) - \overline{Y}^\ast(0)]\}^2.
 $$
 
 ## Estimating the random assignment variance of $\hat{\tau}_{fs}$
@@ -145,7 +145,7 @@ where the probability is for both $\mathbf{W}, \mathbf{Y}^\ast(1)$, and $\mathbf
 
 - With random sampling:
 $$
-\mathbb{E}[\tau_{fs}] = \mathbb{E}[\overline{Y}(1) - \overline{Y}(0)] = \frac{1}{N} \sum_{i = 1}^N \mathbb{E}[Y_i^\ast(1) - Y_i^\ast(0)] = \tau_{sp}.
+\mathbb{E}[\tau_{fs}] = \mathbb{E}[\overline{Y}^\ast(1) - \overline{Y}^\ast(0)] = \frac{1}{N} \sum_{i = 1}^N \mathbb{E}[Y_i^\ast(1) - Y_i^\ast(0)] = \tau_{sp}.
 $$
 - Because $\hat{\tau}_{fs}$ is unbiased for $\tau_{fs}$ by taking expectations due to randomization, further taking the expectation due to sampling shows that $\hat{\tau}_{fs}$ is also unbiased for $\tau_{sp}$.
 

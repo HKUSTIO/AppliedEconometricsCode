@@ -1,0 +1,348 @@
+---
+title: "Regular assignment mechanism"
+author: "Kohei Kawaguchi, Hong Kong University of Science and Technology"
+output: 
+  ioslides_presentation:
+    widescreen: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
+library(foreach)
+library(magrittr)
+library(ggplot2)
+library(modelsummary)
+library(kableExtra)
+```
+
+<style type="text/css">
+div.footnotes {
+  position: absolute;
+  bottom: 0;
+  margin-bottom: 10px;
+  width: 80%;
+  font-size: 10px;
+}
+body, td {
+   font-size: 14px;
+}
+code.r{
+  font-size: 11px;
+}
+pre {
+  font-size: 11px
+}
+blockquote {
+  background: #f9f9f9;
+  border-left: 5px solid #ccc;
+  margin: 1.5em 10px;
+  padding: 0.5em 1.5em;
+}
+</style>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<script>
+$(document).ready(function() {
+  $('slide:not(.backdrop):not(.title-slide)').append('<div class=\"footnotes\">');
+
+  $('footnote').each(function(index) {
+    var text  = $(this).html();
+    var fnNum = (index+1).toString();
+    $(this).html(fnNum.sup());
+
+    var footnote   = fnNum + '. ' + text + '<br/>';
+    var oldContent = $(this).parents('slide').children('div.footnotes').html();
+    var newContent = oldContent + footnote;
+    $(this).parents('slide').children('div.footnotes').html(newContent);
+  });
+});
+</script>
+
+
+# Regular assignment mechanism
+
+## Causal inference for observational studies
+
+- So far, we have considered a situation where the treatment assignment is controlled by an experimenter and the mechanism was known.
+- In observational studies, the mechanism is not known.
+- Nevertheless, we often proceed the analysis assuming that it is a regular assignment mechanism:
+1. Individualistic,
+1. Probabilistic,
+1. Unconfounded.
+
+## Unconfoundedness
+
+- Among three assumptions, unconfoundedness is the most controversial.
+- In the super-population setting, unconfoundedness implies:
+$$
+\mathbb{P}[Z_i = 1| Y_i^\ast(0), Y_i^\ast(1), W_i] = \mathbb{P}[Z_i = 1| W_i] = e(W_i),
+$$
+or:
+$$
+Z_i \perp \!\!\! \perp Y_i^\ast(1), Y_i^\ast(0) | W_i.
+$$
+- This assumption is __not testable__, because it compares the distribution of missing outcomes $Y_i^\ast(1 - Z_i)$ with the distribution of observed outcomes $Y_i^\ast(Z_i)$.
+- Therefore, we need to rely on the background knowledge to justify the assumption: for example, caseworkers assign job training programs according to a known index of observed characteristics.
+
+## Balancing covariate distributions
+
+- In observational studies, the observed covariates can be substantially unbalanced between treated and control units.
+- In the regular assignment mechanism, we can remove all biases in comparisons between treated and control units as long as we adjust for differences in observed covariates.
+- Therefore, the main focus of the analysis using the regular assignment mechanism is how to adjust the covariance distributions.
+
+## Balancing score
+
+- It is easier to balance the covariate distributions if we could reduce the dimensionality of the covariates while maintaining the unconfoundedness.
+- __Definition: Balancing score__
+  - A balancing score $b(w)$ is a function of the covariates such that:
+  $$
+  Z_i \perp \!\!\! \perp W_i | b(W_i).
+  $$
+- There can be multiple balancing scores including $W_i$ itself.
+
+
+## Propensity score is a balancing score
+
+- We can show that the propensity score is a balancing score.
+- First, we have:
+$$
+\mathbb{P}[Z_i = 1| W_i, e(W_i)] = \mathbb{P}[Z_i = 1| W_i] = e(W_i).
+$$
+- Second, we have:
+$$
+\begin{split}
+\mathbb{P}[Z_i = 1| e(W_i)] 
+&= \mathbb{E}[Z_i|e(W_i)]\\
+&= \mathbb{E}[\mathbb{E}[Z_i | W_i, e(W_i)] | e(W_i)]\\
+&= \mathbb{E}[e(W_i)| e(W_i)]\\
+&= e(W_i).
+\end{split}
+$$
+- Therefore:
+$$
+\mathbb{P}[Z_i = 1| W_i, e(W_i)] = \mathbb{P}[Z_i = 1| e(W_i)].
+$$
+
+
+## Balancing score maintains unconfoundedness
+
+- __Lemma: Unconfoundedness given a balancing score__
+  - In a regular assignment mechanism, the assignment is unconfounded given any balancing score:
+  $$
+  Z_i \perp \!\!\! \perp Y_i^\ast(0), Y_i^\ast(1) | b(W_i).
+  $$
+$$
+\begin{split}
+&\mathbb{P}[Z_i = 1 | Y_i^\ast(0), Y_i^\ast(1), b(W_i)]\\
+&= \mathbb{E}[Z_i | Y_i^\ast(0), Y_i^\ast(1), b(W_i)]\\
+&= \mathbb{E}[\mathbb{E}[Z_i | Y_i^\ast(0), Y_i^\ast(1), W_i, b(W_i)] | Y_i^\ast(0), Y_i^\ast(1), b(W_i)]\\
+&= \mathbb{E}[\mathbb{E}[Z_i | W_i, b(W_i)] | Y_i^\ast(0), Y_i^\ast(1), b(W_i)] \text{   by unconfoundedness}\\
+&= \mathbb{E}[\mathbb{E}[Z_i | b(W_i)] | Y_i^\ast(0), Y_i^\ast(1), b(W_i)] \text{   by balancing score}\\
+&= \mathbb{E}[Z_i | b(W_i)] \\
+&= \mathbb{P}[Z_i = 1 | b(W_i)].
+\end{split}
+$$
+
+
+## Adjusting balancing score is sufficient
+
+- The previous lemma implies that it is sufficient for removing biases associated with differences in the covariates to adjust the difference in the balancing scores.
+- Because the propensity score is a balancing score, it is sufficient for adjusting the differences in the propensity scores.
+
+## Propensity score is the coarsest balancing score
+
+- __Lemma: Coarseness of balancing score__
+  - The propensity score is the coarsest balancing score. That is, the propensity score is a function of every balansing score.
+  
+- Suppose not. Then, there is a balancing score $b(w)$ and values $x, x'$ such that $b(w) = b(w')$ but $e(w) \neq e(w')$.
+- Then, we have:
+$$
+\mathbb{P}(Z_i = 1| W_i = w) = e(w) \neq e(w') = \mathbb{P}(Z_i = 1| W_i = w'). 
+$$
+- Then, $Z_i$ and $W_i$ are not independent on $b(w) = b(w')$.
+
+# Estimation and inference
+
+## Estimands
+
+- The super-population average tretment effect:
+$$
+\tau_{sp} \equiv \mathbb{E}[Y_i^\ast(1) - Y_i^\ast(0)] = \mathbb{E}[\tau_{sp}(W_i)],
+$$
+where $\tau_{sp}$ is:
+$$
+\tau_{sp}(W_i) \equiv \mu_1(w) - \mu_0(x) = \mathbb{E}[Y_i^\ast(1) - Y_i^\ast(0) | W_i = w].
+$$
+
+## Estimands
+
+- The finite-sample average treatment effect:
+$$
+\tau_{fs} \equiv \frac{1}{N} \sum_{i = 1}^N[Y_i^\ast(1) - Y_i^\ast(0)].
+$$
+- It is sometimes useful to estimate the conditional average treatment effect on the value of the pretreatment variables in the finite sample:
+$$
+\tau_{cond} \equiv \frac{1}{N} \sum \tau_{sp}(W_i).
+$$
+
+
+## Efficiency bound
+
+- The asymptotic sampling variance of any estimator to $\tau_{sp}$ cannot be smaller than:
+$$
+\mathbb{V}_{sp}^{eff} \equiv \mathbb{E}\Big[ \frac{\sigma_0^2(W_i)}{1 - e(W_i)} + \frac{\sigma_1^2(W_i)}{e(W_i)} + [\tau_{sp}(W_i) - \tau_{sp}]^2 \Big].
+$$
+- The first two terms get bigger as the propensity scores are unbalanced.
+- The third term gets bigger as the treatment effects are heterogeneous across the values of the covariates.
+
+## Efficiency bound
+
+- The asymptotic sampling variance of any estimator to $\tau_{cond}$ cannot be smaller than:
+$$
+\mathbb{V}_{cond}^{eff} \equiv \mathbb{E}\Big[ \frac{\sigma_0^2(W_i)}{1 - e(W_i)} + \frac{\sigma_1^2(W_i)}{e(W_i)}\Big].
+$$
+- The first two terms get bigger as the propensity scores are unbalanced.
+- The term $[\tau_{sp}(W_i) - \tau_{sp}]^2$ does not show up here.
+
+## Estimation strategies
+
+- Model-based imputation: Imputing the missing potential outcomes by a model such as a linear regression function.
+- Weighting estimator: Estimating the propensity score and then estimating the treatment effect as if a randomized experiment.
+- Blocking estimator: Estimating the propensity score and then estimating the treatment effect as if a stratified randomized experiment.
+- Matching estimator: Find a pair of treated and control units with a similar set of covariates.
+
+## Model-based imputation
+
+- It is common in Economics to assume:
+$$
+Y_i^{obs} = \tau \cdot Z_i + Z_i \cdot W_i \beta_1 + (1 - Z_i) \cdot W_i \beta_0 + \epsilon_i,
+$$
+and estiamte the super-population or finite-sample averaget treatment effect by:
+$$
+\hat{\tau}_{ols} = \frac{1}{N} \sum_{i = 1}^N[Z_i \cdot (Y_i^{obs} - W_i \hat{\beta}_{0, ols}) + (1 - Z_i) \cdot (W_i \hat{\beta}_{1, ols} - Y_i^{obs})].
+$$
+- The estimator is inaccurate when the covariates are unbalanced, because:
+$$
+Y_i^{obs} - W_i \hat{\beta}_{0, ols} = \overline{Y}_1^{obs} - \overline{Y}_0^{obs} - (\overline{W}_1 - \overline{W}_0) \hat{\beta}_{0, ols},
+$$
+$$
+W_i \hat{\beta}_{1, ols} - Y_i^{obs} = \overline{Y}_1^{obs} - \overline{Y}_0^{obs} - (\overline{W}_1 - \overline{W}_0) \hat{\beta}_{1, ols}.
+$$
+
+
+## Weighting estimator
+
+- Under the unconfoundedness, we have:
+$$
+\begin{split}
+\mathbb{E}\Bigg[ \frac{Y_i^{obs} \cdot Z_i}{e(W_i)} \Bigg] 
+&= \mathbb{E}\Bigg[ \mathbb{E}\Bigg[ \frac{Y_i^{obs} \cdot Z_i}{e(W_i)} \Bigg | W_i \Bigg] \Bigg]\\
+&= \mathbb{E}\Bigg[ \mathbb{E}\Bigg[ \frac{Y_i^\ast(1) \cdot Z_i}{e(W_i)} \Bigg | W_i \Bigg] \Bigg]\\
+&= \mathbb{E}\Bigg[  \frac{\mathbb{E}[Y_i^\ast(1) | W_i] \cdot \mathbb{E}[Z_i | W_i]}{e(W_i)}  \Bigg]\\
+&= \mathbb{E}[  \mathbb{E}[Y_i^\ast(1) | W_i] ]\\
+&= \mathbb{E}[Y_i^\ast(1)].
+\end{split}
+$$
+
+
+## Weighting estimator
+
+- Similarly, we have:
+$$
+\mathbb{E}\Bigg[ \frac{Y_i^{obs} \cdot (1 - Z_i)}{1 - e(W_i)} \Bigg] = \mathbb{E}[Y_i^\ast(0)].
+$$
+- Then, we can estiamte $\tau_{sp}$ by:
+$$
+\begin{split}
+\hat{\tau}_{weight} &\equiv \frac{1}{N} \sum_{i = 1}^N \frac{Z_i \cdot Y_i^{obs}}{\hat{e}(W_i)} - \frac{1}{N} \sum_{i = 1}^N \frac{(1 - Z_i) \cdot Y_i^{obs}}{1 - \hat{e}(W_i)}.
+\end{split}
+$$
+- This is againg imprecise when the covariance distribution is unbalanced, i.e. either $\hat{e}(W_i)$ or $1 - \hat{e}(W_i)$ is close to zero.
+
+
+## BLocking estimator
+
+- To avoid extreme valeus in the propensity score, one may stratify samples according to the value of the propensity score: For $j = 0, 1, \cdots, J$, $b_0 = 0 \le \cdots \le b_j \le \cdots \le b_J = 1$, let $B_i(j)$ be a binary indicator of $b_{j - 1} < \hat{e}(W_i) \le b_j$.
+- Then, define the strata-level treatment effect:
+$$
+\hat{\tau}^{diff}(j) \equiv \frac{\sum_{i: B_i(j) = 1} Y_i \cdot Z_i}{\sum_{i: B_i(j) = 1} Z_i} - \frac{\sum_{i: B_i(j) = 0} Y_i \cdot (1 - Z_i)}{\sum_{i: B_i(j) = 0} (1 - Z_i)},
+$$
+to construct:
+$$
+\hat{\tau}^{diff} \equiv \sum_{j = 1} \frac{N(j)}{N} \hat{\tau}^{diff}(j).
+$$
+
+## Matching estimator
+
+- Define some metric on the space of covariates and let $M(i) \subset \{1, \cdots, N\}$ be the $M$-nearest units of $i$ in the opposite group of $i$.
+- Then, define:
+$$
+\hat{Y}_i(0) = (1 - Z_i) \cdot Y_i^{obs} + Z_i \cdot \frac{1}{M} \sum_{j \in M(i)} Y_j,
+$$
+$$
+\hat{Y}_i(1) = Z_i \cdot Y_i^{obs} + (1 - Z_i) \cdot \frac{1}{M} \sum_{j \in M(i)} Y_j,
+$$
+and construct:
+$$
+\hat{\tau}_{matching} \equiv \frac{1}{N} \sum_{i = 1}^N [\hat{Y}_i(1) - \hat{Y}_i(0)].
+$$
+
+
+# Assessing unconfoundedness
+
+## Seeking supporting evidence for unconfoundedness
+
+- The unconfoundedness assumption is not testable. 
+- Giving up testing it, we try to estimate _pseudo_-causal estimands with a priori known values, which are typically zero, under assumptions more restrictive than unconfoundedness.
+- If these analyses suggest the null hypothesis does not hold, then the unconfoundedness assumption will be viewed less plausible.
+- If the unconfoundedness assumption is less plausible, we should conclude that it is not possible to estimate credibly and precisly the causal effects of interest.
+
+## Estimating effects on pseudo-outcomes
+
+- One approachs is to test the __pseudo-outcome unconfoundedness__:
+$$
+Z_i \perp \!\!\! \perp W_i^p | W_i^r,
+$$
+for a partition of the covariates $W_i = (W_i^p, W_i^r)$.
+- Testing this property makes sense if a stronger version of unconfoundedness, __subset unconfoundedness__ , is supposed to hold
+$$
+Z_i \perp \!\!\! \perp (Y_i^\ast(1), Y_i^\ast(0)) | W_i^r.
+$$
+and $W_i^p$ is considered to be the proxiy to the potential outcome, such as the lagged outcomes.
+- This is a design-stage method because the observation of the outcomes is not required.
+
+## Estimating effects of pseudo-treatments
+
+- Suppose that the assignment was such that there was 1 treatment group and 2 control groups.
+$$
+Z_i =
+\begin{cases}
+1 &\text{   if   } G_i = t\\
+0 &\text{   if   } G_i = c_1, c_2.
+\end{cases}
+$$
+- Moreover, suppose that a stronger version of unconfoundedness, __group unconfoundedness__, is supposed to hold:
+$$
+G_i \perp \!\!\! \perp Y_i^\ast(0), Y_i^\ast(1) | W_i,
+$$
+which has a testable implication:
+$$
+G_i \perp \!\!\! \perp Y_i^\ast(0) | W_i, G_i \in \{c_1, c_2\} \Leftrightarrow
+G_i \perp \!\!\! \perp Y_i^{obs} | W_i, G_i \in \{c_1, c_2\}.
+$$
+
+## Robustness to the pretreatment variables
+
+- Again assume __subset unconfoundedness__:
+$$
+Z_i \perp \!\!\! \perp (Y_i^\ast(1), Y_i^\ast(0)) | W_i^r,
+$$
+for a partition of the covariates $W_i = (W_i^p, W_i^r)$.
+- Then, the estimated treatment effect should be robust to the inclusion of $W_i^p$.
+
+## Reference
+
+- Chapter 12-13, Guido W. Imbens and Donald B. Rubin, 2015, Causal Inference for Statistics, Social, and Biomedical Sciences, Cambridge University Press.
+
+

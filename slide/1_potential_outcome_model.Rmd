@@ -553,9 +553,9 @@ $$
 
 ## Observationally equivalent and Identification
 
-- Parameter $\theta$ and $\tilde{\theta$ are said to be _observationally equivalent_ if there exist information $\theta$ and $s(\phi, \theta) \neq \emptyset$ and $s(\phi, \tilde{\theta}) \neq \emptyset$.
+- Parameter $\theta$ and $\tilde{\theta}$ are said to be _observationally equivalent_ if there exist information $\phi$ and $s(\phi, \theta) \neq \emptyset$ and $s(\phi, \tilde{\theta}) \neq \emptyset$.
   - If two parameters are observationally equivalent, both can be consistent with the information to the analysis.
-- The parameter $\theta$ is said to be _identified if there is no other parameter $\tilde{\theta}$ that is observationally equivalent to $\theta$.
+- The parameter $\theta$ is said to be _identified_ if there is no other parameter $\tilde{\theta}$ that is observationally equivalent to $\theta$.
 - The parameter space $\Theta$ is said to be _globally identified_ if every parameter in $\Theta$ is identified.
 
 ## Example
