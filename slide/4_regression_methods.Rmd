@@ -98,13 +98,13 @@ which is the expected value of the unit-level treatment effects under the distri
 
 - For each covariate value $w$;
 $$
-\mu_0(x) \equiv \mathbb{E}[Y_i^\ast(0)|W_i = w], \mu_1 \equiv \mathbb{E}[Y_i^\ast(1) | W_i = w],
+\mu_0(w) \equiv \mathbb{E}[Y_i^\ast(0)|W_i = w], \mu_1 \equiv \mathbb{E}[Y_i^\ast(1) | W_i = w],
 $$
 $$
-\sigma_0^2(x) \equiv \mathbb{V}_0[Y_i^\ast(0)|W_i = w], \sigma_1^2 \equiv \mathbb{V}[Y_i^\ast(1)|W_i = w],
+\sigma_0^2(w) \equiv \mathbb{V}_0[Y_i^\ast(0)|W_i = w], \sigma_1^2 \equiv \mathbb{V}[Y_i^\ast(1)|W_i = w],
 $$
 $$
-\tau(x) \equiv \mathbb{E}[Y_i^\ast(1) - Y_i^\ast(0)| W_i = w], \sigma_{10}^2(x) \equiv \mathbb{V}[Y_i^\ast(1) - Y_i^\ast(0)| W_i = w].
+\tau(w) \equiv \mathbb{E}[Y_i^\ast(1) - Y_i^\ast(0)| W_i = w], \sigma_{10}^2(w) \equiv \mathbb{V}[Y_i^\ast(1) - Y_i^\ast(0)| W_i = w].
 $$
 - Marginally:
 $$
@@ -133,9 +133,9 @@ $$
 $$
 Y_i \equiv \alpha + \tau \cdot Z_i + \epsilon_i.
 $$
-- Remark that this linear regression function is correctly specified without loss of generality, because we can set:
+- Remark that this linear regression function is _correctly specified_ without loss of generality, because we can set:
 $$
-\alpha = \mu_{c}, \tau = \tau_{sp}, \epsilon_i = Y_i^\ast(0) - \mu_0 + Z_i \cdot [Y_i^\ast(1) - Y_i^\ast(0) - \tau_{sp}]. 
+\alpha = \mu_0, \tau = \tau_{sp}, \epsilon_i = Y_i^\ast(0) - \mu_0 + Z_i \cdot [Y_i^\ast(1) - Y_i^\ast(0) - \tau_{sp}]. 
 $$
 
 ## Define ols estimator of $\tau$
@@ -172,7 +172,7 @@ $$
 $$
 \epsilon_i \equiv Y_i^\ast(0) - \mu_0 + Z_i \cdot [Y_i^\ast(1) - Y_i^\ast(0) - \tau_{sp}].
 $$
-- In other words, can we derive $\mathbb{E}(\epsilon_i | Z_i = z) = 0$ for $w = 0, 1$ from random sampling and random assignment?
+- In other words, can we derive the conditional mean zero property $\mathbb{E}[\epsilon_i | Z_i = z] = 0$ for $w = 0, 1$ from random sampling and random assignment?
 
 ## Showing conditional mean zero
 
@@ -223,7 +223,10 @@ $$
 $$
 Y_i \equiv \alpha + \tau \cdot Z_i + W_i \beta + \epsilon_i.
 $$
-- We _do not_ assume that the conditional mean of $Y_i$ is actually linear in $Z_i$ and $W_i$.
+- The model can be _misspecified_: We _do not_ assume that the conditional mean of $Y_i$ is actually linear in $Z_i$ and $W_i$.
+$$
+\mathbb{E}[Y_i|Z_i, W_i] \neq  \alpha + \tau \cdot Z_i + W_i \beta.
+$$
 - We are interested in $\tau$ but _not_ in the nuisance parameters $\alpha$ and $\beta$.
 
 
@@ -235,32 +238,102 @@ $$
 $$
 - Define the super-population values as:
 $$
-(\hat{\tau}^*, \hat{\alpha}^*, \hat{\beta}^*) \equiv \text{argmin}_{\tau, \alpha, \beta} \mathbb{E}(Y_i - \alpha - \tau \cdot Z_i - W_i \beta)^2.
+(\tau^\ast, \alpha^\ast, \beta^\ast) \equiv \text{argmin}_{\tau, \alpha, \beta} \mathbb{E}(Y_i - \alpha - \tau \cdot Z_i - W_i \beta)^2.
 $$
 
 
 ## Consistency of $\hat{\tau}_{ols}$
 
 - If $W_i \beta$ is included, $\hat{\tau}_{ols}$ is no longer unbiased for $\tau_{sp}$ in the finite sample.
-- In the large sample, $\hat{\tau}_{ols}$ converges to $\tau^*$ as shown in the basic econometrics.
-- Moreover, we can show $\tau^* = \tau_{sp}$. 
+- In the large sample, $\hat{\tau}_{ols}$ converges to $\tau^\ast$ as shown in the basic econometrics.
+- Moreover, we can show $\tau^\ast = \tau_{sp}$. 
 - Therefore, in the large sample, $\hat{\tau}_{ols}$ is unbiased for $\tau_{sp}$.
 - Intuition:
   - In the large sample, $\hat{\tau}_{ols}$ is unbiased for $\tau_{sp}$, because in the large sample, the correlation between $Z_i$ and $W_i$ is zero because of the random assignment.
   - In the finite sample, however, the correlation between $Z_i$ and $W_i$ can be non-zero.
+- If $Z_i$ is not randomly assigned, the consistency may fail because of the misspecification.
+
+## Proof of $\tau^\ast = \tau_{sp}$
+
+- Consider the limiting objective function:
+$$
+\begin{split}
+Q(\tau, \alpha, \beta) &\equiv \mathbb{E}[(Y_i - \alpha - \tau \cdot Z_i - W_i \beta)^2]\\
+&= \mathbb{E}[(Y_i - \tilde{\alpha} - \tau \cdot Z_i - (W_i - \mu_W) \beta)^2]\\
+&= \mathbb{E}[(Y_i - \tilde{\alpha} - \tau \cdot Z_i)^2] + \mathbb{E}[(W_i - \mu_W)^2 \beta^2]\\
+&-2 \mathbb{E}[ (W_i - \mu_W) \beta \cdot (Y_i - \tilde{\alpha} - \tau \cdot Z_i)],
+\end{split}
+$$
+with
+$$
+\tilde{\alpha} \equiv \alpha + \mu_W \beta.
+$$
+  
+##  Proof of $\tau^\ast = \tau_{sp}$
+
+- This reduces to
+
+$$
+\begin{split}
+Q(\tau, \alpha, \beta) &= \mathbb{E}[(Y_i - \tilde{\alpha} - \tau \cdot Z_i)^2] + \mathbb{E}[(W_i - \mu_W)^2 \beta^2]\\
+&-2 \mathbb{E}[ (W_i - \mu_W) \beta \cdot Y_i]
+\end{split}
+$$
+because of
+$$
+\mathbb{E}[(W_i - \mu_W) \beta] = 0,
+$$
+and
+$$
+\mathbb{E}[(W_i - \mu_W) \beta \cdot \tau Z_i] =\mathbb{E}[(W_i - \mu_W) \beta] \cdot \mathbb{E}[\tau Z_i] = 0,
+$$
+if $W_i$ and $Z_i$ are independent.
+
+## Independence and Conditionally Mean Zero
+
+- The argument so far is robust to the misscpefification.
+- The independence of $Z_i$ and $W_i$ is the key.
+- We often assume the conditionally mean zero in a regression analysis:
+$$
+\mathbb{E}\{\epsilon_i|Z_i, W_i\} = 0,
+$$
+with a true model $f$.
+$$
+\epsilon_i = Y_i - f(Z_i, W_i).
+$$
+- With this assumption, we cannot make $\mathbb{E}[(W_i - \mu_W) \beta \cdot \tau Z_i]$ zero.
+
+
+## Proof of $\tau^\ast = \tau_{sp}$
+
+- The only term in the limiting objective function that depends on $\tilde{\alpha}$ and $\tau$ is:
+$$
+\mathbb{E}[(Y_i - \alpha - \tau \cdot Z_i)^2],
+$$
+which leads to the solution:
+$$
+\tilde{\alpha}^\ast = \mathbb{E}[Y_i|Z_i = 0] = \mathbb{E}[Y_i(0)|Z_i = 0] = \mu_0,
+$$
+$$
+\begin{split}
+\tau^\ast &= \mathbb{E}[Y_i|Z_i = 1] - \mathbb{E}[Y_i|Z_i = 0]\\
+&= \mathbb{E}[Y_i^\ast(1)|Z_i = 1] - \mathbb{E}[Y_i^\ast(0)|Z_i = 0]\\
+&= \tau_{sp}.
+\end{split}
+$$
   
 ## Asymptotic normality of $\hat{\tau}_{ols}$
 
 - __Theorem__:
   - Suppose we conduct a completely randomized experiment in a sample drawn at random from an infinite population. Then:
-  1. $\tau^* = \tau_{sp}$.
+  1. $\tau^\ast = \tau_{sp}$.
   1. $\hat{\tau}_{ols}$ is asymptotically normal centered at $\tau_{sp}$, i.e.:
   $$
   \sqrt{N} \cdot (\hat{\tau}_{ols} - \tau_{sp}) \xrightarrow{d} N(0, V),
   $$ 
   where:
   $$
-  V \equiv \frac{\mathbb{E}[(Z_i - p)^2 \cdot (Y_i - \alpha^* - \tau_{sp} \cdot Z_i - W_i \cdot \beta^*)^2]}{p^2 \cdot (1 - p)^2}.
+  V \equiv \frac{\mathbb{E}[(Z_i - p)^2 \cdot (Y_i - \alpha^\ast - \tau_{sp} \cdot Z_i - W_i \cdot \beta^\ast)^2]}{p^2 \cdot (1 - p)^2}.
   $$
   
 ## Heteroskedasticity robust sampling variance estimator of $\hat{\tau}_{ols}$
@@ -293,14 +366,14 @@ $$
 \scriptsize
 (\hat{\tau}_{ols}, \hat{\alpha}_{ols}, \hat{\beta}_{ols}, \hat{\gamma}_{ols}) \equiv \text{argmin}_{\tau, \alpha, \beta, \gamma} \sum_{i = 1}^N [Y_i - \alpha - \tau \cdot Z_i - W_i \beta - Z_i \cdot (W_i - \overline{W}) \gamma]^2.
 $$
-- Define $\tau^*, \alpha^*, \beta^*$, and $\gamma^*$ as their super-population counterparts.
+- Define $\tau^\ast, \alpha^\ast, \beta^\ast$, and $\gamma^\ast$ as their super-population counterparts.
 
 
 ## Consistency of $\hat{\tau}_{ols}$
 
 - $\hat{\tau}_{ols}$ is no longer unbiased for $\tau_{sp}$ in the finite sample.
-- In the large sample, $\hat{\tau}_{ols}$ converges to $\tau^*$ as shown in the basic econometrics.
-- Moreover, we can show $\tau^* = \tau_{sp}$. 
+- In the large sample, $\hat{\tau}_{ols}$ converges to $\tau^\ast$ as shown in the basic econometrics.
+- Moreover, we can show $\tau^\ast = \tau_{sp}$. 
 - Therefore, in the large sample, $\hat{\tau}_{ols}$ is unbiased for $\tau_{sp}$.
 - Intuition:
   - In the large sample, $\hat{\tau}_{ols}$ is unbiased for $\tau_{sp}$, because in the large sample, the correlation between $Z_i$ and $W_i$ is zero because of the random assignment.
@@ -310,7 +383,7 @@ $$
 
 - __Theorem__:
   - Suppose we conduct a completely randomized experiment in a sample drawn at random from an infinite population. Then:
-  1. $\tau^* = \tau_{sp}$.
+  1. $\tau^\ast = \tau_{sp}$.
   1. $\hat{\tau}_{ols}$ is asymptotically normal centered at $\tau_{sp}$, i.e.:
   $$
   \sqrt{N} \cdot (\hat{\tau}_{ols} - \tau_{sp}) \xrightarrow{d} N(0, V),
@@ -318,7 +391,7 @@ $$
   where:
   $$
   \scriptsize
-  V \equiv \frac{\mathbb{E}[(Z_i - p)^2 \cdot (Y_i - \alpha^* - \tau_{sp} \cdot Z_i - W_i \cdot \beta^* - Z_i \cdot (W_i - \mu_W) \gamma^*)^2]}{p^2 \cdot (1 - p)^2}.
+  V \equiv \frac{\mathbb{E}[(Z_i - p)^2 \cdot (Y_i - \alpha^\ast - \tau_{sp} \cdot Z_i - W_i \cdot \beta^\ast - Z_i \cdot (W_i - \mu_W) \gamma^\ast)^2]}{p^2 \cdot (1 - p)^2}.
   $$
   
 ## Heteroskedasticity robust sampling variance estimator of $\hat{\tau}_{ols}$
@@ -347,7 +420,7 @@ $$
 where $\widehat{V}_\gamma$ is the sampling variance estimator for $\hat{\gamma}_{ols}$.
 - __Theorem__:
   - Suppose we conduct a completely randomized experiment in a random sample from an infinite population. If $Y_i^\ast(1) - Y_i^\ast(0) = \tau$ for some value $\tau$ and all units, then:
-  1. $\gamma^* = 0$.
+  1. $\gamma^\ast = 0$.
   1. $Q \xrightarrow{d} \chi(\text{dim}(W_i))$.
  
 ## Reference

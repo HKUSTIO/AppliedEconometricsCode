@@ -1,0 +1,192 @@
+---
+title: "Clusterd randomized experiments"
+author: "Kohei Kawaguchi, Hong Kong University of Science and Technology"
+output: 
+  ioslides_presentation:
+    widescreen: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
+library(foreach)
+library(magrittr)
+library(ggplot2)
+library(modelsummary)
+library(kableExtra)
+```
+
+<style type="text/css">
+div.footnotes {
+  position: absolute;
+  bottom: 0;
+  margin-bottom: 10px;
+  width: 80%;
+  font-size: 10px;
+}
+body, td {
+   font-size: 14px;
+}
+code.r{
+  font-size: 11px;
+}
+pre {
+  font-size: 11px
+}
+blockquote {
+  background: #f9f9f9;
+  border-left: 5px solid #ccc;
+  margin: 1.5em 10px;
+  padding: 0.5em 1.5em;
+}
+</style>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<script>
+$(document).ready(function() {
+  $('slide:not(.backdrop):not(.title-slide)').append('<div class=\"footnotes\">');
+
+  $('footnote').each(function(index) {
+    var text  = $(this).html();
+    var fnNum = (index+1).toString();
+    $(this).html(fnNum.sup());
+
+    var footnote   = fnNum + '. ' + text + '<br/>';
+    var oldContent = $(this).parents('slide').children('div.footnotes').html();
+    var newContent = oldContent + footnote;
+    $(this).parents('slide').children('div.footnotes').html(newContent);
+  });
+});
+</script>
+
+
+# Clustered random experiments
+
+## Treatment assignment mechanism
+
+- First partition the population on the basis of covariate values into $G$ strata, i.e. if the covariate space is $\mathbb{W}$, partition $\mathbb{W}$ into $\mathbb{W}_1, \cdots, \mathbb{W}_G$, so that $\bigcup_g \mathbb{W}_g = \mathbb{W}$ and $\mathbb{W}_g \cap \mathbb{W}_{g'} = \emptyset$ if $g \neq g'$.
+- Let $G_{ig} = 1_{W_i \in \mathbf{W}_g}$ and $N_g$ be the number of units in cluster $g$.
+- Let $G_t$ be the number of clusters to treat.
+- Let $\overline{Z}_g \equiv 1/N_g \sum_{i: G_{ig} = 1} Z_i$.
+- The assignment probability is:
+$$
+\mathbb{P}[\mathbf{Z}|\mathbf{W}, \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0)] = 
+\begin{pmatrix}
+G \\
+G_t
+\end{pmatrix}^{-1},
+$$
+if $\forall g, \overline{Z}_g = \{0, 1\}, \sum_{g = 1}^G \overline{Z}_g = G_t$ and $0$ otherwise.
+
+## Motivations for clustered randomized experiments
+
+- The clusters may be villages, states, and other geographical entities.
+- Given a fixed sample size, this design is in general not as efficient as completely randomized or stratified randomized experiment.
+- One motivation is that there may be interference between units in the same cluster but not across different clusters.
+- Another motivation is the convenience and practical limitations. 
+
+## Estimands
+
+- The finite-sample average treatment effect:
+$$
+\tau_{fs} \equiv \frac{1}{N} \sum_{i = 1}^N [Y_i^\ast(1) - Y_i^\ast(0)].
+$$
+- The unweighted average of the within-cluster average effects.
+$$
+\tau_C \equiv \frac{1}{G} \sum_{g = 1}^G \tau_g, \tau_g \equiv \frac{1}{N_g} \sum_{i: G_{ig} = 1} [Y_i^\ast(1) - Y_i^\ast(0)].
+$$
+
+## Choice of estimands
+
+- $\tau_{fs}$ is usually more relevant for policies.
+- However, $\tau_{C}$ is easier to analyze: Once we aggregate the data at the cluster level, we can use the inference methods for completely randomized experiments by regarding the clusters as the units.
+- Moreover, the estimates of $\tau_C$ is often more precise than that of $\tau_{fs}$ by a clustered randomized experiment.
+
+
+
+## Estimate $\tau_C$
+
+- We can use the inference methods for completely randomized experiments.
+- The estimator is:
+$$
+\hat{\tau}_C \equiv \frac{1}{G_t} \sum_{g: \overline{Z}_g = 1} \overline{Y}_g^{obs} - \frac{1}{G_c} \sum_{g: \overline{Z}_g = 0} \overline{Y}_g^{obs}.
+$$
+- We can estimate the variance of $\hat{\tau}_C$ by Neyman's variance:
+$$
+\widehat{\mathbb{V}}_{Neyman}(\hat{\tau}_C) \equiv \frac{s_{Cc}^2}{G_c} + \frac{s_{Ct}^2}{G_t}.
+$$
+where
+$$
+s_{Ct}^2 \equiv \frac{1}{G_t - 1} \sum_{g: \overline{Z}_g = 1}(\overline{Y}_g^{obs} - \frac{1}{G_t} \sum_{g': \overline{Z}_{g'} = 1} \overline{Y}_{g'}^{obs}).
+$$
+
+## Estimate $\tau_C$ by a linear regression
+
+- We obtain the same estimate by using the ordinary least squared method for a linear regression function:
+$$
+\overline{Y}_g^{obs} = \alpha + \tau \cdot \overline{Z}_g + \eta_g.
+$$
+- If we consider a unit-level linear regression function:
+$$
+Y_i^{obs} = \alpha + \tau \cdot Z_i + \epsilon_i,
+$$
+we obtain an estimator identical to $\hat{\tau}_C$ if we run a weighted-least squared method where unit $i$ is weighted by $1/N_{g(i)}$.
+
+
+## Estimate $\tau_{fs}$ by a linear regression
+
+- We can estimate $\tau_{fs}$ by running an (unweighted) ordinary least squared method for the unit-level linear regression function:
+$$
+Y_i^{obs} = \alpha + \tau \cdot Z_i + \epsilon_i.
+$$
+
+## Cluster-robust covariance estimate
+
+- Because the assignment is perfectly correlated between units in the same cluster, we use the Liang-Zeger cluster-robust covariance estimates for $(\hat{\alpha}_{ols}, \hat{\tau}_{ols})$:
+
+$$
+\begin{split}
+\Bigg(
+\sum_{i = 1}^N
+\begin{pmatrix}
+1 & Z_i \\
+Z_i & Z_i
+\end{pmatrix}
+\Bigg)^{-1}
+\\
+\times
+\Bigg(
+\sum_{g = 1}^G
+\sum_{i: G_{ig} = 1}
+\begin{pmatrix}
+\hat{\epsilon}_i\\
+Z_i \cdot \hat{\epsilon}_i
+\end{pmatrix}
+\sum_{i: G_{ig} = 1}
+\begin{pmatrix}
+\hat{\epsilon}_i\\
+Z_i \cdot \hat{\epsilon}_i
+\end{pmatrix}'
+\Bigg)
+\\
+\times
+\Bigg(
+\sum_{i = 1}^N
+\begin{pmatrix}
+1 & Z_i \\
+Z_i & Z_i
+\end{pmatrix}
+\Bigg)^{-1}.
+\end{split}
+$$
+
+- Note that this is different from the Eicker-Huber-White heteroskedasticity robust covariance estimates.
+
+
+## Reference
+
+- Section 8, Athey, Susan, and Guido Imbens. 2016. “The Econometrics of Randomized Experiments.” arXiv [stat.ME]. arXiv. http://arxiv.org/abs/1607.00698.
+
+
+
+

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Completely Randomized Experiments</title>
+  <title>Regular assignment mechanism</title>
 
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="chrome=1">
@@ -19,9 +19,8 @@
     var SLIDE_CONFIG = {
       // Slide settings
       settings: {
-                title: 'Completely Randomized Experiments',
-                        subtitle: 'Regression methods for completely randomized experiments',
-                useBuilds: true,
+                title: 'Regular assignment mechanism',
+                        useBuilds: true,
         usePrettify: true,
         enableSlideAreas: true,
         enableTouch: true,
@@ -3138,7 +3137,7 @@ ul.task-list{list-style: none;}
         <!-- The content of this hgroup is replaced programmatically through the slide_config.json. -->
     <hgroup class="auto-fadein">
       <h1 data-config-title><!-- populated from slide_config.json --></h1>
-      <h2 data-config-subtitle><!-- populated from slide_config.json --></h2>
+      
       <p data-config-presenter><!-- populated from slide_config.json --></p>
           </hgroup>
   </slide>
@@ -3187,386 +3186,296 @@ $(document).ready(function() {
 });
 </script>
 
-<slide class=""><hgroup><h2>Incorporating covariates</h2></hgroup><article  id="incorporating-covariates">
+<slide class="segue dark nobackground level1"><hgroup class = 'auto-fadein'><h2>Regular assignment mechanism</h2></hgroup><article  id="regular-assignment-mechanism">
+
+</article></slide><slide class=""><hgroup><h2>Causal inference for observational studies</h2></hgroup><article  id="causal-inference-for-observational-studies">
 
 <ul>
-<li>A researcher may wish to incorporate covariates into the analysis if covariates are recorded for each unit.</li>
-<li>If one has covariates observed prior to the randomization, one should modify the design of the experiment and carry out a stratified randomized experiment.</li>
-<li>Moreover, if one has a conducted a completely randomized experiment where the randomization did not take the covariates into account, one can just ignore the covariates and focus on the difference in means to estimate the average treatment effect.</li>
+<li>So far, we have considered a situation where the treatment assignment is controlled by an experimenter and the mechanism was known.</li>
+<li>In observational studies, the mechanism is not known.</li>
+<li>Nevertheless, we often proceed the analysis assuming that it is a regular assignment mechanism:</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>The role of ex-post covariate adjustment</h2></hgroup><article  id="the-role-of-ex-post-covariate-adjustment">
+<ol>
+<li>Individualistic,</li>
+<li>Probabilistic,</li>
+<li>Unconfounded.</li>
+</ol>
+
+</article></slide><slide class=""><hgroup><h2>Unconfoundedness</h2></hgroup><article  id="unconfoundedness">
 
 <ul>
-<li>Consider a case where the completely randomized experiments did not take the covariates into account at the design stage.</li>
-<li>There are still some roles in ex-post covariate adjustment.</li>
-<li>If the covariates are sufficiently strongly correlated with the potential outcomes, the estimation results may be more precise.</li>
-<li>The covariates allow the assessments of heterogeneity in treatment effects.</li>
-<li>If the randomization is compromised because of practical problems, adjusting for covariate differences may remove the biases.</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Regression methods and the randomization-based approach</h2></hgroup><article  id="regression-methods-and-the-randomization-based-approach">
-
-<ul>
-<li>We often use regression methods to estimate treatment effects, especially for controlling for covariates.</li>
-<li>However, the inference of regression methods are based on sampling-based approach.</li>
-<li>Moreover, the assumptions for the regression methods do not immediately follow from randomization.</li>
-<li>Therefore, regression methods often go beyond analyses that are justified by randomization and end up with analyses that rely on a mix of randomization assumptions, modelling assumptions, and large sample approximations.</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Mixing sampling-based and randomization-based approach</h2></hgroup><article  id="mixing-sampling-based-and-randomization-based-approach">
-
-<ul>
-<li>We assume that the sample of size \(N\) can be a simple random sample drawn from an infinite super-population.</li>
-<li>This random sample induces a distribution on the pair of potential outcomes and covariates.</li>
-<li>Then, the treatment status is randomly assigned and observed outcome is determined.</li>
-<li>The estimand is the super-population average treatment effect: \[
-\tau_{sp} \equiv \mathbb{E}[Y_i^\ast(1) - Y_i^\ast(0)],
-\] which is the expected value of the unit-level treatment effects under the distribution induced by sampling from the super-population.</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Notations</h2></hgroup><article  id="notations">
-
-<ul>
-<li>For each covariate value \(w\); \[
-\mu_0(w) \equiv \mathbb{E}[Y_i^\ast(0)|W_i = w], \mu_1 \equiv \mathbb{E}[Y_i^\ast(1) | W_i = w],
-\] \[
-\sigma_0^2(w) \equiv \mathbb{V}_0[Y_i^\ast(0)|W_i = w], \sigma_1^2 \equiv \mathbb{V}[Y_i^\ast(1)|W_i = w],
-\] \[
-\tau(w) \equiv \mathbb{E}[Y_i^\ast(1) - Y_i^\ast(0)| W_i = w], \sigma_{10}^2(w) \equiv \mathbb{V}[Y_i^\ast(1) - Y_i^\ast(0)| W_i = w].
+<li>Among three assumptions, unconfoundedness is the most controversial.</li>
+<li>In the super-population setting, unconfoundedness implies: \[
+\mathbb{P}[Z_i = 1| Y_i^\ast(0), Y_i^\ast(1), W_i] = \mathbb{P}[Z_i = 1| W_i] = e(W_i),
+\] or: \[
+Z_i \perp \!\!\! \perp Y_i^\ast(1), Y_i^\ast(0) | W_i.
 \]</li>
-<li>Marginally: \[
-\mu_0 \equiv \mathbb{E}[Y_i^\ast(0)] = \mathbb{E}[\mu_0(W_i)], \mu_1 \equiv \mathbb{E}[Y_i^\ast(1)] = \mathbb{E}[\mu_1(W_i)], 
-\] \[
-\sigma_0^2 \equiv \mathbb{V}[Y_i^\ast(0)] = \mathbb{E}[\sigma_0^2(W_i)] + \mathbb{V}[\mu_0(W_i)],
-\] \[
-\sigma_1^2 \equiv \mathbb{V}[Y_i^\ast(1)] = \mathbb{E}[\sigma_1^2(W_i)] + \mathbb{V}[\mu_1(W_i)].
-\]</li>
+<li>This assumption is <strong>not testable</strong>, because it compares the distribution of missing outcomes \(Y_i^\ast(1 - Z_i)\) with the distribution of observed outcomes \(Y_i^\ast(Z_i)\).</li>
+<li>Therefore, we need to rely on the background knowledge to justify the assumption: for example, caseworkers assign job training programs according to a known index of observed characteristics.</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Notations</h2></hgroup><article  id="notations-1">
+</article></slide><slide class=""><hgroup><h2>Balancing covariate distributions</h2></hgroup><article  id="balancing-covariate-distributions">
 
 <ul>
-<li>For the covariates: \[
-\mu_W \equiv \mathbb{E}[W_i], \Omega_W \equiv \mathbb{V}(W_i) = \mathbb{E}[(W_i - \mu_W)&#39; (W_i - \mu_W)].
-\]</li>
+<li>In observational studies, the observed covariates can be substantially unbalanced between treated and control units.</li>
+<li>In the regular assignment mechanism, we can remove all biases in comparisons between treated and control units as long as we adjust for differences in observed covariates.</li>
+<li>Therefore, the main focus of the analysis using the regular assignment mechanism is how to adjust the covariance distributions.</li>
 </ul>
 
-</article></slide><slide class="segue dark nobackground level1"><hgroup class = 'auto-fadein'><h2>Linear regression with no covariate</h2></hgroup><article  id="linear-regression-with-no-covariate">
-
-</article></slide><slide class=""><hgroup><h2>Definie a linear regression function</h2></hgroup><article  id="definie-a-linear-regression-function">
+</article></slide><slide class=""><hgroup><h2>Balancing score</h2></hgroup><article  id="balancing-score">
 
 <ul>
-<li>Specify a linear regression function for the observed outcome \(Y_i\): \[
-Y_i \equiv \alpha + \tau \cdot Z_i + \epsilon_i.
+<li>It is easier to balance the covariate distributions if we could reduce the dimensionality of the covariates while maintaining the unconfoundedness.</li>
+<li><strong>Definition: Balancing score</strong>
+
+<ul>
+<li>A balancing score \(b(w)\) is a function of the covariates such that: \[
+Z_i \perp \!\!\! \perp W_i | b(W_i).
 \]</li>
-<li>Remark that this linear regression function is <em>correctly specified</em> without loss of generality, because we can set: \[
-\alpha = \mu_0, \tau = \tau_{sp}, \epsilon_i = Y_i^\ast(0) - \mu_0 + Z_i \cdot [Y_i^\ast(1) - Y_i^\ast(0) - \tau_{sp}]. 
-\]</li>
+</ul></li>
+<li>There can be multiple balancing scores including \(W_i\) itself.</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Define ols estimator of \(\tau\)</h2></hgroup><article  id="define-ols-estimator-of-tau">
+</article></slide><slide class=""><hgroup><h2>Propensity score is a balancing score</h2></hgroup><article  id="propensity-score-is-a-balancing-score">
 
 <ul>
-<li>The ordinary least squares (ols) estimator for \(\tau\) is defined as: \[
-(\hat{\tau}_{ols}, \hat{\alpha}_{ols}) \equiv \text{argmin}_{\tau, \alpha} \sum_{i = 1}^N (Y_i - \alpha - \tau \cdot Z_i)^2,
-\] and is solved as: \[
-\hat{\tau}_{ols} = \frac{\sum_{i = 1}^N(Z_i - \overline{Z}) (Y_i - \overline{Y})}{\sum_{i = 1}^N (Z_i - \overline{Z})^2}, \hat{\alpha}_{ols} = \overline{Y} - \hat{\tau}_{ols} \cdot \overline{Z}, 
-\] where: \[
-\overline{Y} \equiv \frac{1}{N} \sum_{i = 1}^N Y_i, \overline{Z} = \frac{1}{N} \sum_{i = 1}^N Z_i.
+<li>We can show that the propensity score is a balancing score.</li>
+<li>First, we have: \[
+\mathbb{P}[Z_i = 1| W_i, e(W_i)] = \mathbb{P}[Z_i = 1| W_i] = e(W_i).
 \]</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Ols estimator as Neyman’s estimator</h2></hgroup><article  id="ols-estimator-as-neymans-estimator">
-
-<ul>
-<li>A simple algebra shows that: \[
-\hat{\tau}_{ols} = \overline{Y}_1 - \overline{Y}_0 \equiv \hat{\tau}_{fs}
-\]</li>
-<li>Thus, the ols estimator is equivalent to Neyman’s estimator for the finite-sample average treatment effect.</li>
-<li>In the previous lecture, we showed that \(\hat{\tau}_{fs}\) is unbiased for \(\tau_{sp}\) with random assignment and random sampling.</li>
-<li>This shows that \(\hat{\tau}_{ols}\) is unbiased for \(\tau_{sp}\).</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Is conditional mean zero assumption justified from the current setting?</h2></hgroup><article  id="is-conditional-mean-zero-assumption-justified-from-the-current-setting">
-
-<ul>
-<li>We did not use the standard argument for the unbiasedness of the ols estimator that rely on the conditional mean zero assumption.</li>
-<li>Can we justify this assumption from the random assignment and random sampling?</li>
-<li>Specifying the linear regression model is equivalent to <em>defining</em> \(\epsilon_i\) as follows: \[
-\epsilon_i \equiv Y_i^\ast(0) - \mu_0 + Z_i \cdot [Y_i^\ast(1) - Y_i^\ast(0) - \tau_{sp}].
-\]</li>
-<li>In other words, can we derive the conditional mean zero property \(\mathbb{E}[\epsilon_i | Z_i = z] = 0\) for \(w = 0, 1\) from random sampling and random assignment?</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Showing conditional mean zero</h2></hgroup><article  id="showing-conditional-mean-zero">
-
-<ul>
-<li>The random sampling allows viewing the potential outcome as random variables.</li>
-<li>Moreover, the randam assignment implies: \[
-\mathbb{P}[Z_i = 1|Y_i^\ast(0), Y_i^\ast(1)] = \mathbb{P}(Z_i = 1).
+<li>Second, we have: \[
+\begin{split}
+\mathbb{P}[Z_i = 1| e(W_i)] 
+&amp;= \mathbb{E}[Z_i|e(W_i)]\\
+&amp;= \mathbb{E}[\mathbb{E}[Z_i | W_i, e(W_i)] | e(W_i)]\\
+&amp;= \mathbb{E}[e(W_i)| e(W_i)]\\
+&amp;= e(W_i).
+\end{split}
 \]</li>
 <li>Therefore: \[
-\mathbb{E}[\epsilon_i | Z_i = 0] = \mathbb{E}[Y_i^\ast(0) - \mu_0| Z_i = 0] = \mathbb{E}[Y_i^\ast(0) - \mu_0] = 0,
-\] and: \[
-\mathbb{E}[\epsilon_i | Z_i = 1] = \mathbb{E}[Y_i^\ast(1) - \mu_0 - \tau_{sp}| Z_i = 1] = \mathbb{E}[Y_i^\ast(1) - \mu_0 - \tau_{sp}] = 0. 
+\mathbb{P}[Z_i = 1| W_i, e(W_i)] = \mathbb{P}[Z_i = 1| e(W_i)].
 \]</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Heteroskedasticity robust sampling variance estimator of \(\hat{\tau}_{ols}\)</h2></hgroup><article  id="heteroskedasticity-robust-sampling-variance-estimator-of-hattau_ols">
+</article></slide><slide class=""><hgroup><h2>Balancing score maintains unconfoundedness</h2></hgroup><article  id="balancing-score-maintains-unconfoundedness">
 
 <ul>
-<li>The standard robust sampling variance estimator of \(\hat{\tau}_{ols}\) allowing for heteroskedasticity due to \(Z_i\): \[
-\widehat{\mathbb{V}}_{hetero} \equiv \frac{\sum_{i = 1}^N \hat{\epsilon}_i^2 \cdot (Z_i - \overline{Z})^2}{[\sum_{i = 1}^N (Z_i - \overline{Z})^2]^2},
-\] where: \[
-\hat{\epsilon}_i \equiv Y_i - \hat{\alpha}_{ols} - \hat{\tau}_{ols} \cdot Z_i.
-\]</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>..is the same with \(\widehat{\mathbb{V}}_{Neyman}\) for \(\hat{\tau}_{fs}\)</h2></hgroup><article  id="is-the-same-with-widehatmathbbv_neyman-for-hattau_fs">
+<li><strong>Lemma: Unconfoundedness given a balancing score</strong>
 
 <ul>
-<li>A simple algebra shows: \[
-\widehat{\mathbb{V}}_{hetero} = \frac{s_0^2}{N_0} + \frac{s_1^2}{N_1} = \widehat{\mathbb{V}}_{Neyman},
-\] where: \[
-s_0^2 \equiv \frac{1}{N_0 - 1} \sum_{i: Z_i = 0} (Y_i - \overline{Y})^2, s_1^2 \equiv \frac{1}{N_1 - 1} \sum_{i: Z_i = 1} (Y_i - \overline{Y})^2.
-\]</li>
-<li>Whereas \(\widehat{\mathbb{V}}_{Neyman}\) for \(\hat{\tau}_{fs}\) is justified as a conservative estimator for the variance of \(\hat{\tau}_{fs}\) due to random assignment, \(\widehat{\mathbb{V}}_{hetero}\) is justified as a consistent estimator to the variance of \(\hat{\tau}_{ols}\) under random sampling.</li>
-</ul>
-
-</article></slide><slide class="segue dark nobackground level1"><hgroup class = 'auto-fadein'><h2>Linear regression with additional covariates</h2></hgroup><article  id="linear-regression-with-additional-covariates">
-
-</article></slide><slide class=""><hgroup><h2>Define a linear regression function</h2></hgroup><article  id="define-a-linear-regression-function">
-
-<ul>
-<li>We have \(W_i\) as additional covariates.</li>
-<li>Define a linear regression function with \(W_i\) as: \[
-Y_i \equiv \alpha + \tau \cdot Z_i + W_i \beta + \epsilon_i.
-\]</li>
-<li>The model can be <em>misspecified</em>: We <em>do not</em> assume that the conditional mean of \(Y_i\) is actually linear in \(Z_i\) and \(W_i\). \[
-\mathbb{E}[Y_i|Z_i, W_i] \neq  \alpha + \tau \cdot Z_i + W_i \beta.
-\]</li>
-<li>We are interested in \(\tau\) but <em>not</em> in the nuisance parameters \(\alpha\) and \(\beta\).</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Define ols estimator for \(\tau\)</h2></hgroup><article  id="define-ols-estimator-for-tau">
-
-<ul>
-<li>The ols estimator is defined using least squares: \[
-(\hat{\tau}_{ols}, \hat{\alpha}_{ols}, \hat{\beta}_{ols}) \equiv \text{argmin}_{\tau, \alpha, \beta} \sum_{i = 1}^N(Y_i - \alpha - \tau \cdot Z_i - W_i \beta)^2.
-\]</li>
-<li>Define the super-population values as: \[
-(\tau^\ast, \alpha^\ast, \beta^\ast) \equiv \text{argmin}_{\tau, \alpha, \beta} \mathbb{E}(Y_i - \alpha - \tau \cdot Z_i - W_i \beta)^2.
-\]</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Consistency of \(\hat{\tau}_{ols}\)</h2></hgroup><article  id="consistency-of-hattau_ols">
-
-<ul>
-<li>If \(W_i \beta\) is included, \(\hat{\tau}_{ols}\) is no longer unbiased for \(\tau_{sp}\) in the finite sample.</li>
-<li>In the large sample, \(\hat{\tau}_{ols}\) converges to \(\tau^\ast\) as shown in the basic econometrics.</li>
-<li>Moreover, we can show \(\tau^\ast = \tau_{sp}\).</li>
-<li>Therefore, in the large sample, \(\hat{\tau}_{ols}\) is unbiased for \(\tau_{sp}\).</li>
-<li>Intuition:
-
-<ul>
-<li>In the large sample, \(\hat{\tau}_{ols}\) is unbiased for \(\tau_{sp}\), because in the large sample, the correlation between \(Z_i\) and \(W_i\) is zero because of the random assignment.</li>
-<li>In the finite sample, however, the correlation between \(Z_i\) and \(W_i\) can be non-zero.</li>
-</ul></li>
-<li>If \(Z_i\) is not randomly assigned, the consistency may fail because of the misspecification.</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Proof of \(\tau^\ast = \tau_{sp}\)</h2></hgroup><article  id="proof-of-tauast-tau_sp">
-
-<ul>
-<li>Consider the limiting objective function: \[
-\begin{split}
-Q(\tau, \alpha, \beta) &amp;\equiv \mathbb{E}[(Y_i - \alpha - \tau \cdot Z_i - W_i \beta)^2]\\
-&amp;= \mathbb{E}[(Y_i - \tilde{\alpha} - \tau \cdot Z_i - (W_i - \mu_W) \beta)^2]\\
-&amp;= \mathbb{E}[(Y_i - \tilde{\alpha} - \tau \cdot Z_i)^2] + \mathbb{E}[(W_i - \mu_W)^2 \beta^2]\\
-&amp;-2 \mathbb{E}[ (W_i - \mu_W) \beta \cdot (Y_i - \tilde{\alpha} - \tau \cdot Z_i)],
-\end{split}
-\] with \[
-\tilde{\alpha} \equiv \alpha + \mu_W \beta.
-\]</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Proof of \(\tau^\ast = \tau_{sp}\)</h2></hgroup><article  id="proof-of-tauast-tau_sp-1">
-
-<ul>
-<li>This reduces to</li>
-</ul>
-
-<p>\[
-\begin{split}
-Q(\tau, \alpha, \beta) &amp;= \mathbb{E}[(Y_i - \tilde{\alpha} - \tau \cdot Z_i)^2] + \mathbb{E}[(W_i - \mu_W)^2 \beta^2]\\
-&amp;-2 \mathbb{E}[ (W_i - \mu_W) \beta \cdot Y_i]
-\end{split}
-\] because of \[
-\mathbb{E}[(W_i - \mu_W) \beta] = 0,
-\] and \[
-\mathbb{E}[(W_i - \mu_W) \beta \cdot \tau Z_i] =\mathbb{E}[(W_i - \mu_W) \beta] \cdot \mathbb{E}[\tau Z_i] = 0,
-\] if \(W_i\) and \(Z_i\) are independent.</p>
-
-</article></slide><slide class=""><hgroup><h2>Independence and Conditionally Mean Zero</h2></hgroup><article  id="independence-and-conditionally-mean-zero">
-
-<ul>
-<li>The argument so far is robust to the misscpefification.</li>
-<li>The independence of \(Z_i\) and \(W_i\) is the key.</li>
-<li>We often assume the conditionally mean zero in a regression analysis: \[
-\mathbb{E}\{\epsilon_i|Z_i, W_i\} = 0,
-\] with a true model \(f\). \[
-\epsilon_i = Y_i - f(Z_i, W_i).
-\]</li>
-<li>With this assumption, we cannot make \(\mathbb{E}[(W_i - \mu_W) \beta \cdot \tau Z_i]\) zero.</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Proof of \(\tau^\ast = \tau_{sp}\)</h2></hgroup><article  id="proof-of-tauast-tau_sp-2">
-
-<ul>
-<li>The only term in the limiting objective function that depends on \(\tilde{\alpha}\) and \(\tau\) is: \[
-\mathbb{E}[(Y_i - \alpha - \tau \cdot Z_i)^2],
-\] which leads to the solution: \[
-\tilde{\alpha}^\ast = \mathbb{E}[Y_i|Z_i = 0] = \mathbb{E}[Y_i(0)|Z_i = 0] = \mu_0,
+<li>In a regular assignment mechanism, the assignment is unconfounded given any balancing score: \[
+Z_i \perp \!\!\! \perp Y_i^\ast(0), Y_i^\ast(1) | b(W_i).
 \] \[
 \begin{split}
-\tau^\ast &amp;= \mathbb{E}[Y_i|Z_i = 1] - \mathbb{E}[Y_i|Z_i = 0]\\
-&amp;= \mathbb{E}[Y_i^\ast(1)|Z_i = 1] - \mathbb{E}[Y_i^\ast(0)|Z_i = 0]\\
-&amp;= \tau_{sp}.
+&amp;\mathbb{P}[Z_i = 1 | Y_i^\ast(0), Y_i^\ast(1), b(W_i)]\\
+&amp;= \mathbb{E}[Z_i | Y_i^\ast(0), Y_i^\ast(1), b(W_i)]\\
+&amp;= \mathbb{E}[\mathbb{E}[Z_i | Y_i^\ast(0), Y_i^\ast(1), W_i, b(W_i)] | Y_i^\ast(0), Y_i^\ast(1), b(W_i)]\\
+&amp;= \mathbb{E}[\mathbb{E}[Z_i | W_i, b(W_i)] | Y_i^\ast(0), Y_i^\ast(1), b(W_i)] \text{   by unconfoundedness}\\
+&amp;= \mathbb{E}[\mathbb{E}[Z_i | b(W_i)] | Y_i^\ast(0), Y_i^\ast(1), b(W_i)] \text{   by balancing score}\\
+&amp;= \mathbb{E}[Z_i | b(W_i)] \\
+&amp;= \mathbb{P}[Z_i = 1 | b(W_i)].
+\end{split}
+\]</li>
+</ul></li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Adjusting balancing score is sufficient</h2></hgroup><article  id="adjusting-balancing-score-is-sufficient">
+
+<ul>
+<li>The previous lemma implies that it is sufficient for removing biases associated with differences in the covariates to adjust the difference in the balancing scores.</li>
+<li>Because the propensity score is a balancing score, it is sufficient for adjusting the differences in the propensity scores.</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Propensity score is the coarsest balancing score</h2></hgroup><article  id="propensity-score-is-the-coarsest-balancing-score">
+
+<ul>
+<li><strong>Lemma: Coarseness of balancing score</strong>
+
+<ul>
+<li>The propensity score is the coarsest balancing score. That is, the propensity score is a function of every balansing score.</li>
+</ul></li>
+<li>Suppose not. Then, there is a balancing score \(b(w)\) and values \(w, w&#39;\) such that \(b(w) = b(w&#39;)\) but \(e(w) \neq e(w&#39;)\).</li>
+<li>Then, we have: \[
+\mathbb{P}(Z_i = 1| W_i = w) = e(w) \neq e(w&#39;) = \mathbb{P}(Z_i = 1| W_i = w&#39;). 
+\]</li>
+<li>Then, \(Z_i\) and \(W_i\) are not independent on \(b(w) = b(w&#39;)\).</li>
+</ul>
+
+</article></slide><slide class="segue dark nobackground level1"><hgroup class = 'auto-fadein'><h2>Estimation and inference</h2></hgroup><article  id="estimation-and-inference">
+
+</article></slide><slide class=""><hgroup><h2>Estimands</h2></hgroup><article  id="estimands">
+
+<ul>
+<li>The super-population average tretment effect: \[
+\tau_{sp} \equiv \mathbb{E}[Y_i^\ast(1) - Y_i^\ast(0)] = \mathbb{E}[\tau_{sp}(W_i)],
+\] where \(\tau_{sp}(w)\) is: \[
+\tau_{sp}(w) \equiv \mu_1(w) - \mu_0(w) = \mathbb{E}[Y_i^\ast(1) - Y_i^\ast(0) | W_i = w].
+\]</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Parameters</h2></hgroup><article  id="parameters">
+
+<ul>
+<li>The finite-sample average treatment effect: \[
+\tau_{fs} \equiv \frac{1}{N} \sum_{i = 1}^N[Y_i^\ast(1) - Y_i^\ast(0)].
+\]</li>
+<li>It is sometimes useful to estimate the conditional average treatment effect on the value of the pretreatment variables in the finite sample: \[
+\tau_{cond} \equiv \frac{1}{N} \sum \tau_{sp}(W_i).
+\]</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Efficiency bound</h2></hgroup><article  id="efficiency-bound">
+
+<ul>
+<li>The asymptotic sampling variance of any estimator to \(\tau_{sp}\) cannot be smaller than: \[
+\mathbb{V}_{sp}^{eff} \equiv \mathbb{E}\Big[ \frac{\sigma_0^2(W_i)}{1 - e(W_i)} + \frac{\sigma_1^2(W_i)}{e(W_i)} + [\tau_{sp}(W_i) - \tau_{sp}]^2 \Big].
+\]</li>
+<li>The first two terms get bigger as the propensity scores are unbalanced.</li>
+<li>The third term gets bigger as the treatment effects are heterogeneous across the values of the covariates.</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Efficiency bound</h2></hgroup><article  id="efficiency-bound-1">
+
+<ul>
+<li>The asymptotic sampling variance of any estimator to \(\tau_{cond}\) cannot be smaller than: \[
+\mathbb{V}_{cond}^{eff} \equiv \mathbb{E}\Big[ \frac{\sigma_0^2(W_i)}{1 - e(W_i)} + \frac{\sigma_1^2(W_i)}{e(W_i)}\Big].
+\]</li>
+<li>The first two terms get bigger as the propensity scores are unbalanced.</li>
+<li>The term \([\tau_{sp}(W_i) - \tau_{sp}]^2\) does not show up here.</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Estimation strategies</h2></hgroup><article  id="estimation-strategies">
+
+<ul>
+<li><em>Model-based imputation</em>: Imputing the missing potential outcomes by a model such as a linear regression function.</li>
+<li><em>Weighting estimator</em>: Estimating the propensity score and then balance the covariate distribution by using the propensity score as a weight to estimate the treatment effect.</li>
+<li><em>Blocking estimator</em>: Estimating the propensity score and then balance the covariate distribution by using a blocked propensity score as a weight to estimate the treatment effect.</li>
+<li><em>Matching estimator</em>: Find a pair of treated and control units with a similar set of covariates.</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Model-based imputation</h2></hgroup><article  id="model-based-imputation">
+
+<ul>
+<li>It is common in Economics to assume: \[
+Y_i^{obs} = \tau \cdot Z_i + Z_i \cdot W_i \beta_1 + (1 - Z_i) \cdot W_i \beta_0 + \epsilon_i,
+\] and estiamte the super-population or finite-sample averaget treatment effect by: \[
+\hat{\tau}_{ols} = \frac{1}{N} \sum_{i = 1}^N[Z_i \cdot (Y_i^{obs} - W_i \hat{\beta}_{0, ols}) + (1 - Z_i) \cdot (W_i \hat{\beta}_{1, ols} - Y_i^{obs})].
+\]</li>
+<li>The estimator is inaccurate when the covariates are unbalanced, because: \[
+Y_i^{obs} - W_i \hat{\beta}_{0, ols} = \overline{Y}_1^{obs} - \overline{Y}_0^{obs} - (\overline{W}_1 - \overline{W}_0) \hat{\beta}_{0, ols},
+\] \[
+W_i \hat{\beta}_{1, ols} - Y_i^{obs} = \overline{Y}_1^{obs} - \overline{Y}_0^{obs} - (\overline{W}_1 - \overline{W}_0) \hat{\beta}_{1, ols}.
+\]</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Weighting estimator</h2></hgroup><article  id="weighting-estimator">
+
+<ul>
+<li>Under the unconfoundedness, we have: \[
+\begin{split}
+\mathbb{E}\Bigg[ \frac{Y_i^{obs} \cdot Z_i}{e(W_i)} \Bigg] 
+&amp;= \mathbb{E}\Bigg[ \mathbb{E}\Bigg[ \frac{Y_i^{obs} \cdot Z_i}{e(W_i)} \Bigg | W_i \Bigg] \Bigg]\\
+&amp;= \mathbb{E}\Bigg[ \mathbb{E}\Bigg[ \frac{Y_i^\ast(1) \cdot Z_i}{e(W_i)} \Bigg | W_i \Bigg] \Bigg]\\
+&amp;= \mathbb{E}\Bigg[  \frac{\mathbb{E}[Y_i^\ast(1) | W_i] \cdot \mathbb{E}[Z_i | W_i]}{e(W_i)}  \Bigg]\\
+&amp;= \mathbb{E}[  \mathbb{E}[Y_i^\ast(1) | W_i] ]\\
+&amp;= \mathbb{E}[Y_i^\ast(1)].
 \end{split}
 \]</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Asymptotic normality of \(\hat{\tau}_{ols}\)</h2></hgroup><article  id="asymptotic-normality-of-hattau_ols">
+</article></slide><slide class=""><hgroup><h2>Weighting estimator</h2></hgroup><article  id="weighting-estimator-1">
 
 <ul>
-<li><strong>Theorem</strong>:
-
-<ul>
-<li>Suppose we conduct a completely randomized experiment in a sample drawn at random from an infinite population. Then:</li>
-</ul>
-
-<ol>
-<li>\(\tau^\ast = \tau_{sp}\).</li>
-<li>\(\hat{\tau}_{ols}\) is asymptotically normal centered at \(\tau_{sp}\), i.e.: \[
-\sqrt{N} \cdot (\hat{\tau}_{ols} - \tau_{sp}) \xrightarrow{d} N(0, V),
-\] where: \[
-V \equiv \frac{\mathbb{E}[(Z_i - p)^2 \cdot (Y_i - \alpha^\ast - \tau_{sp} \cdot Z_i - W_i \cdot \beta^\ast)^2]}{p^2 \cdot (1 - p)^2}.
+<li>Similarly, we have: \[
+\mathbb{E}\Bigg[ \frac{Y_i^{obs} \cdot (1 - Z_i)}{1 - e(W_i)} \Bigg] = \mathbb{E}[Y_i^\ast(0)].
 \]</li>
-</ol></li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Heteroskedasticity robust sampling variance estimator of \(\hat{\tau}_{ols}\)</h2></hgroup><article  id="heteroskedasticity-robust-sampling-variance-estimator-of-hattau_ols-1">
-
-<ul>
-<li>The estimator of the sampling variance of \(\hat{\tau}_{ols}\) is: \[
-\scriptsize
-\widehat{\mathbb{V}}_{hetero} \equiv \frac{1}{N\cdot(N - \text{dim}(W_i) - 2)} \frac{\sum_{i = 1}^N (Z_i - \overline{Z})^2 \cdot (Y_i - \hat{\alpha}_{ols} - \hat{\tau}_{ols} \cdot Z_i - W_i \hat{\beta}_{Ols})^2}{[\overline{Z} \cdot (1 - \overline{Z})]^2}.
+<li>Then, we can estiamte \(\tau_{sp}\) by: \[
+\begin{split}
+\hat{\tau}_{weight} &amp;\equiv \frac{1}{N} \sum_{i = 1}^N \frac{Z_i \cdot Y_i^{obs}}{\hat{e}(W_i)} - \frac{1}{N} \sum_{i = 1}^N \frac{(1 - Z_i) \cdot Y_i^{obs}}{1 - \hat{e}(W_i)}.
+\end{split}
 \]</li>
-<li>Including \(W_i\) may reduce the sampling variance to the degree of correlated with the potential outcome.</li>
-<li>The price paid for this is to give up the finite-sample unbiasedness.</li>
-<li>The unbiasedness in the large sample is maintained.</li>
+<li>This is againg imprecise when the covariance distribution is unbalanced, i.e. either \(\hat{e}(W_i)\) or \(1 - \hat{e}(W_i)\) is close to zero.</li>
 </ul>
 
-</article></slide><slide class="segue dark nobackground level1"><hgroup class = 'auto-fadein'><h2>Linear regression with covariates and interactions</h2></hgroup><article  id="linear-regression-with-covariates-and-interactions">
-
-</article></slide><slide class=""><hgroup><h2>Define a linear regression function</h2></hgroup><article  id="define-a-linear-regression-function-1">
+</article></slide><slide class=""><hgroup><h2>Blocking estimator</h2></hgroup><article  id="blocking-estimator">
 
 <ul>
-<li>We can further define a linear regression function with covariates and interactions: \[
-Y_i \equiv \alpha + \tau \cdot Z_i + W_i \beta + Z_i \cdot (W_i - \overline{W}) \gamma + \epsilon_i.
+<li>To avoid extreme values in the propensity score, one may stratify samples according to the value of the propensity score: For \(j = 0, 1, \cdots, J\), \(b_0 = 0 \le \cdots \le b_j \le \cdots \le b_J = 1\), let \(B_i(j)\) be a binary indicator of \(b_{j - 1} &lt; \hat{e}(W_i) \le b_j\).</li>
+<li>Then, define the strata-level treatment effect: \[
+\hat{\tau}^{diff}(j) \equiv \frac{\sum_{i: B_i(j) = 1} Y_i \cdot Z_i}{\sum_{i: B_i(j) = 1} Z_i} - \frac{\sum_{i: B_i(j) = 0} Y_i \cdot (1 - Z_i)}{\sum_{i: B_i(j) = 0} (1 - Z_i)},
+\] to construct: \[
+\hat{\tau}^{diff} \equiv \sum_{j = 1} \frac{N(j)}{N} \hat{\tau}^{diff}(j).
 \]</li>
-<li>Again, we <em>do not</em> assume that this is the correct specification for the conditional mean of \(Y_i\).</li>
-<li>We are interested in \(\tau\) but <em>not</em> in the nuisance parameters \(\alpha\), \(\beta\), and \(\gamma\).</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Define ols estimator for \(\tau\)</h2></hgroup><article  id="define-ols-estimator-for-tau-1">
+</article></slide><slide class=""><hgroup><h2>Matching estimator</h2></hgroup><article  id="matching-estimator">
 
 <ul>
-<li>Define ols estimator as: \[
-\scriptsize
-(\hat{\tau}_{ols}, \hat{\alpha}_{ols}, \hat{\beta}_{ols}, \hat{\gamma}_{ols}) \equiv \text{argmin}_{\tau, \alpha, \beta, \gamma} \sum_{i = 1}^N [Y_i - \alpha - \tau \cdot Z_i - W_i \beta - Z_i \cdot (W_i - \overline{W}) \gamma]^2.
+<li>Define some metric on the space of covariates and let \(M(i) \subset \{1, \cdots, N\}\) be the \(M\)-nearest units of \(i\) in the opposite group of \(i\).</li>
+<li>Then, define: \[
+\hat{Y}_i(0) = (1 - Z_i) \cdot Y_i^{obs} + Z_i \cdot \frac{1}{M} \sum_{j \in M(i)} Y_j,
+\] \[
+\hat{Y}_i(1) = Z_i \cdot Y_i^{obs} + (1 - Z_i) \cdot \frac{1}{M} \sum_{j \in M(i)} Y_j,
+\] and construct: \[
+\hat{\tau}_{matching} \equiv \frac{1}{N} \sum_{i = 1}^N [\hat{Y}_i(1) - \hat{Y}_i(0)].
 \]</li>
-<li>Define \(\tau^\ast, \alpha^\ast, \beta^\ast\), and \(\gamma^\ast\) as their super-population counterparts.</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Consistency of \(\hat{\tau}_{ols}\)</h2></hgroup><article  id="consistency-of-hattau_ols-1">
+</article></slide><slide class="segue dark nobackground level1"><hgroup class = 'auto-fadein'><h2>Assessing unconfoundedness</h2></hgroup><article  id="assessing-unconfoundedness">
+
+</article></slide><slide class=""><hgroup><h2>Seeking supporting evidence for unconfoundedness</h2></hgroup><article  id="seeking-supporting-evidence-for-unconfoundedness">
 
 <ul>
-<li>\(\hat{\tau}_{ols}\) is no longer unbiased for \(\tau_{sp}\) in the finite sample.</li>
-<li>In the large sample, \(\hat{\tau}_{ols}\) converges to \(\tau^\ast\) as shown in the basic econometrics.</li>
-<li>Moreover, we can show \(\tau^\ast = \tau_{sp}\).</li>
-<li>Therefore, in the large sample, \(\hat{\tau}_{ols}\) is unbiased for \(\tau_{sp}\).</li>
-<li>Intuition:
-
-<ul>
-<li>In the large sample, \(\hat{\tau}_{ols}\) is unbiased for \(\tau_{sp}\), because in the large sample, the correlation between \(Z_i\) and \(W_i\) is zero because of the random assignment.</li>
-<li>In the finite sample, however, the correlation between \(Z_i\) and \(W_i\) can be non-zero.</li>
-</ul></li>
+<li>The unconfoundedness assumption is not testable.</li>
+<li>Giving up testing it, we try to estimate <em>pseudo</em>-causal estimands with a priori known values, which are typically zero, under assumptions more restrictive than unconfoundedness.</li>
+<li>If these analyses suggest the null hypothesis does not hold, then the unconfoundedness assumption will be viewed less plausible.</li>
+<li>If the unconfoundedness assumption is less plausible, we should conclude that it is not possible to estimate credibly and precisly the causal effects of interest.</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Asymptotic normality of \(\hat{\tau}_{ols}\)</h2></hgroup><article  id="asymptotic-normality-of-hattau_ols-1">
+</article></slide><slide class=""><hgroup><h2>Estimating effects on pseudo-outcomes</h2></hgroup><article  id="estimating-effects-on-pseudo-outcomes">
 
 <ul>
-<li><strong>Theorem</strong>:
-
-<ul>
-<li>Suppose we conduct a completely randomized experiment in a sample drawn at random from an infinite population. Then:</li>
+<li>One approachs is to test the <strong>pseudo-outcome unconfoundedness</strong>: \[
+Z_i \perp \!\!\! \perp W_i^p | W_i^r,
+\] for a partition of the covariates \(W_i = (W_i^p, W_i^r)\).</li>
+<li>Testing this property makes sense if a stronger version of unconfoundedness, <strong>subset unconfoundedness</strong> , is supposed to hold \[
+Z_i \perp \!\!\! \perp (Y_i^\ast(1), Y_i^\ast(0)) | W_i^r.
+\] and \(W_i^p\) is considered to be the proxy to the potential outcome, such as the lagged outcomes.</li>
+<li>This is a design-stage method because the observation of the outcomes is not required.</li>
 </ul>
 
-<ol>
-<li>\(\tau^\ast = \tau_{sp}\).</li>
-<li>\(\hat{\tau}_{ols}\) is asymptotically normal centered at \(\tau_{sp}\), i.e.: \[
-\sqrt{N} \cdot (\hat{\tau}_{ols} - \tau_{sp}) \xrightarrow{d} N(0, V),
-\] where: \[
-\scriptsize
-V \equiv \frac{\mathbb{E}[(Z_i - p)^2 \cdot (Y_i - \alpha^\ast - \tau_{sp} \cdot Z_i - W_i \cdot \beta^\ast - Z_i \cdot (W_i - \mu_W) \gamma^\ast)^2]}{p^2 \cdot (1 - p)^2}.
+</article></slide><slide class=""><hgroup><h2>Estimating effects of pseudo-treatments</h2></hgroup><article  id="estimating-effects-of-pseudo-treatments">
+
+<ul>
+<li>Suppose that the assignment was such that there was 1 treatment group and 2 control groups. \[
+Z_i =
+\begin{cases}
+1 &amp;\text{   if   } G_i = t\\
+0 &amp;\text{   if   } G_i = c_1, c_2.
+\end{cases}
 \]</li>
-</ol></li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Heteroskedasticity robust sampling variance estimator of \(\hat{\tau}_{ols}\)</h2></hgroup><article  id="heteroskedasticity-robust-sampling-variance-estimator-of-hattau_ols-2">
-
-<ul>
-<li>The estimator of the sampling variance of \(\hat{\tau}_{ols}\) is: \[
-\tiny
-\widehat{\mathbb{V}}_{hetero} \equiv \frac{1}{N\cdot(N - 2 \cdot \text{dim}(W_i)) - 2} \frac{\sum_{i = 1}^N (Z_i - \overline{Z})^2 \cdot [ Y_i - \hat{\alpha}_{ols} - \hat{\tau}_{ols} \cdot Z_i - W_i \hat{\beta}_{ols} - Z_i \cdot (W_i - \overline{W})\hat{\gamma}_{ols} ]^2}{[\overline{Z} \cdot (1 - \overline{Z})]^2}.
+<li>Moreover, suppose that a stronger version of unconfoundedness, <strong>group unconfoundedness</strong>, is supposed to hold: \[
+G_i \perp \!\!\! \perp Y_i^\ast(0), Y_i^\ast(1) | W_i,
+\] which has a testable implication: \[
+G_i \perp \!\!\! \perp Y_i^\ast(0) | W_i, G_i \in \{c_1, c_2\} \Leftrightarrow
+G_i \perp \!\!\! \perp Y_i^{obs} | W_i, G_i \in \{c_1, c_2\}.
 \]</li>
-<li>Including \(W_i\) may reduce the sampling variance to the degree of correlated with the potential outcome.</li>
-<li>The price paid for this is to give up the finite-sample unbiasedness.</li>
-<li>The unbiasedness in the large sample is maintained.</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Can we test the presence of treatment effect heterogeneity?</h2></hgroup><article  id="can-we-test-the-presence-of-treatment-effect-heterogeneity">
+</article></slide><slide class=""><hgroup><h2>Robustness to the pretreatment variables</h2></hgroup><article  id="robustness-to-the-pretreatment-variables">
 
 <ul>
-<li>Based on the ols estimator \(\hat{\tau}_{ols}\) and its sampling variance estimator, we can test the null of \(\tau_{sp} = 0\).</li>
-<li>Can we further test the following null hypothesis?: \(Y_i^\ast(1) - Y_i^\ast(0) = \tau\) for some \(\tau\).</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Chi-squared test statistics</h2></hgroup><article  id="chi-squared-test-statistics">
-
-<ul>
-<li>Consider a test statistics such that: \[
-Q \equiv \hat{\gamma}_{ols}&#39; \widehat{V}_\gamma^{-1} \hat{\gamma}_{ols},
-\] where \(\widehat{V}_\gamma\) is the sampling variance estimator for \(\hat{\gamma}_{ols}\).</li>
-<li><strong>Theorem</strong>:
-
-<ul>
-<li>Suppose we conduct a completely randomized experiment in a random sample from an infinite population. If \(Y_i^\ast(1) - Y_i^\ast(0) = \tau\) for some value \(\tau\) and all units, then:</li>
-</ul>
-
-<ol>
-<li>\(\gamma^\ast = 0\).</li>
-<li>\(Q \xrightarrow{d} \chi(\text{dim}(W_i))\).</li>
-</ol></li>
+<li>Again assume <strong>subset unconfoundedness</strong>: \[
+Z_i \perp \!\!\! \perp (Y_i^\ast(1), Y_i^\ast(0)) | W_i^r,
+\] for a partition of the covariates \(W_i = (W_i^p, W_i^r)\).</li>
+<li>Then, the estimated treatment effect should be robust to the inclusion of \(W_i^p\).</li>
 </ul>
 
 </article></slide><slide class=""><hgroup><h2>Reference</h2></hgroup><article  id="reference">
 
 <ul>
-<li>Chapter 7, Guido W. Imbens and Donald B. Rubin, 2015, Causal Inference for Statistics, Social, and Biomedical Sciences, Cambridge University Press.</li>
-<li>Section 5, Athey, Susan, and Guido Imbens. 2016. &ldquo;The Econometrics of Randomized Experiments.&rdquo; arXiv [stat.ME]. arXiv. <a href='http://arxiv.org/abs/1607.00698' title=''>http://arxiv.org/abs/1607.00698</a>.</li>
+<li>Chapter 12-13, Guido W. Imbens and Donald B. Rubin, 2015, Causal Inference for Statistics, Social, and Biomedical Sciences, Cambridge University Press.</li>
 </ul></article></slide>
 
 

@@ -1,0 +1,229 @@
+---
+title: "Stratified randomized experiments"
+author: "Kohei Kawaguchi, Hong Kong University of Science and Technology"
+output: 
+  ioslides_presentation:
+    widescreen: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
+library(foreach)
+library(magrittr)
+library(ggplot2)
+library(modelsummary)
+library(kableExtra)
+```
+
+<style type="text/css">
+div.footnotes {
+  position: absolute;
+  bottom: 0;
+  margin-bottom: 10px;
+  width: 80%;
+  font-size: 10px;
+}
+body, td {
+   font-size: 14px;
+}
+code.r{
+  font-size: 11px;
+}
+pre {
+  font-size: 11px
+}
+blockquote {
+  background: #f9f9f9;
+  border-left: 5px solid #ccc;
+  margin: 1.5em 10px;
+  padding: 0.5em 1.5em;
+}
+</style>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<script>
+$(document).ready(function() {
+  $('slide:not(.backdrop):not(.title-slide)').append('<div class=\"footnotes\">');
+
+  $('footnote').each(function(index) {
+    var text  = $(this).html();
+    var fnNum = (index+1).toString();
+    $(this).html(fnNum.sup());
+
+    var footnote   = fnNum + '. ' + text + '<br/>';
+    var oldContent = $(this).parents('slide').children('div.footnotes').html();
+    var newContent = oldContent + footnote;
+    $(this).parents('slide').children('div.footnotes').html(newContent);
+  });
+});
+</script>
+
+# Stratified random experiments
+
+## Treatment assignment mechanism
+
+- First partition the population on the basis of covariate values into $G$ strata, i.e. if the covariate space is $\mathbb{W}$, partition $\mathbb{W}$ into $\mathbb{W}_1, \cdots, \mathbb{W}_G$, so that $\bigcup_g \mathbb{W}_g = \mathbb{W}$ and $\mathbb{W}_g \cap \mathbb{W}_{g'} = \emptyset$ if $g \neq g'$.
+- Let $G_{ig} = 1_{W_i \in \mathbf{W}_g}$ and $N_g$ be the number of units in stratum $g$.
+- Fix the number of treated units in each stratum as $N_{tg}$ such that $\sum_g N_{tg} = N_t$.
+- The assignment probability is:
+$$
+\mathbb{P}[\mathbf{Z}|\mathbf{W}, \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0)] = \prod_{g = 1}^G 
+\begin{pmatrix}
+N_g\\
+N_{tg}
+\end{pmatrix}^{-1},
+$$
+
+## Benefits of stratification
+
+- Many assignments vectors that would have positive probability with a completely randomized experiment have probability zero with the stratified randomized experiment.
+- By doing so, the stratification rules out substantial imbalances in the covariate distributions in the two treatment groups that could arise by chance in a completely randomized experiment.
+- If the stratification is random, no gain will be obtained.
+- However, if the stratification is based on characteristics that are associated with the outcomes of interest, stratified random experiments can be more informative than completely randomized experiments.
+
+## Finite-sample average treatment effet in each strata
+
+- Define the finite-sample average treatment effect in strata $g$ as:
+$$
+\tau_{fsg} \equiv \frac{1}{N_g} \sum_{i: G_{ig} = 1} [Y_i^\ast(1) - Y_i^\ast(0)]. 
+$$
+- Let the stratum proportion and the propensity score be:
+$$
+q_g \equiv \frac{N_g}{N},
+$$
+$$
+e_g \equiv \frac{N_{tg}}{N_g}.
+$$
+
+# Fisher's exact p-value for sharp null hypotheses
+
+## Sharp null hypothesis
+
+- Consider testing a sharp null hypothesis:
+$$
+H_0: Y_i^\ast(0) = Y_i^\ast(1), \forall i = 1, \cdots, N.
+$$
+- We can consider a type of test statistics:
+$$
+T_{\lambda} \equiv \Bigg|\sum_{g = 1}^G \lambda_g [\overline{Y}_{tg}^{obs} - \overline{Y}_{cg}^{obs}]\Bigg|,
+$$
+where:
+$$
+\overline{Y}_{cg}^{obs} \equiv \frac{1}{N_{cg}} \sum_{i: G_{ig} = 1} (1 - Z_i) \cdot Y_i^{obs}, \overline{Y}_{tg}^{obs} \equiv \frac{1}{N_{tg}} \sum_{i: G_{ig} = 1} Z_i \cdot Y_i^{obs}.
+$$
+
+
+## Choice of weight $\lambda_g$
+
+- A choice to balance the population proportion of strata:
+$$
+\lambda_{g0} \equiv q_g.
+$$
+- When there is substantial variation in stratum-specific proportions of treated units, the following weight often gives a higher power:
+$$
+\lambda_{g1} \equiv \frac{q_g \cdot e_{g} \cdot (1 - e_g)}{\sum_{g = 1}^G q_g \cdot e_{g} \cdot (1 - e_g)},
+$$
+which gives a higher weight on stratum with a balanced treatment status.
+
+
+# Neyman's inference for average treatment effects
+
+## Finite-sample average treatment effect
+
+- Consider a finite-sample average treatment effect as an estimand:
+$$
+\tau_{fs} \equiv \frac{1}{N} \sum_{i = 1}^N [Y_i^\ast(1) - Y_i^\ast(0)] \equiv \overline{Y}^\ast(1) - \overline{Y}^\ast(0),
+$$
+where $fs$ represents being the finite-sample parameter.
+
+## Estimator for the finite-sample average treatment effect
+
+- We can estimate the difference in means for each stratum:
+$$
+\hat{\tau}_{fsg} \equiv \overline{Y}_{tg}^{obs} - \overline{Y}_{cg}^{obs} \equiv \frac{1}{N_{tg}} \sum_{i: G_{ig} = 1} Z_i \cdot Y_i^{obs} - \frac{1}{N_{cg}} \sum_{i: G_{ig} = 0} (1 - Z_i) \cdot Y_i^{obs}.
+$$
+- Then, we can take the weighted average:
+$$
+\hat{\tau}_{fs} \equiv \sum_{g = 1}^G q_g \hat{\tau}_{fsg}.
+$$
+
+- With the fixed stratum size, the unbiasedness of each within-stratum estimator implies unbiasedness of $\hat{\tau}_{fs}$ to $\tau_{fs}$.
+
+## Random assignment variance of $\hat{\tau}_{fs}$
+
+- Random assignment within each strata implies that the within-stratum estimators are mutually uncorrelated.
+- Therefore, the random assignment variance of $\hat{\tau}_{fs}$ is:
+$$
+\mathbb{V}(\hat{\tau}_{fs}) = \sum_{g = 1}^G q_g^2 \mathbb{V}(\hat{\tau}_{fsg}).
+$$
+- We can use $\widehat{\mathbb{V}}_{Neyman}(\hat{\tau}_{fsg})$ as a conservative estimator for $\mathbb{V}(\hat{\tau}_{fsg})$.
+
+# Regression methods for completely randomized experiments
+
+## Super-population average treatment effect
+
+- Suppose out estimand is the super-population average treatment effect:
+$$
+\tau_{sp} \equiv \mathbb{E}[Y_i^\ast(1) - Y_i^\ast(0)].
+$$
+- Also let:
+$$
+\tau_{spg} \equiv \mathbb{E}[Y_i^\ast(1) - Y_i^\ast(0)|G_{ig} = 1].
+$$
+- To consistently estimate $\tau_{sp}$, we need to fully interact strata dummies in the linear regression (_saturated_).
+
+## Define a linear regression function
+
+- Define a linear regression function as:
+$$
+Y_i^{obs} \equiv \sum_{g = 1}^G \alpha_g \cdot G_{ig} + \sum_{g = 1}^G \tau_g \cdot Z_i \cdot G_{ig} + \epsilon_i.
+$$
+- Then, the ols estimator is such that for $g = 1, \cdots, G$:
+$$
+\hat{\tau}_{olsg} = \overline{Y}_{tg}^{ols} - \overline{Y}_{tc}^{ols},
+$$
+which is a consistent estimator for $\tau_{spg}$.
+- Because $\tau_{sp} \equiv \sum_{g = 1}^G q_g \cdot \tau_{spg}$, $\hat{\tau}_{sp} \equiv \sum_{g = 1}^G q_g \cdot \hat{\tau}_{olsg}$ is a consistent estimator.
+
+## Transforming the linear regression funciton
+
+- Inserting $\tau_G = (\tau - \sum_{g = 1}^{G - 1} q_g \cdot \tau_g)/q_G$ to the linear regression function, we have:
+$$
+Y_i^{obs} = \tau \cdot Z_i \cdot \frac{G_{iG}}{q_G} + \sum_{g = 1}^G \alpha_g \cdot G_{ig} + \sum_{g = 1}^{G - 1} \tau_g \cdot Z_i \cdot [G_{ig} - G_{iG} \cdot \frac{q_g}{q_G}] + \epsilon_i.
+$$
+- By estimating this linear regression function by the ols method, we can directly estiamte $\tau_{sp}$.
+
+## Asymptotic normality
+
+- __Theorem__:
+  - Suppose we conduct a stratified randomized experiment in a sample drawn at random from an infinite population. Then:
+  $$
+  \sqrt{N} \cdot (\hat{\tau}_{ols} - \tau_{sp}) \xrightarrow{d} N(0, V),
+  $$
+  where:
+  $$
+  V \equiv \sum_{g = 1}^G q_g^2 \cdot \Bigg( \frac{\sigma_{cg}^2}{(1 - e_g) \cdot q_g} + \frac{\sigma_{tg}^2}{e_g \cdot q_g } \Bigg).
+  $$
+
+
+## If strata dummies are not fully interacted
+
+- If we estimate the following linear regression function:
+$$
+Y_i^{obs} = \tau \cdot Z_i + \sum_{g = 1}^G \beta_g \cdot G_{ig} + \epsilon_i,
+$$
+the ols estimator $\hat{\tau}_{ols}$ does not converge to $\tau_{sp}$, but to:
+$$
+\tau_\omega \equiv \frac{\sum_{g = 1}^G \omega_g \cdot \tau_{spg}}{\sum_{g = 1}^G \omega_g},
+$$
+where:
+$$
+\omega_g \equiv q_g \cdot e_g \cdot (1 - e_g).
+$$
+
+
+## Reference
+
+- Chapter 7, Guido W. Imbens and Donald B. Rubin, 2015, Causal Inference for Statistics, Social, and Biomedical Sciences, Cambridge University Press.
+- Section 5, Athey, Susan, and Guido Imbens. 2016. “The Econometrics of Randomized Experiments.” arXiv [stat.ME]. arXiv. http://arxiv.org/abs/1607.00698.

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Completely Randomized Experiments</title>
+  <title>Stratified randomized experiments</title>
 
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="chrome=1">
@@ -19,9 +19,8 @@
     var SLIDE_CONFIG = {
       // Slide settings
       settings: {
-                title: 'Completely Randomized Experiments',
-                        subtitle: 'Regression methods for completely randomized experiments',
-                useBuilds: true,
+                title: 'Stratified randomized experiments',
+                        useBuilds: true,
         usePrettify: true,
         enableSlideAreas: true,
         enableTouch: true,
@@ -3138,7 +3137,7 @@ ul.task-list{list-style: none;}
         <!-- The content of this hgroup is replaced programmatically through the slide_config.json. -->
     <hgroup class="auto-fadein">
       <h1 data-config-title><!-- populated from slide_config.json --></h1>
-      <h2 data-config-subtitle><!-- populated from slide_config.json --></h2>
+      
       <p data-config-presenter><!-- populated from slide_config.json --></p>
           </hgroup>
   </slide>
@@ -3187,379 +3186,162 @@ $(document).ready(function() {
 });
 </script>
 
-<slide class=""><hgroup><h2>Incorporating covariates</h2></hgroup><article  id="incorporating-covariates">
+<slide class="segue dark nobackground level1"><hgroup class = 'auto-fadein'><h2>Stratified random experiments</h2></hgroup><article  id="stratified-random-experiments">
+
+</article></slide><slide class=""><hgroup><h2>Treatment assignment mechanism</h2></hgroup><article  id="treatment-assignment-mechanism">
 
 <ul>
-<li>A researcher may wish to incorporate covariates into the analysis if covariates are recorded for each unit.</li>
-<li>If one has covariates observed prior to the randomization, one should modify the design of the experiment and carry out a stratified randomized experiment.</li>
-<li>Moreover, if one has a conducted a completely randomized experiment where the randomization did not take the covariates into account, one can just ignore the covariates and focus on the difference in means to estimate the average treatment effect.</li>
+<li>First partition the population on the basis of covariate values into \(G\) strata, i.e. if the covariate space is \(\mathbb{W}\), partition \(\mathbb{W}\) into \(\mathbb{W}_1, \cdots, \mathbb{W}_G\), so that \(\bigcup_g \mathbb{W}_g = \mathbb{W}\) and \(\mathbb{W}_g \cap \mathbb{W}_{g&#39;} = \emptyset\) if \(g \neq g&#39;\).</li>
+<li>Let \(G_{ig} = 1_{W_i \in \mathbf{W}_g}\) and \(N_g\) be the number of units in stratum \(g\).</li>
+<li>Fix the number of treated units in each stratum as \(N_{tg}\) such that \(\sum_g N_{tg} = N_t\).</li>
+<li>The assignment probability is: \[
+\mathbb{P}[\mathbf{Z}|\mathbf{W}, \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0)] = \prod_{g = 1}^G 
+\begin{pmatrix}
+N_g\\
+N_{tg}
+\end{pmatrix}^{-1},
+\]</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>The role of ex-post covariate adjustment</h2></hgroup><article  id="the-role-of-ex-post-covariate-adjustment">
+</article></slide><slide class=""><hgroup><h2>Benefits of stratification</h2></hgroup><article  id="benefits-of-stratification">
 
 <ul>
-<li>Consider a case where the completely randomized experiments did not take the covariates into account at the design stage.</li>
-<li>There are still some roles in ex-post covariate adjustment.</li>
-<li>If the covariates are sufficiently strongly correlated with the potential outcomes, the estimation results may be more precise.</li>
-<li>The covariates allow the assessments of heterogeneity in treatment effects.</li>
-<li>If the randomization is compromised because of practical problems, adjusting for covariate differences may remove the biases.</li>
+<li>Many assignments vectors that would have positive probability with a completely randomized experiment have probability zero with the stratified randomized experiment.</li>
+<li>By doing so, the stratification rules out substantial imbalances in the covariate distributions in the two treatment groups that could arise by chance in a completely randomized experiment.</li>
+<li>If the stratification is random, no gain will be obtained.</li>
+<li>However, if the stratification is based on characteristics that are associated with the outcomes of interest, stratified random experiments can be more informative than completely randomized experiments.</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Regression methods and the randomization-based approach</h2></hgroup><article  id="regression-methods-and-the-randomization-based-approach">
+</article></slide><slide class=""><hgroup><h2>Finite-sample average treatment effet in each strata</h2></hgroup><article  id="finite-sample-average-treatment-effet-in-each-strata">
 
 <ul>
-<li>We often use regression methods to estimate treatment effects, especially for controlling for covariates.</li>
-<li>However, the inference of regression methods are based on sampling-based approach.</li>
-<li>Moreover, the assumptions for the regression methods do not immediately follow from randomization.</li>
-<li>Therefore, regression methods often go beyond analyses that are justified by randomization and end up with analyses that rely on a mix of randomization assumptions, modelling assumptions, and large sample approximations.</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Mixing sampling-based and randomization-based approach</h2></hgroup><article  id="mixing-sampling-based-and-randomization-based-approach">
-
-<ul>
-<li>We assume that the sample of size \(N\) can be a simple random sample drawn from an infinite super-population.</li>
-<li>This random sample induces a distribution on the pair of potential outcomes and covariates.</li>
-<li>Then, the treatment status is randomly assigned and observed outcome is determined.</li>
-<li>The estimand is the super-population average treatment effect: \[
-\tau_{sp} \equiv \mathbb{E}[Y_i^\ast(1) - Y_i^\ast(0)],
-\] which is the expected value of the unit-level treatment effects under the distribution induced by sampling from the super-population.</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Notations</h2></hgroup><article  id="notations">
-
-<ul>
-<li>For each covariate value \(w\); \[
-\mu_0(w) \equiv \mathbb{E}[Y_i^\ast(0)|W_i = w], \mu_1 \equiv \mathbb{E}[Y_i^\ast(1) | W_i = w],
+<li>Define the finite-sample average treatment effect in strata \(g\) as: \[
+\tau_{fsg} \equiv \frac{1}{N_g} \sum_{i: G_{ig} = 1} [Y_i^\ast(1) - Y_i^\ast(0)]. 
+\]</li>
+<li>Let the stratum proportion and the propensity score be: \[
+q_g \equiv \frac{N_g}{N},
 \] \[
-\sigma_0^2(w) \equiv \mathbb{V}_0[Y_i^\ast(0)|W_i = w], \sigma_1^2 \equiv \mathbb{V}[Y_i^\ast(1)|W_i = w],
-\] \[
-\tau(w) \equiv \mathbb{E}[Y_i^\ast(1) - Y_i^\ast(0)| W_i = w], \sigma_{10}^2(w) \equiv \mathbb{V}[Y_i^\ast(1) - Y_i^\ast(0)| W_i = w].
-\]</li>
-<li>Marginally: \[
-\mu_0 \equiv \mathbb{E}[Y_i^\ast(0)] = \mathbb{E}[\mu_0(W_i)], \mu_1 \equiv \mathbb{E}[Y_i^\ast(1)] = \mathbb{E}[\mu_1(W_i)], 
-\] \[
-\sigma_0^2 \equiv \mathbb{V}[Y_i^\ast(0)] = \mathbb{E}[\sigma_0^2(W_i)] + \mathbb{V}[\mu_0(W_i)],
-\] \[
-\sigma_1^2 \equiv \mathbb{V}[Y_i^\ast(1)] = \mathbb{E}[\sigma_1^2(W_i)] + \mathbb{V}[\mu_1(W_i)].
+e_g \equiv \frac{N_{tg}}{N_g}.
 \]</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Notations</h2></hgroup><article  id="notations-1">
+</article></slide><slide class="segue dark nobackground level1"><hgroup class = 'auto-fadein'><h2>Fisher’s exact p-value for sharp null hypotheses</h2></hgroup><article  id="fishers-exact-p-value-for-sharp-null-hypotheses">
+
+</article></slide><slide class=""><hgroup><h2>Sharp null hypothesis</h2></hgroup><article  id="sharp-null-hypothesis">
 
 <ul>
-<li>For the covariates: \[
-\mu_W \equiv \mathbb{E}[W_i], \Omega_W \equiv \mathbb{V}(W_i) = \mathbb{E}[(W_i - \mu_W)&#39; (W_i - \mu_W)].
+<li>Consider testing a sharp null hypothesis: \[
+H_0: Y_i^\ast(0) = Y_i^\ast(1), \forall i = 1, \cdots, N.
 \]</li>
-</ul>
-
-</article></slide><slide class="segue dark nobackground level1"><hgroup class = 'auto-fadein'><h2>Linear regression with no covariate</h2></hgroup><article  id="linear-regression-with-no-covariate">
-
-</article></slide><slide class=""><hgroup><h2>Definie a linear regression function</h2></hgroup><article  id="definie-a-linear-regression-function">
-
-<ul>
-<li>Specify a linear regression function for the observed outcome \(Y_i\): \[
-Y_i \equiv \alpha + \tau \cdot Z_i + \epsilon_i.
-\]</li>
-<li>Remark that this linear regression function is <em>correctly specified</em> without loss of generality, because we can set: \[
-\alpha = \mu_0, \tau = \tau_{sp}, \epsilon_i = Y_i^\ast(0) - \mu_0 + Z_i \cdot [Y_i^\ast(1) - Y_i^\ast(0) - \tau_{sp}]. 
-\]</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Define ols estimator of \(\tau\)</h2></hgroup><article  id="define-ols-estimator-of-tau">
-
-<ul>
-<li>The ordinary least squares (ols) estimator for \(\tau\) is defined as: \[
-(\hat{\tau}_{ols}, \hat{\alpha}_{ols}) \equiv \text{argmin}_{\tau, \alpha} \sum_{i = 1}^N (Y_i - \alpha - \tau \cdot Z_i)^2,
-\] and is solved as: \[
-\hat{\tau}_{ols} = \frac{\sum_{i = 1}^N(Z_i - \overline{Z}) (Y_i - \overline{Y})}{\sum_{i = 1}^N (Z_i - \overline{Z})^2}, \hat{\alpha}_{ols} = \overline{Y} - \hat{\tau}_{ols} \cdot \overline{Z}, 
+<li>We can consider a type of test statistics: \[
+T_{\lambda} \equiv \Bigg|\sum_{g = 1}^G \lambda_g [\overline{Y}_{tg}^{obs} - \overline{Y}_{cg}^{obs}]\Bigg|,
 \] where: \[
-\overline{Y} \equiv \frac{1}{N} \sum_{i = 1}^N Y_i, \overline{Z} = \frac{1}{N} \sum_{i = 1}^N Z_i.
+\overline{Y}_{cg}^{obs} \equiv \frac{1}{N_{cg}} \sum_{i: G_{ig} = 1} (1 - Z_i) \cdot Y_i^{obs}, \overline{Y}_{tg}^{obs} \equiv \frac{1}{N_{tg}} \sum_{i: G_{ig} = 1} Z_i \cdot Y_i^{obs}.
 \]</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Ols estimator as Neyman’s estimator</h2></hgroup><article  id="ols-estimator-as-neymans-estimator">
+</article></slide><slide class=""><hgroup><h2>Choice of weight \(\lambda_g\)</h2></hgroup><article  id="choice-of-weight-lambda_g">
 
 <ul>
-<li>A simple algebra shows that: \[
-\hat{\tau}_{ols} = \overline{Y}_1 - \overline{Y}_0 \equiv \hat{\tau}_{fs}
+<li>A choice to balance the population proportion of strata: \[
+\lambda_{g0} \equiv q_g.
 \]</li>
-<li>Thus, the ols estimator is equivalent to Neyman’s estimator for the finite-sample average treatment effect.</li>
-<li>In the previous lecture, we showed that \(\hat{\tau}_{fs}\) is unbiased for \(\tau_{sp}\) with random assignment and random sampling.</li>
-<li>This shows that \(\hat{\tau}_{ols}\) is unbiased for \(\tau_{sp}\).</li>
+<li>When there is substantial variation in stratum-specific proportions of treated units, the following weight often gives a higher power: \[
+\lambda_{g1} \equiv \frac{q_g \cdot e_{g} \cdot (1 - e_g)}{\sum_{g = 1}^G q_g \cdot e_{g} \cdot (1 - e_g)},
+\] which gives a higher weight on stratum with a balanced treatment status.</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Is conditional mean zero assumption justified from the current setting?</h2></hgroup><article  id="is-conditional-mean-zero-assumption-justified-from-the-current-setting">
+</article></slide><slide class="segue dark nobackground level1"><hgroup class = 'auto-fadein'><h2>Neyman’s inference for average treatment effects</h2></hgroup><article  id="neymans-inference-for-average-treatment-effects">
+
+</article></slide><slide class=""><hgroup><h2>Finite-sample average treatment effect</h2></hgroup><article  id="finite-sample-average-treatment-effect">
 
 <ul>
-<li>We did not use the standard argument for the unbiasedness of the ols estimator that rely on the conditional mean zero assumption.</li>
-<li>Can we justify this assumption from the random assignment and random sampling?</li>
-<li>Specifying the linear regression model is equivalent to <em>defining</em> \(\epsilon_i\) as follows: \[
-\epsilon_i \equiv Y_i^\ast(0) - \mu_0 + Z_i \cdot [Y_i^\ast(1) - Y_i^\ast(0) - \tau_{sp}].
-\]</li>
-<li>In other words, can we derive the conditional mean zero property \(\mathbb{E}[\epsilon_i | Z_i = z] = 0\) for \(w = 0, 1\) from random sampling and random assignment?</li>
+<li>Consider a finite-sample average treatment effect as an estimand: \[
+\tau_{fs} \equiv \frac{1}{N} \sum_{i = 1}^N [Y_i^\ast(1) - Y_i^\ast(0)] \equiv \overline{Y}^\ast(1) - \overline{Y}^\ast(0),
+\] where \(fs\) represents being the finite-sample parameter.</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Showing conditional mean zero</h2></hgroup><article  id="showing-conditional-mean-zero">
+</article></slide><slide class=""><hgroup><h2>Estimator for the finite-sample average treatment effect</h2></hgroup><article  id="estimator-for-the-finite-sample-average-treatment-effect">
 
 <ul>
-<li>The random sampling allows viewing the potential outcome as random variables.</li>
-<li>Moreover, the randam assignment implies: \[
-\mathbb{P}[Z_i = 1|Y_i^\ast(0), Y_i^\ast(1)] = \mathbb{P}(Z_i = 1).
-\]</li>
-<li>Therefore: \[
-\mathbb{E}[\epsilon_i | Z_i = 0] = \mathbb{E}[Y_i^\ast(0) - \mu_0| Z_i = 0] = \mathbb{E}[Y_i^\ast(0) - \mu_0] = 0,
-\] and: \[
-\mathbb{E}[\epsilon_i | Z_i = 1] = \mathbb{E}[Y_i^\ast(1) - \mu_0 - \tau_{sp}| Z_i = 1] = \mathbb{E}[Y_i^\ast(1) - \mu_0 - \tau_{sp}] = 0. 
-\]</li>
+<li><p>We can estimate the difference in means for each stratum: \[
+\hat{\tau}_{fsg} \equiv \overline{Y}_{tg}^{obs} - \overline{Y}_{cg}^{obs} \equiv \frac{1}{N_{tg}} \sum_{i: G_{ig} = 1} Z_i \cdot Y_i^{obs} - \frac{1}{N_{cg}} \sum_{i: G_{ig} = 0} (1 - Z_i) \cdot Y_i^{obs}.
+\]</p></li>
+<li><p>Then, we can take the weighted average: \[
+\hat{\tau}_{fs} \equiv \sum_{g = 1}^G q_g \hat{\tau}_{fsg}.
+\]</p></li>
+<li><p>With the fixed stratum size, the unbiasedness of each within-stratum estimator implies unbiasedness of \(\hat{\tau}_{fs}\) to \(\tau_{fs}\).</p></li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Heteroskedasticity robust sampling variance estimator of \(\hat{\tau}_{ols}\)</h2></hgroup><article  id="heteroskedasticity-robust-sampling-variance-estimator-of-hattau_ols">
+</article></slide><slide class=""><hgroup><h2>Random assignment variance of \(\hat{\tau}_{fs}\)</h2></hgroup><article  id="random-assignment-variance-of-hattau_fs">
 
 <ul>
-<li>The standard robust sampling variance estimator of \(\hat{\tau}_{ols}\) allowing for heteroskedasticity due to \(Z_i\): \[
-\widehat{\mathbb{V}}_{hetero} \equiv \frac{\sum_{i = 1}^N \hat{\epsilon}_i^2 \cdot (Z_i - \overline{Z})^2}{[\sum_{i = 1}^N (Z_i - \overline{Z})^2]^2},
-\] where: \[
-\hat{\epsilon}_i \equiv Y_i - \hat{\alpha}_{ols} - \hat{\tau}_{ols} \cdot Z_i.
+<li>Random assignment within each strata implies that the within-stratum estimators are mutually uncorrelated.</li>
+<li>Therefore, the random assignment variance of \(\hat{\tau}_{fs}\) is: \[
+\mathbb{V}(\hat{\tau}_{fs}) = \sum_{g = 1}^G q_g^2 \mathbb{V}(\hat{\tau}_{fsg}).
 \]</li>
+<li>We can use \(\widehat{\mathbb{V}}_{Neyman}(\hat{\tau}_{fsg})\) as a conservative estimator for \(\mathbb{V}(\hat{\tau}_{fsg})\).</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>..is the same with \(\widehat{\mathbb{V}}_{Neyman}\) for \(\hat{\tau}_{fs}\)</h2></hgroup><article  id="is-the-same-with-widehatmathbbv_neyman-for-hattau_fs">
+</article></slide><slide class="segue dark nobackground level1"><hgroup class = 'auto-fadein'><h2>Regression methods for completely randomized experiments</h2></hgroup><article  id="regression-methods-for-completely-randomized-experiments">
+
+</article></slide><slide class=""><hgroup><h2>Super-population average treatment effect</h2></hgroup><article  id="super-population-average-treatment-effect">
 
 <ul>
-<li>A simple algebra shows: \[
-\widehat{\mathbb{V}}_{hetero} = \frac{s_0^2}{N_0} + \frac{s_1^2}{N_1} = \widehat{\mathbb{V}}_{Neyman},
-\] where: \[
-s_0^2 \equiv \frac{1}{N_0 - 1} \sum_{i: Z_i = 0} (Y_i - \overline{Y})^2, s_1^2 \equiv \frac{1}{N_1 - 1} \sum_{i: Z_i = 1} (Y_i - \overline{Y})^2.
+<li>Suppose out estimand is the super-population average treatment effect: \[
+\tau_{sp} \equiv \mathbb{E}[Y_i^\ast(1) - Y_i^\ast(0)].
 \]</li>
-<li>Whereas \(\widehat{\mathbb{V}}_{Neyman}\) for \(\hat{\tau}_{fs}\) is justified as a conservative estimator for the variance of \(\hat{\tau}_{fs}\) due to random assignment, \(\widehat{\mathbb{V}}_{hetero}\) is justified as a consistent estimator to the variance of \(\hat{\tau}_{ols}\) under random sampling.</li>
+<li>Also let: \[
+\tau_{spg} \equiv \mathbb{E}[Y_i^\ast(1) - Y_i^\ast(0)|G_{ig} = 1].
+\]</li>
+<li>To consistently estimate \(\tau_{sp}\), we need to fully interact strata dummies in the linear regression (<em>saturated</em>).</li>
 </ul>
-
-</article></slide><slide class="segue dark nobackground level1"><hgroup class = 'auto-fadein'><h2>Linear regression with additional covariates</h2></hgroup><article  id="linear-regression-with-additional-covariates">
 
 </article></slide><slide class=""><hgroup><h2>Define a linear regression function</h2></hgroup><article  id="define-a-linear-regression-function">
 
 <ul>
-<li>We have \(W_i\) as additional covariates.</li>
-<li>Define a linear regression function with \(W_i\) as: \[
-Y_i \equiv \alpha + \tau \cdot Z_i + W_i \beta + \epsilon_i.
+<li>Define a linear regression function as: \[
+Y_i^{obs} \equiv \sum_{g = 1}^G \alpha_g \cdot G_{ig} + \sum_{g = 1}^G \tau_g \cdot Z_i \cdot G_{ig} + \epsilon_i.
 \]</li>
-<li>The model can be <em>misspecified</em>: We <em>do not</em> assume that the conditional mean of \(Y_i\) is actually linear in \(Z_i\) and \(W_i\). \[
-\mathbb{E}[Y_i|Z_i, W_i] \neq  \alpha + \tau \cdot Z_i + W_i \beta.
-\]</li>
-<li>We are interested in \(\tau\) but <em>not</em> in the nuisance parameters \(\alpha\) and \(\beta\).</li>
+<li>Then, the ols estimator is such that for \(g = 1, \cdots, G\): \[
+\hat{\tau}_{olsg} = \overline{Y}_{tg}^{ols} - \overline{Y}_{tc}^{ols},
+\] which is a consistent estimator for \(\tau_{spg}\).</li>
+<li>Because \(\tau_{sp} \equiv \sum_{g = 1}^G q_g \cdot \tau_{spg}\), \(\hat{\tau}_{sp} \equiv \sum_{g = 1}^G q_g \cdot \hat{\tau}_{olsg}\) is a consistent estimator.</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Define ols estimator for \(\tau\)</h2></hgroup><article  id="define-ols-estimator-for-tau">
+</article></slide><slide class=""><hgroup><h2>Transforming the linear regression funciton</h2></hgroup><article  id="transforming-the-linear-regression-funciton">
 
 <ul>
-<li>The ols estimator is defined using least squares: \[
-(\hat{\tau}_{ols}, \hat{\alpha}_{ols}, \hat{\beta}_{ols}) \equiv \text{argmin}_{\tau, \alpha, \beta} \sum_{i = 1}^N(Y_i - \alpha - \tau \cdot Z_i - W_i \beta)^2.
+<li>Inserting \(\tau_G = (\tau - \sum_{g = 1}^{G - 1} q_g \cdot \tau_g)/q_G\) to the linear regression function, we have: \[
+Y_i^{obs} = \tau \cdot Z_i \cdot \frac{G_{iG}}{q_G} + \sum_{g = 1}^G \alpha_g \cdot G_{ig} + \sum_{g = 1}^{G - 1} \tau_g \cdot Z_i \cdot [G_{ig} - G_{iG} \cdot \frac{q_g}{q_G}] + \epsilon_i.
 \]</li>
-<li>Define the super-population values as: \[
-(\tau^\ast, \alpha^\ast, \beta^\ast) \equiv \text{argmin}_{\tau, \alpha, \beta} \mathbb{E}(Y_i - \alpha - \tau \cdot Z_i - W_i \beta)^2.
-\]</li>
+<li>By estimating this linear regression function by the ols method, we can directly estiamte \(\tau_{sp}\).</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Consistency of \(\hat{\tau}_{ols}\)</h2></hgroup><article  id="consistency-of-hattau_ols">
-
-<ul>
-<li>If \(W_i \beta\) is included, \(\hat{\tau}_{ols}\) is no longer unbiased for \(\tau_{sp}\) in the finite sample.</li>
-<li>In the large sample, \(\hat{\tau}_{ols}\) converges to \(\tau^\ast\) as shown in the basic econometrics.</li>
-<li>Moreover, we can show \(\tau^\ast = \tau_{sp}\).</li>
-<li>Therefore, in the large sample, \(\hat{\tau}_{ols}\) is unbiased for \(\tau_{sp}\).</li>
-<li>Intuition:
-
-<ul>
-<li>In the large sample, \(\hat{\tau}_{ols}\) is unbiased for \(\tau_{sp}\), because in the large sample, the correlation between \(Z_i\) and \(W_i\) is zero because of the random assignment.</li>
-<li>In the finite sample, however, the correlation between \(Z_i\) and \(W_i\) can be non-zero.</li>
-</ul></li>
-<li>If \(Z_i\) is not randomly assigned, the consistency may fail because of the misspecification.</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Proof of \(\tau^\ast = \tau_{sp}\)</h2></hgroup><article  id="proof-of-tauast-tau_sp">
-
-<ul>
-<li>Consider the limiting objective function: \[
-\begin{split}
-Q(\tau, \alpha, \beta) &amp;\equiv \mathbb{E}[(Y_i - \alpha - \tau \cdot Z_i - W_i \beta)^2]\\
-&amp;= \mathbb{E}[(Y_i - \tilde{\alpha} - \tau \cdot Z_i - (W_i - \mu_W) \beta)^2]\\
-&amp;= \mathbb{E}[(Y_i - \tilde{\alpha} - \tau \cdot Z_i)^2] + \mathbb{E}[(W_i - \mu_W)^2 \beta^2]\\
-&amp;-2 \mathbb{E}[ (W_i - \mu_W) \beta \cdot (Y_i - \tilde{\alpha} - \tau \cdot Z_i)],
-\end{split}
-\] with \[
-\tilde{\alpha} \equiv \alpha + \mu_W \beta.
-\]</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Proof of \(\tau^\ast = \tau_{sp}\)</h2></hgroup><article  id="proof-of-tauast-tau_sp-1">
-
-<ul>
-<li>This reduces to</li>
-</ul>
-
-<p>\[
-\begin{split}
-Q(\tau, \alpha, \beta) &amp;= \mathbb{E}[(Y_i - \tilde{\alpha} - \tau \cdot Z_i)^2] + \mathbb{E}[(W_i - \mu_W)^2 \beta^2]\\
-&amp;-2 \mathbb{E}[ (W_i - \mu_W) \beta \cdot Y_i]
-\end{split}
-\] because of \[
-\mathbb{E}[(W_i - \mu_W) \beta] = 0,
-\] and \[
-\mathbb{E}[(W_i - \mu_W) \beta \cdot \tau Z_i] =\mathbb{E}[(W_i - \mu_W) \beta] \cdot \mathbb{E}[\tau Z_i] = 0,
-\] if \(W_i\) and \(Z_i\) are independent.</p>
-
-</article></slide><slide class=""><hgroup><h2>Independence and Conditionally Mean Zero</h2></hgroup><article  id="independence-and-conditionally-mean-zero">
-
-<ul>
-<li>The argument so far is robust to the misscpefification.</li>
-<li>The independence of \(Z_i\) and \(W_i\) is the key.</li>
-<li>We often assume the conditionally mean zero in a regression analysis: \[
-\mathbb{E}\{\epsilon_i|Z_i, W_i\} = 0,
-\] with a true model \(f\). \[
-\epsilon_i = Y_i - f(Z_i, W_i).
-\]</li>
-<li>With this assumption, we cannot make \(\mathbb{E}[(W_i - \mu_W) \beta \cdot \tau Z_i]\) zero.</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Proof of \(\tau^\ast = \tau_{sp}\)</h2></hgroup><article  id="proof-of-tauast-tau_sp-2">
-
-<ul>
-<li>The only term in the limiting objective function that depends on \(\tilde{\alpha}\) and \(\tau\) is: \[
-\mathbb{E}[(Y_i - \alpha - \tau \cdot Z_i)^2],
-\] which leads to the solution: \[
-\tilde{\alpha}^\ast = \mathbb{E}[Y_i|Z_i = 0] = \mathbb{E}[Y_i(0)|Z_i = 0] = \mu_0,
-\] \[
-\begin{split}
-\tau^\ast &amp;= \mathbb{E}[Y_i|Z_i = 1] - \mathbb{E}[Y_i|Z_i = 0]\\
-&amp;= \mathbb{E}[Y_i^\ast(1)|Z_i = 1] - \mathbb{E}[Y_i^\ast(0)|Z_i = 0]\\
-&amp;= \tau_{sp}.
-\end{split}
-\]</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Asymptotic normality of \(\hat{\tau}_{ols}\)</h2></hgroup><article  id="asymptotic-normality-of-hattau_ols">
+</article></slide><slide class=""><hgroup><h2>Asymptotic normality</h2></hgroup><article  id="asymptotic-normality">
 
 <ul>
 <li><strong>Theorem</strong>:
 
 <ul>
-<li>Suppose we conduct a completely randomized experiment in a sample drawn at random from an infinite population. Then:</li>
-</ul>
-
-<ol>
-<li>\(\tau^\ast = \tau_{sp}\).</li>
-<li>\(\hat{\tau}_{ols}\) is asymptotically normal centered at \(\tau_{sp}\), i.e.: \[
+<li>Suppose we conduct a stratified randomized experiment in a sample drawn at random from an infinite population. Then: \[
 \sqrt{N} \cdot (\hat{\tau}_{ols} - \tau_{sp}) \xrightarrow{d} N(0, V),
 \] where: \[
-V \equiv \frac{\mathbb{E}[(Z_i - p)^2 \cdot (Y_i - \alpha^\ast - \tau_{sp} \cdot Z_i - W_i \cdot \beta^\ast)^2]}{p^2 \cdot (1 - p)^2}.
+V \equiv \sum_{g = 1}^G q_g^2 \cdot \Bigg( \frac{\sigma_{cg}^2}{(1 - e_g) \cdot q_g} + \frac{\sigma_{tg}^2}{e_g \cdot q_g } \Bigg).
 \]</li>
-</ol></li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Heteroskedasticity robust sampling variance estimator of \(\hat{\tau}_{ols}\)</h2></hgroup><article  id="heteroskedasticity-robust-sampling-variance-estimator-of-hattau_ols-1">
-
-<ul>
-<li>The estimator of the sampling variance of \(\hat{\tau}_{ols}\) is: \[
-\scriptsize
-\widehat{\mathbb{V}}_{hetero} \equiv \frac{1}{N\cdot(N - \text{dim}(W_i) - 2)} \frac{\sum_{i = 1}^N (Z_i - \overline{Z})^2 \cdot (Y_i - \hat{\alpha}_{ols} - \hat{\tau}_{ols} \cdot Z_i - W_i \hat{\beta}_{Ols})^2}{[\overline{Z} \cdot (1 - \overline{Z})]^2}.
-\]</li>
-<li>Including \(W_i\) may reduce the sampling variance to the degree of correlated with the potential outcome.</li>
-<li>The price paid for this is to give up the finite-sample unbiasedness.</li>
-<li>The unbiasedness in the large sample is maintained.</li>
-</ul>
-
-</article></slide><slide class="segue dark nobackground level1"><hgroup class = 'auto-fadein'><h2>Linear regression with covariates and interactions</h2></hgroup><article  id="linear-regression-with-covariates-and-interactions">
-
-</article></slide><slide class=""><hgroup><h2>Define a linear regression function</h2></hgroup><article  id="define-a-linear-regression-function-1">
-
-<ul>
-<li>We can further define a linear regression function with covariates and interactions: \[
-Y_i \equiv \alpha + \tau \cdot Z_i + W_i \beta + Z_i \cdot (W_i - \overline{W}) \gamma + \epsilon_i.
-\]</li>
-<li>Again, we <em>do not</em> assume that this is the correct specification for the conditional mean of \(Y_i\).</li>
-<li>We are interested in \(\tau\) but <em>not</em> in the nuisance parameters \(\alpha\), \(\beta\), and \(\gamma\).</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Define ols estimator for \(\tau\)</h2></hgroup><article  id="define-ols-estimator-for-tau-1">
-
-<ul>
-<li>Define ols estimator as: \[
-\scriptsize
-(\hat{\tau}_{ols}, \hat{\alpha}_{ols}, \hat{\beta}_{ols}, \hat{\gamma}_{ols}) \equiv \text{argmin}_{\tau, \alpha, \beta, \gamma} \sum_{i = 1}^N [Y_i - \alpha - \tau \cdot Z_i - W_i \beta - Z_i \cdot (W_i - \overline{W}) \gamma]^2.
-\]</li>
-<li>Define \(\tau^\ast, \alpha^\ast, \beta^\ast\), and \(\gamma^\ast\) as their super-population counterparts.</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Consistency of \(\hat{\tau}_{ols}\)</h2></hgroup><article  id="consistency-of-hattau_ols-1">
-
-<ul>
-<li>\(\hat{\tau}_{ols}\) is no longer unbiased for \(\tau_{sp}\) in the finite sample.</li>
-<li>In the large sample, \(\hat{\tau}_{ols}\) converges to \(\tau^\ast\) as shown in the basic econometrics.</li>
-<li>Moreover, we can show \(\tau^\ast = \tau_{sp}\).</li>
-<li>Therefore, in the large sample, \(\hat{\tau}_{ols}\) is unbiased for \(\tau_{sp}\).</li>
-<li>Intuition:
-
-<ul>
-<li>In the large sample, \(\hat{\tau}_{ols}\) is unbiased for \(\tau_{sp}\), because in the large sample, the correlation between \(Z_i\) and \(W_i\) is zero because of the random assignment.</li>
-<li>In the finite sample, however, the correlation between \(Z_i\) and \(W_i\) can be non-zero.</li>
 </ul></li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Asymptotic normality of \(\hat{\tau}_{ols}\)</h2></hgroup><article  id="asymptotic-normality-of-hattau_ols-1">
+</article></slide><slide class=""><hgroup><h2>If strata dummies are not fully interacted</h2></hgroup><article  id="if-strata-dummies-are-not-fully-interacted">
 
 <ul>
-<li><strong>Theorem</strong>:
-
-<ul>
-<li>Suppose we conduct a completely randomized experiment in a sample drawn at random from an infinite population. Then:</li>
-</ul>
-
-<ol>
-<li>\(\tau^\ast = \tau_{sp}\).</li>
-<li>\(\hat{\tau}_{ols}\) is asymptotically normal centered at \(\tau_{sp}\), i.e.: \[
-\sqrt{N} \cdot (\hat{\tau}_{ols} - \tau_{sp}) \xrightarrow{d} N(0, V),
+<li>If we estimate the following linear regression function: \[
+Y_i^{obs} = \tau \cdot Z_i + \sum_{g = 1}^G \beta_g \cdot G_{ig} + \epsilon_i,
+\] the ols estimator \(\hat{\tau}_{ols}\) does not converge to \(\tau_{sp}\), but to: \[
+\tau_\omega \equiv \frac{\sum_{g = 1}^G \omega_g \cdot \tau_{spg}}{\sum_{g = 1}^G \omega_g},
 \] where: \[
-\scriptsize
-V \equiv \frac{\mathbb{E}[(Z_i - p)^2 \cdot (Y_i - \alpha^\ast - \tau_{sp} \cdot Z_i - W_i \cdot \beta^\ast - Z_i \cdot (W_i - \mu_W) \gamma^\ast)^2]}{p^2 \cdot (1 - p)^2}.
+\omega_g \equiv q_g \cdot e_g \cdot (1 - e_g).
 \]</li>
-</ol></li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Heteroskedasticity robust sampling variance estimator of \(\hat{\tau}_{ols}\)</h2></hgroup><article  id="heteroskedasticity-robust-sampling-variance-estimator-of-hattau_ols-2">
-
-<ul>
-<li>The estimator of the sampling variance of \(\hat{\tau}_{ols}\) is: \[
-\tiny
-\widehat{\mathbb{V}}_{hetero} \equiv \frac{1}{N\cdot(N - 2 \cdot \text{dim}(W_i)) - 2} \frac{\sum_{i = 1}^N (Z_i - \overline{Z})^2 \cdot [ Y_i - \hat{\alpha}_{ols} - \hat{\tau}_{ols} \cdot Z_i - W_i \hat{\beta}_{ols} - Z_i \cdot (W_i - \overline{W})\hat{\gamma}_{ols} ]^2}{[\overline{Z} \cdot (1 - \overline{Z})]^2}.
-\]</li>
-<li>Including \(W_i\) may reduce the sampling variance to the degree of correlated with the potential outcome.</li>
-<li>The price paid for this is to give up the finite-sample unbiasedness.</li>
-<li>The unbiasedness in the large sample is maintained.</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Can we test the presence of treatment effect heterogeneity?</h2></hgroup><article  id="can-we-test-the-presence-of-treatment-effect-heterogeneity">
-
-<ul>
-<li>Based on the ols estimator \(\hat{\tau}_{ols}\) and its sampling variance estimator, we can test the null of \(\tau_{sp} = 0\).</li>
-<li>Can we further test the following null hypothesis?: \(Y_i^\ast(1) - Y_i^\ast(0) = \tau\) for some \(\tau\).</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Chi-squared test statistics</h2></hgroup><article  id="chi-squared-test-statistics">
-
-<ul>
-<li>Consider a test statistics such that: \[
-Q \equiv \hat{\gamma}_{ols}&#39; \widehat{V}_\gamma^{-1} \hat{\gamma}_{ols},
-\] where \(\widehat{V}_\gamma\) is the sampling variance estimator for \(\hat{\gamma}_{ols}\).</li>
-<li><strong>Theorem</strong>:
-
-<ul>
-<li>Suppose we conduct a completely randomized experiment in a random sample from an infinite population. If \(Y_i^\ast(1) - Y_i^\ast(0) = \tau\) for some value \(\tau\) and all units, then:</li>
-</ul>
-
-<ol>
-<li>\(\gamma^\ast = 0\).</li>
-<li>\(Q \xrightarrow{d} \chi(\text{dim}(W_i))\).</li>
-</ol></li>
 </ul>
 
 </article></slide><slide class=""><hgroup><h2>Reference</h2></hgroup><article  id="reference">
