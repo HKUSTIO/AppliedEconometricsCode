@@ -3197,7 +3197,7 @@ $(document).ready(function() {
 
 <ul>
 <li><p>The natural estimator is: \[
-\hat{\tau}_{fs} \equiv \overline{Y}_1 - \overline{Y}_0 \equiv \frac{1}{N_1} \sum_{i: W_i = 1} Y_i - \frac{1}{N_0} \sum_{i: W_i = 0} Y_i.
+\hat{\tau}_{fs} \equiv \overline{Y}_1 - \overline{Y}_0 \equiv \frac{1}{N_1} \sum_{i: Z_i = 1} Y_i - \frac{1}{N_0} \sum_{i: Z_i = 0} Y_i.
 \]</p></li>
 <li><p>Is this estimator unbiased?</p></li>
 <li><p>How to calculate the standard error of the estimator?</p></li>
@@ -3209,7 +3209,7 @@ $(document).ready(function() {
 <li>The estimator is arranged to: \[
 \hat{\tau}_{fs} \equiv \tau_{fs} + \frac{1}{N} \sum_{i = 1} D_i \cdot \Bigg[\frac{N}{N_1} \cdot Y_i^\ast(1) + \frac{N}{N_0} \cdot Y_i^\ast(0) \Bigg],
 \] where \[
-D_i = W_i - \frac{N_1}{N}.
+D_i = Z_i - \frac{N_1}{N}.
 \]</li>
 <li>Because \(\mathbb{E}(D_i) = 0\), by unconfoundedness, \(\mathbb{E}(\hat{\tau}_{fs}) = \tau_{fs}\): unbiased.</li>
 </ul>
@@ -3231,9 +3231,9 @@ D_i = W_i - \frac{N_1}{N}.
 <li>We can show that: \[
 \mathbb{V}(\hat{\tau}_{fs}) = \frac{S_0^2}{N_0} + \frac{S_1^2}{N_1} - \frac{S_{10}^2}{N},
 \] where: \[
-S_0^2 \equiv \frac{1}{N - 1} \sum_{i = 1}^N [Y_i^\ast(0) - \overline{Y}(0)]^2, S_1^2 \equiv \frac{1}{N - 1} \sum_{i = 1}^N [Y_i^\ast(1) - \overline{Y}(1)]^2, 
+S_0^2 \equiv \frac{1}{N - 1} \sum_{i = 1}^N [Y_i^\ast(0) - \overline{Y}^\ast(0)]^2, S_1^2 \equiv \frac{1}{N - 1} \sum_{i = 1}^N [Y_i^\ast(1) - \overline{Y}^\ast(1)]^2, 
 \] \[
-S_{10}^2 \equiv \frac{1}{N - 1} \sum_{i = 1}^N \{Y_i^\ast(1) - Y_i^\ast(0) - [\overline{Y}(1) - \overline{Y}(0)]\}^2.
+S_{10}^2 \equiv \frac{1}{N - 1} \sum_{i = 1}^N \{Y_i^\ast(1) - Y_i^\ast(0) - [\overline{Y}^\ast(1) - \overline{Y}^\ast(0)]\}^2.
 \]</li>
 </ul>
 
@@ -3275,7 +3275,7 @@ s_1^2 \equiv \frac{1}{N_1 - 1} \sum_{i: W_i = 1} (Y_i - \overline{Y}_1)^2.
 
 <ul>
 <li>With random sampling: \[
-\mathbb{E}[\tau_{fs}] = \mathbb{E}[\overline{Y}(1) - \overline{Y}(0)] = \frac{1}{N} \sum_{i = 1}^N \mathbb{E}[Y_i^\ast(1) - Y_i^\ast(0)] = \tau_{sp}.
+\mathbb{E}[\tau_{fs}] = \mathbb{E}[\overline{Y}^\ast(1) - \overline{Y}^\ast(0)] = \frac{1}{N} \sum_{i = 1}^N \mathbb{E}[Y_i^\ast(1) - Y_i^\ast(0)] = \tau_{sp}.
 \]</li>
 <li>Because \(\hat{\tau}_{fs}\) is unbiased for \(\tau_{fs}\) by taking expectations due to randomization, further taking the expectation due to sampling shows that \(\hat{\tau}_{fs}\) is also unbiased for \(\tau_{sp}\).</li>
 </ul>

@@ -1,0 +1,358 @@
+---
+title: "Randomized Experiment"
+subtitle: "Clustered Randomized Experiments"
+output: 
+  html_document:
+    css: style_do.css
+    number_sections: yes
+    toc: yes
+    toc_depth: '3'
+    toc_float: yes
+    theme: spacelab #"default", "bootstrap", "cerulean", "cosmo", "darkly", "flatly",
+                 # "journal", "lumen", "paper", "readable", "sandstone", "simplex",
+                 # "spacelab", "united", "yeti"
+    df_print: paged
+    code_folding: show
+#date: '2022-03-30'
+date: 'Last Update: `r Sys.Date()`'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(cache = FALSE, echo = TRUE, fig.align = "center")
+library(foreach)
+library(magrittr)
+library(ggplot2)
+library(kableExtra)
+library(modelsummary)
+color_main <- scales::viridis_pal(option = "C")(1)
+```
+
+
+Translate: Here, we implement the clustered randomized experiment. The functions called from `AppliedEconometricsCode` are defined in `R/functions_randomized.R`. First, we generate the potential outcomes of the sample, and then we generate the treatment vector and the realized outcomes. We consider two methods for estimating the average treatment effect: one that treats each cluster as an individual and calculates the average treatment effect ($\hat{\tau}_c$), and one that calculates the average treatment effect for the entire sample ($\hat{\tau}$). Finally, we calculate the cluster-robust standard error when estimating the average treatment effect using the data from the clustered randomized experiment.
+
+# Generating simulated data
+
+## Calculating the constants and parameters
+
+We consider a clustered randomized experiment with two clusters. First, we fix the seed and set the number of clusters `G` and draw the number of individuals in each cluster `N_g` from a Poisson distribution. We set the total number of individuals `N`. We specify the number of clusters to which the treatment is assigned as `G_1`.
+
+
+```{r}
+set.seed(1)
+G <- 100
+N_g <- 
+  rpois(
+    G, 
+    99
+  ) + 
+  1
+N <- sum(N_g)
+G_1 <- 50
+```
+
+Next, we draw the average treatment effect `tau_g_population` in each cluster from the absolute value of a standard normal distribution.
+
+```{r}
+tau_g_population <- 
+  abs(
+    rnorm(G)
+  )
+tau_g_population
+```
+
+The average treatment effect `tau_population` in the population is defined as the weighted average of `tau_g_population` using the number of individuals in each cluster.
+
+```{r}
+tau_population <- 
+  sum(
+    tau_g_population * N_g / 
+    N
+  )
+tau_population
+```
+
+The population average treatment effect `tau_c_population` when each cluster is considered as an individual is defined as the simple average of `tau_g_population`.
+
+```{r}
+tau_c_population <- mean(tau_g_population)
+tau_c_population
+```
+
+## Generating data
+
+Based on the above constants and parameters, we generate the potential outcomes of the sample. This operation corresponds to one random draw.
+
+```{r}
+outcome_potential <-
+  1:G %>%
+  purrr::map(
+    .,
+    ~ tibble::tibble(
+      g = .,
+      y_0 = 
+        rnorm(
+          N_g[.], 
+          mean = 0, 
+          sd = 1
+        ),
+      y_1 = 
+        rnorm(
+          N_g[.], 
+          mean = tau_g_population[.], 
+          sd = 1
+        )
+    )
+  ) %>%
+  dplyr::bind_rows()
+
+outcome_potential %>%
+  head() %>%
+  kbl() %>%
+  kable_styling()
+
+outcome_potential %>%
+  modelsummary::datasummary_skim()
+```
+
+We also calculate the average treatment effect `tau_g` in each cluster in the sample.
+
+```{r}
+tau_g <-
+  outcome_potential %>%
+  dplyr::group_by(g) %>%
+  dplyr::summarise(
+    tau = 
+      mean(
+        y_1 - y_0
+      )
+  ) %>%
+  dplyr::pull(tau)
+
+tau_g
+```
+
+The average treatment effect `tau` in the sample is also calculated.
+
+```{r}
+tau <-
+  outcome_potential %>%
+  dplyr::summarise(
+    tau = 
+      mean(
+        y_1 - y_0
+      )
+  ) %>%
+  dplyr::pull(tau)
+
+tau
+```
+
+We also calculate the average treatment effect `tau_c` in the sample.
+
+```{r}
+tau_c <- mean(tau_g)
+tau_c
+```
+
+Next, we generate the observed data. First, we generate the treatment vector `z`. This operation corresponds to one random experiment. We then calculate the realized outcomes based on the realized treatment vector and potential outcomes. The resulting `data_realized` is the observed data.
+
+```{r}
+data_realized <-
+  AppliedEconometricsCode::generate_data_cluster(
+    outcome_potential = outcome_potential,
+    G_1 = G_1,
+    seed = 1
+  )
+data_realized %>%
+  head() %>%
+  kbl() %>%
+  kable_styling()
+```
+
+# Analysis
+
+## Estimating $\hat{\tau}_c$ using the difference in means
+
+```{r}
+tau_c_hat <-
+  data_realized %>%
+  dplyr::group_by(g) %>%
+  dplyr::summarise(
+    z = mean(z),
+    y = mean(y)
+    ) %>%
+  dplyr::ungroup() %>%
+  dplyr::summarise(
+    tau = 
+      sum(y * z) / 
+      sum(z) - 
+      sum(y * (1 - z)) / 
+      sum(1 - z)
+  )
+tau_c_hat
+```
+
+## Calculating the standard error of $\hat{\tau}_c$ manually
+
+```{r}
+tau_c_hat_se <-
+  data_realized %>%
+  dplyr::group_by(g) %>%
+  dplyr::summarise(
+    z = mean(z),
+    y = mean(y)
+    ) %>%
+  dplyr::ungroup() %>%
+  dplyr::group_by(z) %>%
+  dplyr::summarise(
+    G_z = length(y),
+    variance = 
+      sum(
+        (y - mean(y))^2 / 
+        (G_z - 1)
+      )
+  ) %>%
+  dplyr::ungroup() %>%
+  dplyr::summarise(
+    se = 
+      sum(
+        variance / 
+        G_z
+      ) %>% 
+      sqrt()
+  )
+  
+tau_c_hat_se
+```
+
+## Estiamting $\hat{\tau}_c$ using regression analysis
+
+```{r}
+tau_c_hat_regression <-
+  data_realized %>%
+  dplyr::group_by(g) %>%
+  dplyr::summarise(
+    z = mean(z),
+    y = mean(y)
+    ) %>%
+  dplyr::ungroup() %>%
+  lm(
+    data = .,
+    formula = y ~ z
+  ) 
+```
+
+## The estimate of $\hat{\tau}_c$ 
+
+```{r}
+tau_c_hat_regression %>%
+  modelsummary(
+    fmt = 6
+  )
+```
+
+## Estimating $\hat{\tau}$ using the difference in means
+
+```{r}
+tau_hat <-
+  data_realized %>%
+  dplyr::summarise(
+    tau = 
+      sum(y * z) / 
+      sum(z) - 
+      sum(y * (1 - z)) / 
+      sum(1 - z)
+  )
+tau_hat
+```
+
+## Estimating $\hat{\tau}$ using regression analysis
+
+```{r}
+tau_hat_regression <-
+  data_realized %>%
+  dplyr::mutate(
+    z = 
+      z %>%
+      as.integer()
+    ) %>%
+  lm(
+    data = .,
+    formula = y ~ z
+  )
+```
+
+## The estimate of $\hat{\tau}$ 
+
+```{r, warning = FALSE}
+tau_hat_regression %>%
+  modelsummary(
+    vcov = ~ g, 
+    fmt = 6
+  )
+```
+
+## Calculating the standard error of $\hat{\tau}$ manually
+
+```{r}
+se_cluster_robust <-
+  data_realized %>%
+  dplyr::mutate(
+    constant = 1,
+    epsilon = tau_hat_regression$residuals
+  ) 
+  
+term_1 <-
+  se_cluster_robust %>%
+  dplyr::select(
+    constant, 
+    z
+  ) %>%
+  as.matrix()
+term_1 <- 
+  crossprod(
+    term_1, 
+    term_1
+  )
+```
+
+```{r}
+term_2 <-
+  se_cluster_robust %>%
+  dplyr::group_split(g) %>%
+  purrr::map(
+    .,
+    function(df) {
+      df <-
+        df %>%
+        dplyr::mutate(
+          z_epsilon = z * epsilon
+        ) %>%
+        dplyr::select(
+          epsilon, 
+          z_epsilon
+        ) %>%
+        dplyr::summarise_all(sum) %>%
+        as.matrix()
+      df <- 
+        crossprod(
+          df, 
+          df
+        )
+    }
+  ) %>%
+  purrr::reduce(`+`)
+```
+
+
+```{r}
+se_cluster_robust <-
+  solve(
+    term_1, 
+    term_2
+  ) %*% 
+  solve(term_1)
+se_cluster_robust %>%
+  diag() %>%
+  sqrt() 
+```

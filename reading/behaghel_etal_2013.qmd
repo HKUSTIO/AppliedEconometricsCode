@@ -1,0 +1,135 @@
+---
+title: "Private and Public Provision of Counseling to Job Seekers"
+subtitle: "Evidence from a Large Controlled Experiment"
+author: Luc Behaghel, Bruno Cr&eacute;pon, Marc Gurgand
+format: 
+  revealjs:
+    slide-number: true
+editor: visual
+---
+
+## Job search counseling policies
+
+-   Job search counseling policies
+
+    -   cf. traditional active labor market policies
+
+    -   e.g. Australia (1998-), Netherlands (2001-), United States
+
+-   Public versus private provision of the service
+
+    -   Contract
+
+    -   Technology
+
+-   Which of the public and private service performs better?
+
+## French intensive counselling service
+
+-   Status quo service
+
+    -   &euro;120 per client
+
+-   Public intensive counseling service
+
+    -   2007-
+
+    -   &euro;657 per client
+
+-   Private intensive counseling service
+
+    -   2007-
+
+    -   &euro;900-3,947 per client
+
+## Incentive to private contractors
+
+-   30%: registration
+
+-   35%: job found within 6 months
+
+-   35%: still employed after 6 months
+
+## Experimental design
+
+-   Target at people at risk of long-term unemployment
+
+-   Recruited at the public employment service
+
+-   Randomly assigned to each arm
+
+    -   One-sided non-compliance
+
+-   Sample size
+
+    -   Control 4,565, Public 3,385, Private 36,027
+
+## Outcomes
+
+-   Exit from PES
+
+    -   Registers to employment
+
+    -   Any employment \> 110 hours per month
+
+-   Employment eligible for payment
+
+    -   Still employed after 6 months
+
+## Main results
+
+![](images/clipboard-1285968885.png){fig-align="center"}
+
+-   Positive and similar effects compare to the control
+
+## First-stage regression results
+
+![](images/clipboard-3474850370.png){fig-align="center"}
+
+-   Two-way non-compliance?
+
+## Second-stage regression results
+
+![](images/clipboard-3842980186.png){fig-align="center"}
+
+-   LATE?
+
+-   The effects significantly greater for public in (1), (2)
+
+## Why is public better?
+
+-   Differential selection?
+
+-   Differential effectiveness?
+
+    -   Parking?
+
+    -   Less skill?
+
+    -   Less discipline?
+
+## Heterogeneity across sub-populations
+
+![](images/clipboard-1862071688.png){fig-align="center"}
+
+## Selection?
+
+![](images/clipboard-2431880839.png){fig-align="center"}
+
+## Parking?
+
+![](images/clipboard-3425110648.png){fig-align="center"}
+
+## Less skill?
+
+![](images/clipboard-339098658.png){fig-align="center"}
+
+## Less discipline?
+
+![](images/clipboard-1470535326.png){fig-align="center"}
+
+## Conclusion
+
+-   Relevance
+
+-   Cost-benefit

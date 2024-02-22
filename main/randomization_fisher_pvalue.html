@@ -2916,7 +2916,7 @@ if (window.hljs) {
 
 
 
-<link rel="stylesheet" href="style_do.css" type="text/css" />
+<style type="text/css">body {font-family: Helvetica, arial, "ヒラギノ角ゴ Pro W3", "Hiragino Kaku Gothic Pro", "メイリオ", Meiryo, sans-serif;font-size: 18px;line-height: 150%;padding-top: 10px;padding-bottom: 10px;background-color: white;padding: 30px;max-width: none;margin: auto;}table {table-layout: fixed;boarder-collapse: collapse;width: 100%;}td {font-family: Helvetica, arial, "ヒラギノ角ゴ Pro W3", "Hiragino Kaku Gothic Pro", "メイリオ", Meiryo, sans-serif;font-size: 16px;}tt, code, pre {font-family: 'DejaVu Sans Mono', 'Droid Sans Mono', 'Lucida Console', Consolas, Monaco, monospace;font-size: 16px;}h1 {font-size:2.5em;}h2 {font-size:2.0em;}h3 {font-size:1.6em;}h4 {font-size:1.2em;}h5 {font-size:1.0em;}h6 {font-size:0.8em;}a:visited {color: rgb(50%, 0%, 50%);}pre, img {max-width: 100%;}pre code {display: block;padding: 0.5em;overflow-x: auto;}code {font-size: 92%;border: 0px solid #ccc;}code[class] {background-color: #F8F8F8;}blockquote {color:#666666;margin:0;padding-left: 1em;border-left: 0.5em #EEE solid;}hr {height: 0px;border-bottom: none;border-top-width: thin;border-top-style: dotted;border-top-color: #999999;}@media print {* {background: transparent !important;color: black !important;filter:none !important;-ms-filter: none !important;}body {font-size:12pt;max-width:100%;}a, a:visited {text-decoration: underline;}hr {visibility: hidden;page-break-before: always;}pre, blockquote {padding-right: 1em;page-break-inside: avoid;}tr, img {page-break-inside: avoid;}img {max-width: 100% !important;}@page :left {margin: 15mm 20mm 15mm 10mm;}@page :right {margin: 15mm 10mm 15mm 20mm;}p, h2, h3 {orphans: 3; widows: 3;}h2, h3 {page-break-after: avoid;}}</style>
 
 
 
@@ -3087,13 +3087,13 @@ border-radius: 0px;
 
 <h1 class="title toc-ignore">Randomized Experiment</h1>
 <h3 class="subtitle">Fisher’s p-value</h3>
-<h4 class="date">Last Update: 2024-02-07</h4>
+<h4 class="date">Last Update: 2024-02-17</h4>
 
 </div>
 
 
 <p>Here we implement the method of “5 Fisher’s p-value”. The functions
-called from <code>AppliedEconometrics</code> are defined in
+called from <code>AppliedEconometricsCode</code> are defined in
 <code>R/functions_randomized.R</code>. First, we generate the potential
 outcomes of the sample, and then we generate the treatment vector and
 the realized outcomes. Based on the realized treatment vector and
@@ -3340,11 +3340,11 @@ white-space: pre;
 <pre><code>## [1] 0.1953862</code></pre>
 <p>Next, we generate the observed data. To do this, we first generate
 the treatment vector <code>z</code>. This operation corresponds to one
-randomization experiment. Furthermore, we calculate the realized
-outcomes from the realized treatment vector and potential outcomes. The
-resulting <code>data_realized</code> is the observed data.</p>
+randomized experiment. Furthermore, we calculate the realized outcomes
+from the realized treatment vector and potential outcomes. The resulting
+<code>data_realized</code> is the observed data.</p>
 <pre class="r"><code>data_realized &lt;-
-  AppliedEconometrics::generate_data_randomized(
+  AppliedEconometricsCode::generate_data_randomized(
     outcome_potential = outcome_potential,
     N_1 = N_1,
     seed = 1
@@ -3551,7 +3551,7 @@ statistic</h2>
 operation will also be repeated in the calculation of the p-value, so we
 will make it a function.</p>
 <pre class="r"><code>t &lt;- 
-  AppliedEconometrics::calculate_difference_in_means(
+  AppliedEconometricsCode::calculate_difference_in_means(
     data_realized = data_realized
   )
 t</code></pre>
@@ -3577,12 +3577,12 @@ t_distribution &lt;-
   1:R %&gt;%
   purrr::map(
     .,
-    ~ AppliedEconometrics::generate_data_randomized(
+    ~ AppliedEconometricsCode::generate_data_randomized(
         outcome_potential = outcome_potential_null,
         N_1 = N_1,
         seed = .
       ) %&gt;%
-      AppliedEconometrics::calculate_difference_in_means()
+      AppliedEconometricsCode::calculate_difference_in_means()
   ) %&gt;%
   purrr::reduce(c)
 
