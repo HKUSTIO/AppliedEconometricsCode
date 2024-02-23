@@ -3168,14 +3168,14 @@ border-radius: 0px;
 
 <h1 class="title toc-ignore">Randomized Experiment</h1>
 <h3 class="subtitle">Regression Analysis</h3>
-<h4 class="date">Last Update: 2024-02-17</h4>
+<h4 class="date">Last Update: 2024-02-22</h4>
 
 </div>
 
 
 <p>Here we implement the method in “7 Controlling for Covariates and
 Regression Analysis”. The functions called from
-<code>AppliedEconometricsCode</code> are defined in
+<code>AppliedEconometrics</code> are defined in
 <code>R/functions_randomized.R</code>. First, we generate the potential
 outcomes of the sample, and then we generate the treatment vector and
 the realized outcomes. We obtain the estimated average treatment effect
@@ -3193,7 +3193,7 @@ Parameters</h2>
 size of the treatment group <code>N_1</code>.</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
 <span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>N <span class="ot">&lt;-</span> <span class="dv">10000</span></span>
-<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>N_1 <span class="ot">&lt;-</span> <span class="dv">500</span></span></code></pre></div>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>N_1 <span class="ot">&lt;-</span> <span class="dv">5000</span></span></code></pre></div>
 <p>Second, we set the average treatment effect
 <code>tau_population</code> in the population.</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>tau_population <span class="ot">&lt;-</span> <span class="fl">0.2</span></span></code></pre></div>
@@ -3221,13 +3221,13 @@ effect <code>tau</code> in the randomly drawn sample.</p>
 <span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>            <span class="fu">exp</span>(x) <span class="sc">-</span> </span>
 <span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>            <span class="fu">exp</span>(<span class="dv">1</span><span class="sc">/</span><span class="dv">2</span>)</span>
 <span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a>          ), </span>
-<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a>        <span class="at">sd =</span> <span class="fl">0.1</span></span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a>        <span class="at">sd =</span> <span class="dv">1</span></span>
 <span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a>      ),</span>
 <span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a>    <span class="at">y_1 =</span> </span>
 <span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a>      <span class="fu">rnorm</span>(</span>
 <span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a>        N, </span>
 <span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a>        <span class="at">mean =</span> tau_population, </span>
-<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a>        <span class="at">sd =</span> <span class="fl">0.1</span></span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a>        <span class="at">sd =</span> <span class="dv">1</span></span>
 <span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a>      )</span>
 <span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a>  )</span>
 <span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a>tau <span class="ot">&lt;-</span></span>
@@ -3264,10 +3264,10 @@ y_1
 -0.6264538
 </td>
 <td style="text-align:right;">
--1.1946706
+-1.9185690
 </td>
 <td style="text-align:right;">
-0.2235349
+0.4353485
 </td>
 </tr>
 <tr>
@@ -3275,10 +3275,10 @@ y_1
 0.1836433
 </td>
 <td style="text-align:right;">
--0.5527867
+-1.5036598
 </td>
 <td style="text-align:right;">
-0.2244825
+0.4448250
 </td>
 </tr>
 <tr>
@@ -3286,10 +3286,10 @@ y_1
 -0.8356286
 </td>
 <td style="text-align:right;">
--1.3186590
+-2.2505152
 </td>
 <td style="text-align:right;">
-0.1357813
+-0.4421869
 </td>
 </tr>
 <tr>
@@ -3297,10 +3297,10 @@ y_1
 1.5952808
 </td>
 <td style="text-align:right;">
-3.1624358
+2.0954315
 </td>
 <td style="text-align:right;">
-0.0065191
+-1.7348085
 </td>
 </tr>
 <tr>
@@ -3308,10 +3308,10 @@ y_1
 0.3295078
 </td>
 <td style="text-align:right;">
--0.3084816
+-0.7588772
 </td>
 <td style="text-align:right;">
-0.3038696
+1.2386957
 </td>
 </tr>
 <tr>
@@ -3319,10 +3319,10 @@ y_1
 -0.8204684
 </td>
 <td style="text-align:right;">
--1.2609947
+-1.7334846
 </td>
 <td style="text-align:right;">
-0.1716450
+-0.0835501
 </td>
 </tr>
 </tbody>
@@ -3419,16 +3419,16 @@ y_0
 −0.0
 </td>
 <td style="text-align:right;">
-2.1
+2.3
 </td>
 <td style="text-align:right;">
-−1.8
+−5.6
 </td>
 <td style="text-align:right;">
-−0.7
+−0.4
 </td>
 <td style="text-align:right;">
-43.6
+44.8
 </td>
 <td style="text-align:right;">
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" class="svglite" width="48.00pt" height="12.00pt" viewBox="0 0 48.00 12.00">
@@ -3446,7 +3446,7 @@ white-space: pre;
 }
 </style>
 </defs><rect width="100%" height="100%" style="stroke: none; fill: none;"></rect><defs><clipPath id="cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw"><rect x="0.00" y="0.00" width="48.00" height="12.00"></rect></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw)">
-</g><defs><clipPath id="cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw"><rect x="0.00" y="2.88" width="48.00" height="9.12"></rect></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw)"><rect x="-1.38" y="3.22" width="4.89" height="8.44" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="3.52" y="8.34" width="4.89" height="3.32" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="8.41" y="11.35" width="4.89" height="0.31" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="13.30" y="11.61" width="4.89" height="0.049" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="18.19" y="11.65" width="4.89" height="0.015" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="23.09" y="11.66" width="4.89" height="0.0036" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="27.98" y="11.66" width="4.89" height="0.0012" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="32.87" y="11.66" width="4.89" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="37.77" y="11.66" width="4.89" height="0.0024" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="42.66" y="11.66" width="4.89" height="0.0012" style="stroke-width: 0.38; fill: #000000;"></rect></g>
+</g><defs><clipPath id="cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw"><rect x="0.00" y="2.88" width="48.00" height="9.12"></rect></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw)"><rect x="-2.12" y="11.66" width="4.41" height="0.0014" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="2.29" y="3.22" width="4.41" height="8.44" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="6.70" y="6.76" width="4.41" height="4.91" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="11.11" y="11.28" width="4.41" height="0.38" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="15.52" y="11.61" width="4.41" height="0.057" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="19.93" y="11.65" width="4.41" height="0.012" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="24.35" y="11.65" width="4.41" height="0.0083" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="28.76" y="11.66" width="4.41" height="0.0014" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="33.17" y="11.66" width="4.41" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="37.58" y="11.66" width="4.41" height="0.0028" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="41.99" y="11.66" width="4.41" height="0.0014" style="stroke-width: 0.38; fill: #000000;"></rect></g>
 </svg>
 </td>
 </tr>
@@ -3464,16 +3464,16 @@ y_1
 0.2
 </td>
 <td style="text-align:right;">
-0.1
+1.0
 </td>
 <td style="text-align:right;">
-−0.2
+−3.4
 </td>
 <td style="text-align:right;">
 0.2
 </td>
 <td style="text-align:right;">
-0.6
+3.9
 </td>
 <td style="text-align:right;">
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" class="svglite" width="48.00pt" height="12.00pt" viewBox="0 0 48.00 12.00">
@@ -3491,20 +3491,20 @@ white-space: pre;
 }
 </style>
 </defs><rect width="100%" height="100%" style="stroke: none; fill: none;"></rect><defs><clipPath id="cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw"><rect x="0.00" y="0.00" width="48.00" height="12.00"></rect></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw)">
-</g><defs><clipPath id="cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw"><rect x="0.00" y="2.88" width="48.00" height="9.12"></rect></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw)"><rect x="-0.42" y="11.66" width="3.05" height="0.0043" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="2.63" y="11.59" width="3.05" height="0.074" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="5.67" y="11.44" width="3.05" height="0.22" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="8.72" y="10.96" width="3.05" height="0.70" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="11.77" y="9.76" width="3.05" height="1.90" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="14.82" y="7.59" width="3.05" height="4.07" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="17.87" y="5.30" width="3.05" height="6.36" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="20.92" y="3.70" width="3.05" height="7.97" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="23.96" y="3.22" width="3.05" height="8.44" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="27.01" y="4.90" width="3.05" height="6.76" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="30.06" y="7.70" width="3.05" height="3.96" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="33.11" y="9.74" width="3.05" height="1.92" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="36.16" y="10.88" width="3.05" height="0.78" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="39.21" y="11.41" width="3.05" height="0.25" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="42.25" y="11.63" width="3.05" height="0.035" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="45.30" y="11.65" width="3.05" height="0.0087" style="stroke-width: 0.38; fill: #000000;"></rect></g>
+</g><defs><clipPath id="cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw"><rect x="0.00" y="2.88" width="48.00" height="9.12"></rect></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw)"><rect x="1.41" y="11.65" width="3.05" height="0.017" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="4.45" y="11.51" width="3.05" height="0.15" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="7.50" y="11.25" width="3.05" height="0.42" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="10.55" y="10.27" width="3.05" height="1.39" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="13.60" y="8.62" width="3.05" height="3.04" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="16.65" y="6.24" width="3.05" height="5.42" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="19.70" y="4.34" width="3.05" height="7.33" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="22.74" y="3.22" width="3.05" height="8.44" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="25.79" y="4.23" width="3.05" height="7.43" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="28.84" y="6.57" width="3.05" height="5.09" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="31.89" y="9.23" width="3.05" height="2.43" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="34.94" y="10.51" width="3.05" height="1.15" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="37.99" y="11.25" width="3.05" height="0.42" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="41.04" y="11.56" width="3.05" height="0.10" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="44.08" y="11.65" width="3.05" height="0.0086" style="stroke-width: 0.38; fill: #000000;"></rect></g>
 </svg>
 </td>
 </tr>
 </tbody>
 </table>
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>tau</span></code></pre></div>
-<pre><code>## [1] 0.2019586</code></pre>
+<pre><code>## [1] 0.2125288</code></pre>
 <p>Next, we generate the observed data. To do this, we first generate
 the treatment vector <code>z</code>. This operation corresponds to a
 single randomized experiment. Furthermore, we calculate the realized
 outcomes from the realized treatment vector and potential outcomes.</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>data_realized <span class="ot">&lt;-</span></span>
-<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>  AppliedEconometricsCode<span class="sc">::</span><span class="fu">generate_data_randomized</span>(</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>  AppliedEconometrics<span class="sc">::</span><span class="fu">generate_data_randomized</span>(</span>
 <span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>    <span class="at">outcome_potential =</span> outcome_potential,</span>
 <span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>    <span class="at">N_1 =</span> N_1,</span>
 <span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>    <span class="at">seed =</span> <span class="dv">1</span></span>
@@ -3536,7 +3536,7 @@ y
 0
 </td>
 <td style="text-align:right;">
--1.1946706
+-1.9185690
 </td>
 </tr>
 <tr>
@@ -3547,7 +3547,7 @@ y
 0
 </td>
 <td style="text-align:right;">
--0.5527867
+-1.5036598
 </td>
 </tr>
 <tr>
@@ -3558,7 +3558,7 @@ y
 0
 </td>
 <td style="text-align:right;">
--1.3186590
+-2.2505152
 </td>
 </tr>
 <tr>
@@ -3566,10 +3566,10 @@ y
 1.5952808
 </td>
 <td style="text-align:right;">
-0
+1
 </td>
 <td style="text-align:right;">
-3.1624358
+-1.7348085
 </td>
 </tr>
 <tr>
@@ -3580,7 +3580,7 @@ y
 0
 </td>
 <td style="text-align:right;">
--0.3084816
+-0.7588772
 </td>
 </tr>
 <tr>
@@ -3588,10 +3588,10 @@ y
 -0.8204684
 </td>
 <td style="text-align:right;">
-0
+1
 </td>
 <td style="text-align:right;">
--1.2609947
+-0.0835501
 </td>
 </tr>
 </tbody>
@@ -3685,16 +3685,16 @@ z
 0
 </td>
 <td style="text-align:right;">
-0.0
+0.5
 </td>
 <td style="text-align:right;">
-0.2
-</td>
-<td style="text-align:right;">
-0.0
+0.5
 </td>
 <td style="text-align:right;">
 0.0
+</td>
+<td style="text-align:right;">
+0.5
 </td>
 <td style="text-align:right;">
 1.0
@@ -3715,7 +3715,7 @@ white-space: pre;
 }
 </style>
 </defs><rect width="100%" height="100%" style="stroke: none; fill: none;"></rect><defs><clipPath id="cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw"><rect x="0.00" y="0.00" width="48.00" height="12.00"></rect></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw)">
-</g><defs><clipPath id="cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw"><rect x="0.00" y="2.88" width="48.00" height="9.12"></rect></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw)"><rect x="1.78" y="3.22" width="2.22" height="8.44" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="4.00" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="6.22" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="8.44" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="10.67" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="12.89" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="15.11" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="17.33" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="19.56" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="21.78" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="24.00" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="26.22" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="28.44" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="30.67" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="32.89" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="35.11" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="37.33" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="39.56" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="41.78" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="44.00" y="11.22" width="2.22" height="0.44" style="stroke-width: 0.38; fill: #000000;"></rect></g>
+</g><defs><clipPath id="cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw"><rect x="0.00" y="2.88" width="48.00" height="9.12"></rect></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw)"><rect x="1.78" y="3.22" width="2.22" height="8.44" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="4.00" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="6.22" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="8.44" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="10.67" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="12.89" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="15.11" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="17.33" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="19.56" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="21.78" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="24.00" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="26.22" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="28.44" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="30.67" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="32.89" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="35.11" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="37.33" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="39.56" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="41.78" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="44.00" y="3.22" width="2.22" height="8.44" style="stroke-width: 0.38; fill: #000000;"></rect></g>
 </svg>
 </td>
 </tr>
@@ -3730,19 +3730,19 @@ y
 0
 </td>
 <td style="text-align:right;">
-0.0
+0.1
 </td>
 <td style="text-align:right;">
-2.1
+1.8
 </td>
 <td style="text-align:right;">
-−1.8
+−4.3
 </td>
 <td style="text-align:right;">
-−0.6
+−0.0
 </td>
 <td style="text-align:right;">
-43.6
+44.8
 </td>
 <td style="text-align:right;">
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" class="svglite" width="48.00pt" height="12.00pt" viewBox="0 0 48.00 12.00">
@@ -3760,7 +3760,7 @@ white-space: pre;
 }
 </style>
 </defs><rect width="100%" height="100%" style="stroke: none; fill: none;"></rect><defs><clipPath id="cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw"><rect x="0.00" y="0.00" width="48.00" height="12.00"></rect></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw)">
-</g><defs><clipPath id="cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw"><rect x="0.00" y="2.88" width="48.00" height="9.12"></rect></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw)"><rect x="-1.38" y="3.22" width="4.89" height="8.44" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="3.52" y="7.69" width="4.89" height="3.97" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="8.41" y="11.36" width="4.89" height="0.31" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="13.30" y="11.61" width="4.89" height="0.047" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="18.19" y="11.65" width="4.89" height="0.015" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="23.09" y="11.66" width="4.89" height="0.0038" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="27.98" y="11.66" width="4.89" height="0.0013" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="32.87" y="11.66" width="4.89" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="37.77" y="11.66" width="4.89" height="0.0026" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="42.66" y="11.66" width="4.89" height="0.0013" style="stroke-width: 0.38; fill: #000000;"></rect></g>
+</g><defs><clipPath id="cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw"><rect x="0.00" y="2.88" width="48.00" height="9.12"></rect></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw)"><rect x="1.13" y="3.22" width="4.53" height="8.44" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="5.66" y="3.75" width="4.53" height="7.91" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="10.19" y="11.41" width="4.53" height="0.25" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="14.71" y="11.62" width="4.53" height="0.038" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="19.24" y="11.66" width="4.53" height="0.0017" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="23.77" y="11.66" width="4.53" height="0.0033" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="28.30" y="11.66" width="4.53" height="0.0017" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="32.83" y="11.66" width="4.53" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="37.35" y="11.66" width="4.53" height="0.0017" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="41.88" y="11.66" width="4.53" height="0.0017" style="stroke-width: 0.38; fill: #000000;"></rect></g>
 </svg>
 </td>
 </tr>
@@ -3777,26 +3777,27 @@ Analysis</h2>
 formulation, we ignore the information of the covariates. Next, we
 consider a model that is linear in <code>x</code> but not correctly
 formulated. Finally, we consider a correctly formulated model,
-<code>exp(x)</code>.</p>
+<code>exp(x) + z:exp(x)</code>.</p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>result_ols <span class="ot">&lt;-</span></span>
 <span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>  <span class="fu">c</span>(</span>
 <span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>    <span class="st">&quot;y ~ z&quot;</span>,</span>
 <span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>    <span class="st">&quot;y ~ z + x&quot;</span>,</span>
-<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>    <span class="st">&quot;y ~ z + exp(x)&quot;</span></span>
-<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
-<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>  purrr<span class="sc">::</span><span class="fu">map</span>(as.formula) <span class="sc">%&gt;%</span></span>
-<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>  purrr<span class="sc">::</span><span class="fu">map</span>(</span>
-<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a>    .,</span>
-<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a>    <span class="sc">~</span> <span class="fu">lm</span>(</span>
-<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a>      <span class="at">formula =</span> .,</span>
-<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a>      <span class="at">data =</span> data_realized</span>
-<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a>      )</span>
-<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a>  )</span></code></pre></div>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>    <span class="st">&quot;y ~ z + exp(x)&quot;</span>,</span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>    <span class="st">&quot;y ~ z + exp(x) + z:exp(x)&quot;</span></span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>  purrr<span class="sc">::</span><span class="fu">map</span>(as.formula) <span class="sc">%&gt;%</span></span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a>  purrr<span class="sc">::</span><span class="fu">map</span>(</span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a>    .,</span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a>    <span class="sc">~</span> <span class="fu">lm</span>(</span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a>      <span class="at">formula =</span> .,</span>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a>      <span class="at">data =</span> data_realized</span>
+<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a>      )</span>
+<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a>  )</span></code></pre></div>
 </div>
 <div id="estimated-results" class="section level2" number="2.2">
 <h2><span class="header-section-number">2.2</span> Estimated
 Results</h2>
-<p>We find that the average treatment effect <code>tau</code> <span class="math inline">\(=\)</span> 0.2019586 in the sample is included in
+<p>We find that the average treatment effect <code>tau</code> <span class="math inline">\(=\)</span> 0.2125288 in the sample is included in
 the 95% confidence interval regardless of the correctness of the
 formulation of the covariates.</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>result_ols <span class="sc">%&gt;%</span></span>
@@ -3817,6 +3818,9 @@ formulation of the covariates.</p>
 <th style="text-align:center;">
   (3)
 </th>
+<th style="text-align:center;">
+  (4)
+</th>
 </tr>
 </thead>
 <tbody>
@@ -3825,26 +3829,32 @@ formulation of the covariates.</p>
 (Intercept)
 </td>
 <td style="text-align:center;">
-0.002
+0.037
 </td>
 <td style="text-align:center;">
-0.009
+0.026
 </td>
 <td style="text-align:center;">
-−1.577
+−0.868
+</td>
+<td style="text-align:center;">
+−1.669
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
 </td>
 <td style="text-align:center;">
-(0.022)
+(0.034)
 </td>
 <td style="text-align:center;">
-(0.014)
+(0.027)
 </td>
 <td style="text-align:center;">
-(0.013)
+(0.060)
+</td>
+<td style="text-align:center;">
+(0.018)
 </td>
 </tr>
 <tr>
@@ -3852,26 +3862,32 @@ formulation of the covariates.</p>
 z
 </td>
 <td style="text-align:center;">
-0.200
+0.174
 </td>
 <td style="text-align:center;">
-0.265
+0.208
 </td>
 <td style="text-align:center;">
-0.266
+0.222
+</td>
+<td style="text-align:center;">
+1.886
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
 </td>
 <td style="text-align:center;">
-(0.022)
+(0.037)
 </td>
 <td style="text-align:center;">
-(0.069)
+(0.032)
 </td>
 <td style="text-align:center;">
-(0.085)
+(0.029)
+</td>
+<td style="text-align:center;">
+(0.025)
 </td>
 </tr>
 <tr>
@@ -3881,7 +3897,9 @@ x
 <td style="text-align:center;">
 </td>
 <td style="text-align:center;">
-1.535
+0.842
+</td>
+<td style="text-align:center;">
 </td>
 <td style="text-align:center;">
 </td>
@@ -3892,7 +3910,9 @@ x
 <td style="text-align:center;">
 </td>
 <td style="text-align:center;">
-(0.034)
+(0.033)
+</td>
+<td style="text-align:center;">
 </td>
 <td style="text-align:center;">
 </td>
@@ -3906,7 +3926,38 @@ exp(x)
 <td style="text-align:center;">
 </td>
 <td style="text-align:center;">
-0.956
+0.535
+</td>
+<td style="text-align:center;">
+1.008
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+(0.038)
+</td>
+<td style="text-align:center;">
+(0.006)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+z × exp(x)
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+−1.011
 </td>
 </tr>
 <tr>
@@ -3917,12 +3968,17 @@ exp(x)
 <td style="text-align:center;box-shadow: 0px 1.5px">
 </td>
 <td style="text-align:center;box-shadow: 0px 1.5px">
-(0.008)
+</td>
+<td style="text-align:center;box-shadow: 0px 1.5px">
+(0.009)
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
 Num.Obs.
+</td>
+<td style="text-align:center;">
+10000
 </td>
 <td style="text-align:center;">
 10000
@@ -3939,13 +3995,16 @@ Num.Obs.
 R2
 </td>
 <td style="text-align:center;">
-0.000
+0.002
 </td>
 <td style="text-align:center;">
-0.571
+0.216
 </td>
 <td style="text-align:center;">
-0.954
+0.374
+</td>
+<td style="text-align:center;">
+0.704
 </td>
 </tr>
 <tr>
@@ -3953,13 +4012,16 @@ R2
 R2 Adj.
 </td>
 <td style="text-align:center;">
-0.000
+0.002
 </td>
 <td style="text-align:center;">
-0.571
+0.216
 </td>
 <td style="text-align:center;">
-0.954
+0.374
+</td>
+<td style="text-align:center;">
+0.704
 </td>
 </tr>
 <tr>
@@ -3967,13 +4029,16 @@ R2 Adj.
 AIC
 </td>
 <td style="text-align:center;">
-42807.5
+40591.3
 </td>
 <td style="text-align:center;">
-34355.4
+38184.5
 </td>
 <td style="text-align:center;">
-12061.7
+35933.8
+</td>
+<td style="text-align:center;">
+28430.7
 </td>
 </tr>
 <tr>
@@ -3981,13 +4046,16 @@ AIC
 BIC
 </td>
 <td style="text-align:center;">
-42829.1
+40612.9
 </td>
 <td style="text-align:center;">
-34384.3
+38213.3
 </td>
 <td style="text-align:center;">
-12090.6
+35962.6
+</td>
+<td style="text-align:center;">
+28466.8
 </td>
 </tr>
 <tr>
@@ -3995,13 +4063,16 @@ BIC
 Log.Lik.
 </td>
 <td style="text-align:center;">
-−21400.744
+−20292.642
 </td>
 <td style="text-align:center;">
-−17173.708
+−19088.235
 </td>
 <td style="text-align:center;">
-−6026.866
+−17962.897
+</td>
+<td style="text-align:center;">
+−14210.364
 </td>
 </tr>
 <tr>
@@ -4009,13 +4080,16 @@ Log.Lik.
 F
 </td>
 <td style="text-align:center;">
-81.891
+22.334
 </td>
 <td style="text-align:center;">
-1028.889
+624.737
 </td>
 <td style="text-align:center;">
-15093.626
+118.577
+</td>
+<td style="text-align:center;">
+8871.031
 </td>
 </tr>
 <tr>
@@ -4023,18 +4097,24 @@ F
 RMSE
 </td>
 <td style="text-align:center;">
-2.06
+1.84
 </td>
 <td style="text-align:center;">
-1.35
+1.63
 </td>
 <td style="text-align:center;">
-0.44
+1.46
+</td>
+<td style="text-align:center;">
+1.00
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
 Std.Errors
+</td>
+<td style="text-align:center;">
+HC2
 </td>
 <td style="text-align:center;">
 HC2
@@ -4087,7 +4167,7 @@ Standard Errors</h2>
 <span id="cb11-33"><a href="#cb11-33" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
 <span id="cb11-34"><a href="#cb11-34" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">bind_rows</span>()</span></code></pre></div>
 <div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="fu">data.frame</span>(</span>
-<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>  <span class="at">model =</span> <span class="fu">c</span>(<span class="st">&quot;No&quot;</span>, <span class="st">&quot;Linear&quot;</span>, <span class="st">&quot;Exponential&quot;</span>),</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>  <span class="at">model =</span> <span class="fu">c</span>(<span class="st">&quot;No&quot;</span>, <span class="st">&quot;Linear&quot;</span>, <span class="st">&quot;Exponential&quot;</span>, <span class="st">&quot;Correct&quot;</span>),</span>
 <span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>  <span class="st">&quot;Heteroskedasticity-robust standard error&quot;</span> <span class="ot">=</span> se_hetero<span class="sc">$</span>v</span>
 <span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
 <span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>  <span class="fu">kbl</span>() <span class="sc">%&gt;%</span></span>
@@ -4109,7 +4189,7 @@ Heteroskedasticity.robust.standard.error
 No
 </td>
 <td style="text-align:right;">
-0.0220743
+0.0368243
 </td>
 </tr>
 <tr>
@@ -4117,7 +4197,7 @@ No
 Linear
 </td>
 <td style="text-align:right;">
-0.0691356
+0.0326475
 </td>
 </tr>
 <tr>
@@ -4125,7 +4205,15 @@ Linear
 Exponential
 </td>
 <td style="text-align:right;">
-0.0843844
+0.0291727
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Correct
+</td>
+<td style="text-align:right;">
+0.0200460
 </td>
 </tr>
 </tbody>
