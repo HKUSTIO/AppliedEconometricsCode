@@ -1,0 +1,149 @@
+---
+title: "Robust Standard Errors"
+author: "Kohei Kawaguchi, Hong Kong University of Science and Technology"
+output: 
+  ioslides_presentation:
+    widescreen: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Standard errors of OLS estimator
+
+- For $i = 1, \cdots, N$,
+$$
+Y_i = X_i' \beta + u_i,
+$$
+with non-stochastic $X_i$ and $\mathbb{E}[u_i] = 0$.
+- The OLS estimator of $\beta$ is
+$$
+\hat{\beta} - \beta = (\sum_{i = 1}^N X_i X_i')^{-1} \sum_{i = 1}^N X_i u_i.
+$$
+with
+$$
+\mathbb{V}[\hat{\beta}] = (\sum_{i = 1}^N X_i X_i')^{-1} \sum_{i = 1}^N \sum_{j = 1}^N X_i \mathbb{E}[u_i u_j] X_j' (\sum_{i = 1}^N X_iX_i')^{-1}.
+$$
+
+## Standard errors of OLS estimator
+
+- To estimate $\sum_{i = 1}^N \sum_{j = 1}^N X_i \mathbb{E}[u_i u_j] X_j'$, we replace $u_i$ with $\hat{u}_i = Y_i - X_i' \hat{\beta}$.
+- However, we cannot do this without any restriction as
+$$
+ \sum_{i = 1}^N \sum_{j = 1}^N X_i \hat{u}_i  \hat{u}_j X_j' = \sum_{i = 1}^N X_i \hat{u}_i \left(\sum_{j = 1}^N \hat{u}_j X_j'\right) = 0, 
+$$
+because $\sum_{i = 1}^N X_i \hat{u}_i = 0$ by construction of an OLS estimator.
+- Need some restrictions to reduce the dimension.
+
+## Popular restrictions
+
+- Homoskedasticity: $\mathbb{E}[u_i u_j] = 0$ if $i \neq j$ and $\sigma^2$ if $i = j$.
+$$
+\widehat{\mathbb{V}}_{homo}[\hat{\beta}] = \sigma^2 (\sum_{i = 1}^N X_i X_i')^{-1}.
+$$
+- Heteroskedasticity: $\mathbb{E}[u_i u_j] = 0$ if $i \neq j.
+$$
+\widehat{\mathbb{V}}_{hetero}[\hat{\beta}] = (\sum_{i = 1}^N X_i X_i')^{-1} \sum_{i = 1}^N X_i \hat{u}_i \hat{u}_i X_i' (\sum_{i = 1}^N X_i X_i')^{-1}.
+$$
+- Heteroskedasticity and autocorrelation: $corr(u_i, u_j) = \rho^{|j - i|}$.
+$$
+\widehat{\mathbb{V}}_{hac}[\hat{\beta}] = (\sum_{i = 1}^N X_i X_i')^{-1} \sum_{i = 1}^N \sum_{j = 1}^N \rho^{|j - i|} X_i \hat{u}_i \hat{u}_j X_j' (\sum_{i = 1}^N X_i X_i')^{-1}.
+$$
+
+## Cluster-robust standard error
+
+- $\mathbb{E}[u_iu_j] = 0$ if $g(i) \neq g(j)$, where $g(i)$ is the cluster of unit $i$.
+$$
+\begin{split}
+&\widehat{\mathbb{V}}_{cluster}[\hat{\beta}]\\
+&= (\sum_{i = 1}^N X_i X_i')^{-1} \sum_{i = 1}^N \sum_{j = 1}^N 1\{g(i) = g(j)\} X_i \hat{u}_i \hat{u}_j X_j' (\sum_{i = 1}^N X_i X_i')^{-1}\\
+&= (\sum_{g = 1}^G X_g'X_g)^{-1} \sum_{g = 1}^G X_g' \hat{u}_g \hat{u}_g' X_g (\sum_{g = 1}^G X_g'X_g)^{-1}
+\end{split}
+$$
+with $X_g$ stacks $X_i'$ for $i \in g$ and $\hat{u}_g$ stacks $\hat{u}_i$ for $i \in g$.
+
+## Moulton's inflation factor
+
+- The ratio of $\widehat{\mathbb{V}}_{cluster}[\hat{\beta}]$ to $\widehat{\mathbb{V}}_{homo}[\hat{\beta}]$ for $\beta_k$ is approximately inflated by
+$$
+1 + \rho_k \rho_u (\overline{N}_g - 1),
+$$
+where $\rho_k$ and $\rho_u$ are within-cluster correlation of $k$-th $X_i$ and $u_i$ and $\overline{N}_g$ is the average units per cluster.
+- When $\rho_k$ and $\rho_u$ have the same sign, the downward bias of the homoskedastic standard error is greater then:
+    - The within-cluster correlation of the regressor is higher;
+    - The within-cluster correlation of the error is higher;
+    - The average units per cluster.
+    
+    
+## Cluster randomized experiments
+
+- Recommended to compute the cluster-robust standard error at the cluster level for which the treatment is assigned.
+- Why?
+- Because the treatment variable is perfectly correlated within a cluster, even a small correlation in the error will inflate the standard deviation of the OLS estimator.
+- Because the treatment variable is independent across clusters, the standard deviation of the OLS estimator is not affected by the between-cluster correlation of the error.
+
+
+## Asymptotic inference of cluster-robust standard errors
+
+- It relies on
+$$
+\frac{1}{G} \sum_{g = 1}^G X_g' \hat{u}_g \hat{u}_g' X_g - \frac{1}{G} \sum_{g = 1}^G \mathbb{E}[X_g' u_g u_g' X_g] \xrightarrow{p} 0,
+$$
+when $G \to \infty$.
+- How large $G$ should be? 
+    - The heterogeneity in $X_g' u_g$.
+    - Whether enough clusters are treated.
+    
+    
+## Bootstrap inference of cluster-robust standard errors
+
+- Repeat the following steps for $b = 1, \cdots, B$:
+    1. Form $G$ clusters by resampling with replacement from original $G$ clusters to obtain $\{(Y_1^b, X_1^b), \cdots, (Y_G^b, X_G^b)\}$.
+    1. Compute the OLS estimator with the sample to obtain $\hat{\beta}^b$.
+- Use the empirical distribution of $\{\hat{\beta}^b\}_{b = 1}^B$ conduct an inference.
+- For example, the bootstrap cluster-robust standard error is:
+$$
+\widehat{V}_{cluster, bootstrap}[\hat{\beta}] = \frac{1}{B - 1} \sum_{b = 1}^B (\hat{\beta}^b - \overline{\hat{\beta}}) (\hat{\beta}^b - \overline{\hat{\beta}})'.
+$$
+
+## Wild cluster bootstrap
+
+- Impose the null hypothesis $H_0$ and estimate $\beta$ to obtain the constrained OLS estimator$\hat{\beta}_{H_0}$. 
+- Calculate $\tilde{u}_i = Y_i - X_i'\hat{\beta}_{H_0}$.
+- Repeat the following steps for $b = 1, \cdots, B$:
+    1. Randomly assign cluster $g$ the weight $d_g = - 1$ w/p 0.5 and $+1$ w/p 0.5.
+    1. Generate a pseudo-residual $u_i^b = d_g \tilde{u}_i$ and new pseudo-outcome variable $Y_i^b = X_i'\hat{\beta}_{H_0} + u_i^b$.
+    1. Compute the OLS estimator $\hat{\beta}^b$ and its cluster-robust standard error $s_{\hat{\beta}^b}$ with this sample.
+    1. Calculate the Wald test statics $w^b = (\hat{\beta}^b - \hat{\beta})/s_{\hat{\beta}^b}$.
+
+## Wild cluster bootstrap
+
+- Reject the null hypothesis $H_0$ if the Wald statics $w = |\hat{\beta} - \beta_0|/s_{\hat{\beta}}$ is greater than $(1 -\alpha/2)$-percentile of $\{w^b\}_{b = 1}^B$.
+- This procedure is specific to a single null hypotheses.
+- Because $(1-\alpha)$-confidence interval is the set of null hypotheses $H_0: \beta = \beta_0$ that are not rejected at the significance level of $\alpha$, to construct the $(1 - \alpha)$-confidence interval with the wild cluster bootstrap, we need to repeat the procedure by changing the values of $\beta_0$.
+
+
+## Two-way cluster-robust stanadard error
+
+- The cluster-robust standard error assumed that $\mathbb{E}[u_i u_j]$ can be non-zero if $i$ and $j$ belong to the same cluster. 
+- Suppose that there are two dimensions of clusters, say, states and years. Then, we can consider two-way clusters; state-clusters and year-clusters. 
+- In two-way clustered-robust standard errors, $\mathbb{E}[u_i u_j]$ can be non-zero if $i$ and $j$ belong to the same cluster of _any_ dimension.
+    - Zero: $i$ belongs to (Iowa, 1995), $j$ belongs to (Ohio, 1997).
+    - Any: $i$ belongs to (Iowa, 1995), $j$ belongs to (Ohio, 1995).
+    - Any: $i$ belongs to (Iowa, 1995), $j$ belongs to (Iowa, 1997).
+    - Any: $i$ belongs to (Iowa, 1995), $j$ belongs to (Iowa, 1995).
+    
+## Two-way cluster-robust standard error
+
+- The standard error is:
+$$
+\begin{split}
+&\widehat{\mathbb{V}}_{two-way}[\hat{\beta}]\\
+&= (\sum_{i = 1}^N X_i X_i')^{-1} \sum_{i = 1}^N \sum_{j = 1}^N 1\{\text{$i$, $j$ share any cluster}\} X_i \hat{u}_i \hat{u}_j X_j' (\sum_{i = 1}^N X_i X_i')^{-1}.
+\end{split}
+$$
+- This can be computed as
+$$
+\widehat{\mathbb{V}}_{two-way}[\hat{\beta}]= \widehat{\mathbb{V}}_{1}[\hat{\beta}] + \widehat{\mathbb{V}}_{2}[\hat{\beta}] - \widehat{\mathbb{V}}_{12}[\hat{\beta}].
+$$

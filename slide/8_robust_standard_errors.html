@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Regular assignment mechanism</title>
+  <title>Robust Standard Errors</title>
 
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="chrome=1">
@@ -19,7 +19,7 @@
     var SLIDE_CONFIG = {
       // Slide settings
       settings: {
-                title: 'Regular assignment mechanism',
+                title: 'Robust Standard Errors',
                         useBuilds: true,
         usePrettify: true,
         enableSlideAreas: true,
@@ -3142,405 +3142,158 @@ ul.task-list{list-style: none;}
           </hgroup>
   </slide>
 
-<style type="text/css">
-div.footnotes {
-  position: absolute;
-  bottom: 0;
-  margin-bottom: 10px;
-  width: 80%;
-  font-size: 10px;
-}
-body, td {
-   font-size: 14px;
-}
-code.r{
-  font-size: 11px;
-}
-pre {
-  font-size: 11px
-}
-blockquote {
-  background: #f9f9f9;
-  border-left: 5px solid #ccc;
-  margin: 1.5em 10px;
-  padding: 0.5em 1.5em;
-}
-</style>
-
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
-
-<script>
-$(document).ready(function() {
-  $('slide:not(.backdrop):not(.title-slide)').append('<div class=\"footnotes\">');
-
-  $('footnote').each(function(index) {
-    var text  = $(this).html();
-    var fnNum = (index+1).toString();
-    $(this).html(fnNum.sup());
-
-    var footnote   = fnNum + '. ' + text + '<br/>';
-    var oldContent = $(this).parents('slide').children('div.footnotes').html();
-    var newContent = oldContent + footnote;
-    $(this).parents('slide').children('div.footnotes').html(newContent);
-  });
-});
-</script>
-
-<slide class="segue dark nobackground level1"><hgroup class = 'auto-fadein'><h2>Regular assignment mechanism</h2></hgroup><article  id="regular-assignment-mechanism">
-
-</article></slide><slide class=""><hgroup><h2>Causal inference for observational studies</h2></hgroup><article  id="causal-inference-for-observational-studies">
+<slide class=""><hgroup><h2>Standard errors of OLS estimator</h2></hgroup><article  id="standard-errors-of-ols-estimator">
 
 <ul>
-<li>So far, we have considered a situation where the treatment assignment is controlled by an experimenter and the mechanism was known.</li>
-<li>In observational studies, the mechanism is not known.</li>
-<li>Nevertheless, we often proceed the analysis assuming that it is a regular assignment mechanism:</li>
+<li>For \(i = 1, \cdots, N\), \[
+Y_i = X_i&#39; \beta + u_i,
+\] with non-stochastic \(X_i\) and \(\mathbb{E}[u_i] = 0\).</li>
+<li>The OLS estimator of \(\beta\) is \[
+\hat{\beta} - \beta = (\sum_{i = 1}^N X_i X_i&#39;)^{-1} \sum_{i = 1}^N X_i u_i.
+\] with \[
+\mathbb{V}[\hat{\beta}] = (\sum_{i = 1}^N X_i X_i&#39;)^{-1} \sum_{i = 1}^N \sum_{j = 1}^N X_i \mathbb{E}[u_i u_j] X_j&#39; (\sum_{i = 1}^N X_iX_i&#39;)^{-1}.
+\]</li>
 </ul>
+
+</article></slide><slide class=""><hgroup><h2>Standard errors of OLS estimator</h2></hgroup><article  id="standard-errors-of-ols-estimator-1">
+
+<ul>
+<li>To estimate \(\sum_{i = 1}^N \sum_{j = 1}^N X_i \mathbb{E}[u_i u_j] X_j&#39;\), we replace \(u_i\) with \(\hat{u}_i = Y_i - X_i&#39; \hat{\beta}\).</li>
+<li>However, we cannot do this without any restriction as \[
+ \sum_{i = 1}^N \sum_{j = 1}^N X_i \hat{u}_i  \hat{u}_j X_j&#39; = \sum_{i = 1}^N X_i \hat{u}_i \left(\sum_{j = 1}^N \hat{u}_j X_j&#39;\right) = 0, 
+\] because \(\sum_{i = 1}^N X_i \hat{u}_i = 0\) by construction of an OLS estimator.</li>
+<li>Need some restrictions to reduce the dimension.</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Popular restrictions</h2></hgroup><article  id="popular-restrictions">
+
+<ul>
+<li>Homoskedasticity: \(\mathbb{E}[u_i u_j] = 0\) if \(i \neq j\) and \(\sigma^2\) if \(i = j\). \[
+\widehat{\mathbb{V}}_{homo}[\hat{\beta}] = \sigma^2 (\sum_{i = 1}^N X_i X_i&#39;)^{-1}.
+\]</li>
+<li>Heteroskedasticity: \(\mathbb{E}[u_i u_j] = 0\) if $i j. \[
+\widehat{\mathbb{V}}_{hetero}[\hat{\beta}] = (\sum_{i = 1}^N X_i X_i&#39;)^{-1} \sum_{i = 1}^N X_i \hat{u}_i \hat{u}_i X_i&#39; (\sum_{i = 1}^N X_i X_i&#39;)^{-1}.
+\]</li>
+<li>Heteroskedasticity and autocorrelation: \(corr(u_i, u_j) = \rho^{|j - i|}\). \[
+\widehat{\mathbb{V}}_{hac}[\hat{\beta}] = (\sum_{i = 1}^N X_i X_i&#39;)^{-1} \sum_{i = 1}^N \sum_{j = 1}^N \rho^{|j - i|} X_i \hat{u}_i \hat{u}_j X_j&#39; (\sum_{i = 1}^N X_i X_i&#39;)^{-1}.
+\]</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Cluster-robust standard error</h2></hgroup><article  id="cluster-robust-standard-error">
+
+<ul>
+<li>\(\mathbb{E}[u_iu_j] = 0\) if \(g(i) \neq g(j)\), where \(g(i)\) is the cluster of unit \(i\). \[
+\begin{split}
+&amp;\widehat{\mathbb{V}}_{cluster}[\hat{\beta}]\\
+&amp;= (\sum_{i = 1}^N X_i X_i&#39;)^{-1} \sum_{i = 1}^N \sum_{j = 1}^N 1\{g(i) = g(j)\} X_i \hat{u}_i \hat{u}_j X_j&#39; (\sum_{i = 1}^N X_i X_i&#39;)^{-1}\\
+&amp;= (\sum_{g = 1}^G X_g&#39;X_g)^{-1} \sum_{g = 1}^G X_g&#39; \hat{u}_g \hat{u}_g&#39; X_g (\sum_{g = 1}^G X_g&#39;X_g)^{-1}
+\end{split}
+\] with \(X_g\) stacks \(X_i&#39;\) for \(i \in g\) and \(\hat{u}_g\) stacks \(\hat{u}_i\) for \(i \in g\).</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Moulton’s inflation factor</h2></hgroup><article  id="moultons-inflation-factor">
+
+<ul>
+<li>The ratio of \(\widehat{\mathbb{V}}_{cluster}[\hat{\beta}]\) to \(\widehat{\mathbb{V}}_{homo}[\hat{\beta}]\) for \(\beta_k\) is approximately inflated by \[
+1 + \rho_k \rho_u (\overline{N}_g - 1),
+\] where \(\rho_k\) and \(\rho_u\) are within-cluster correlation of \(k\)-th \(X_i\) and \(u_i\) and \(\overline{N}_g\) is the average units per cluster.</li>
+<li>When \(\rho_k\) and \(\rho_u\) have the same sign, the downward bias of the homoskedastic standard error is greater then:
+
+<ul>
+<li>The within-cluster correlation of the regressor is higher;</li>
+<li>The within-cluster correlation of the error is higher;</li>
+<li>The average units per cluster.</li>
+</ul></li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Cluster randomized experiments</h2></hgroup><article  id="cluster-randomized-experiments">
+
+<ul>
+<li>Recommended to compute the cluster-robust standard error at the cluster level for which the treatment is assigned.</li>
+<li>Why?</li>
+<li>Because the treatment variable is perfectly correlated within a cluster, even a small correlation in the error will inflate the standard deviation of the OLS estimator.</li>
+<li>Because the treatment variable is independent across clusters, the standard deviation of the OLS estimator is not affected by the between-cluster correlation of the error.</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Asymptotic inference of cluster-robust standard errors</h2></hgroup><article  id="asymptotic-inference-of-cluster-robust-standard-errors">
+
+<ul>
+<li>It relies on \[
+\frac{1}{G} \sum_{g = 1}^G X_g&#39; \hat{u}_g \hat{u}_g&#39; X_g - \frac{1}{G} \sum_{g = 1}^G \mathbb{E}[X_g&#39; u_g u_g&#39; X_g] \xrightarrow{p} 0,
+\] when \(G \to \infty\).</li>
+<li>How large \(G\) should be?
+
+<ul>
+<li>The heterogeneity in \(X_g&#39; u_g\).</li>
+<li>Whether enough clusters are treated.</li>
+</ul></li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Bootstrap inference of cluster-robust standard errors</h2></hgroup><article  id="bootstrap-inference-of-cluster-robust-standard-errors">
+
+<ul>
+<li>Repeat the following steps for \(b = 1, \cdots, B\):
 
 <ol>
-<li>Individualistic,</li>
-<li>Probabilistic,</li>
-<li>Unconfounded.</li>
-</ol>
-
-</article></slide><slide class=""><hgroup><h2>Unconfoundedness</h2></hgroup><article  id="unconfoundedness">
-
-<ul>
-<li>Among three assumptions, unconfoundedness is the most controversial.</li>
-<li>In the super-population setting, unconfoundedness implies: \[
-\mathbb{P}[Z_i = 1| Y_i^\ast(0), Y_i^\ast(1), W_i] = \mathbb{P}[Z_i = 1| W_i] = e(W_i),
-\] or: \[
-Z_i \perp \!\!\! \perp Y_i^\ast(1), Y_i^\ast(0) | W_i.
-\]</li>
-<li>This assumption is <strong>not testable</strong>, because it compares the distribution of missing outcomes \(Y_i^\ast(1 - Z_i)\) with the distribution of observed outcomes \(Y_i^\ast(Z_i)\).</li>
-<li>Therefore, we need to rely on the background knowledge to justify the assumption: for example, caseworkers assign job training programs according to a known index of observed characteristics.</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Balancing covariate distributions</h2></hgroup><article  id="balancing-covariate-distributions">
-
-<ul>
-<li>In observational studies, the observed covariates can be substantially unbalanced between treated and control units.</li>
-<li>In the regular assignment mechanism, we can remove all biases in comparisons between treated and control units as long as we adjust for differences in observed covariates.</li>
-<li>Therefore, the main focus of the analysis using the regular assignment mechanism is how to adjust the covariance distributions.</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Balancing score</h2></hgroup><article  id="balancing-score">
-
-<ul>
-<li>It is easier to balance the covariate distributions if we could reduce the dimensionality of the covariates while maintaining the unconfoundedness.</li>
-<li><strong>Definition: Balancing score</strong>
-
-<ul>
-<li>A balancing score \(b(w)\) is a function of the covariates such that: \[
-Z_i \perp \!\!\! \perp W_i | b(W_i).
-\]</li>
-</ul></li>
-<li>There can be multiple balancing scores including \(W_i\) itself.</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Propensity score is a balancing score</h2></hgroup><article  id="propensity-score-is-a-balancing-score">
-
-<ul>
-<li>We can show that the propensity score is a balancing score.</li>
-<li>First, we have: \[
-\mathbb{P}[Z_i = 1| W_i, e(W_i)] = \mathbb{P}[Z_i = 1| W_i] = e(W_i).
-\]</li>
-<li>Second, we have: \[
-\begin{split}
-\mathbb{P}[Z_i = 1| e(W_i)] 
-&amp;= \mathbb{E}[Z_i|e(W_i)]\\
-&amp;= \mathbb{E}[\mathbb{E}[Z_i | W_i, e(W_i)] | e(W_i)]\\
-&amp;= \mathbb{E}[e(W_i)| e(W_i)]\\
-&amp;= e(W_i).
-\end{split}
-\]</li>
-<li>Therefore: \[
-\mathbb{P}[Z_i = 1| W_i, e(W_i)] = \mathbb{P}[Z_i = 1| e(W_i)].
+<li>Form \(G\) clusters by resampling with replacement from original \(G\) clusters to obtain \(\{(Y_1^b, X_1^b), \cdots, (Y_G^b, X_G^b)\}\).</li>
+<li>Compute the OLS estimator with the sample to obtain \(\hat{\beta}^b\).</li>
+</ol></li>
+<li>Use the empirical distribution of \(\{\hat{\beta}^b\}_{b = 1}^B\) conduct an inference.</li>
+<li>For example, the bootstrap cluster-robust standard error is: \[
+\widehat{V}_{cluster, bootstrap}[\hat{\beta}] = \frac{1}{B - 1} \sum_{b = 1}^B (\hat{\beta}^b - \overline{\hat{\beta}}) (\hat{\beta}^b - \overline{\hat{\beta}})&#39;.
 \]</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Balancing score maintains unconfoundedness</h2></hgroup><article  id="balancing-score-maintains-unconfoundedness">
+</article></slide><slide class=""><hgroup><h2>Wild cluster bootstrap</h2></hgroup><article  id="wild-cluster-bootstrap">
 
 <ul>
-<li><strong>Lemma: Unconfoundedness given a balancing score</strong>
+<li>Impose the null hypothesis \(H_0\) and estimate \(\beta\) to obtain the constrained OLS estimator\(\hat{\beta}_{H_0}\).</li>
+<li>Calculate \(\tilde{u}_i = Y_i - X_i&#39;\hat{\beta}_{H_0}\).</li>
+<li>Repeat the following steps for \(b = 1, \cdots, B\):
+
+<ol>
+<li>Randomly assign cluster \(g\) the weight \(d_g = - 1\) w/p 0.5 and \(+1\) w/p 0.5.</li>
+<li>Generate a pseudo-residual \(u_i^b = d_g \tilde{u}_i\) and new pseudo-outcome variable \(Y_i^b = X_i&#39;\hat{\beta}_{H_0} + u_i^b\).</li>
+<li>Compute the OLS estimator \(\hat{\beta}^b\) and its cluster-robust standard error \(s_{\hat{\beta}^b}\) with this sample.</li>
+<li>Calculate the Wald test statics \(w^b = (\hat{\beta}^b - \hat{\beta})/s_{\hat{\beta}^b}\).</li>
+</ol></li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Wild cluster bootstrap</h2></hgroup><article  id="wild-cluster-bootstrap-1">
 
 <ul>
-<li>In a regular assignment mechanism, the assignment is unconfounded given any balancing score: \[
-Z_i \perp \!\!\! \perp Y_i^\ast(0), Y_i^\ast(1) | b(W_i).
-\] \[
-\begin{split}
-&amp;\mathbb{P}[Z_i = 1 | Y_i^\ast(0), Y_i^\ast(1), b(W_i)]\\
-&amp;= \mathbb{E}[Z_i | Y_i^\ast(0), Y_i^\ast(1), b(W_i)]\\
-&amp;= \mathbb{E}[\mathbb{E}[Z_i | Y_i^\ast(0), Y_i^\ast(1), W_i, b(W_i)] | Y_i^\ast(0), Y_i^\ast(1), b(W_i)]\\
-&amp;= \mathbb{E}[\mathbb{E}[Z_i | W_i, b(W_i)] | Y_i^\ast(0), Y_i^\ast(1), b(W_i)] \text{   by unconfoundedness}\\
-&amp;= \mathbb{E}[\mathbb{E}[Z_i | b(W_i)] | Y_i^\ast(0), Y_i^\ast(1), b(W_i)] \text{   by balancing score}\\
-&amp;= \mathbb{E}[Z_i | b(W_i)] \\
-&amp;= \mathbb{P}[Z_i = 1 | b(W_i)].
-\end{split}
-\]</li>
+<li>Reject the null hypothesis \(H_0\) if the Wald statics \(w = |\hat{\beta} - \beta_0|/s_{\hat{\beta}}\) is greater than \((1 -\alpha/2)\)-percentile of \(\{w^b\}_{b = 1}^B\).</li>
+<li>This procedure is specific to a single null hypotheses.</li>
+<li>Because \((1-\alpha)\)-confidence interval is the set of null hypotheses \(H_0: \beta = \beta_0\) that are not rejected at the significance level of \(\alpha\), to construct the \((1 - \alpha)\)-confidence interval with the wild cluster bootstrap, we need to repeat the procedure by changing the values of \(\beta_0\).</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Two-way cluster-robust stanadard error</h2></hgroup><article  id="two-way-cluster-robust-stanadard-error">
+
+<ul>
+<li>The cluster-robust standard error assumed that \(\mathbb{E}[u_i u_j]\) can be non-zero if \(i\) and \(j\) belong to the same cluster.</li>
+<li>Suppose that there are two dimensions of clusters, say, states and years. Then, we can consider two-way clusters; state-clusters and year-clusters.</li>
+<li>In two-way clustered-robust standard errors, \(\mathbb{E}[u_i u_j]\) can be non-zero if \(i\) and \(j\) belong to the same cluster of <em>any</em> dimension.
+
+<ul>
+<li>Zero: \(i\) belongs to (Iowa, 1995), \(j\) belongs to (Ohio, 1997).</li>
+<li>Any: \(i\) belongs to (Iowa, 1995), \(j\) belongs to (Ohio, 1995).</li>
+<li>Any: \(i\) belongs to (Iowa, 1995), \(j\) belongs to (Iowa, 1997).</li>
+<li>Any: \(i\) belongs to (Iowa, 1995), \(j\) belongs to (Iowa, 1995).</li>
 </ul></li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Adjusting balancing score is sufficient</h2></hgroup><article  id="adjusting-balancing-score-is-sufficient">
+</article></slide><slide class=""><hgroup><h2>Two-way cluster-robust standard error</h2></hgroup><article  id="two-way-cluster-robust-standard-error">
 
 <ul>
-<li>The previous lemma implies that it is sufficient for removing biases associated with differences in the covariates to adjust the difference in the balancing scores.</li>
-<li>Because the propensity score is a balancing score, it is sufficient for adjusting the differences in the propensity scores.</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Propensity score is the coarsest balancing score</h2></hgroup><article  id="propensity-score-is-the-coarsest-balancing-score">
-
-<ul>
-<li><strong>Lemma: Coarseness of balancing score</strong>
-
-<ul>
-<li>The propensity score is the coarsest balancing score. That is, the propensity score is a function of every balansing score.</li>
-</ul></li>
-<li>Suppose not. Then, there is a balancing score \(b(w)\) and values \(w, w&#39;\) such that \(b(w) = b(w&#39;)\) but \(e(w) \neq e(w&#39;)\).</li>
-<li>Then, we have: \[
-\mathbb{P}(Z_i = 1| W_i = w) = e(w) \neq e(w&#39;) = \mathbb{P}(Z_i = 1| W_i = w&#39;). 
-\]</li>
-<li>Then, \(Z_i\) and \(W_i\) are not independent on \(b(w) = b(w&#39;)\).</li>
-</ul>
-
-</article></slide><slide class="segue dark nobackground level1"><hgroup class = 'auto-fadein'><h2>Estimation and inference</h2></hgroup><article  id="estimation-and-inference">
-
-</article></slide><slide class=""><hgroup><h2>Estimands</h2></hgroup><article  id="estimands">
-
-<ul>
-<li>The super-population average tretment effect: \[
-\tau_{sp} \equiv \mathbb{E}[Y_i^\ast(1) - Y_i^\ast(0)] = \mathbb{E}[\tau_{sp}(W_i)],
-\] where \(\tau_{sp}(w)\) is: \[
-\tau_{sp}(w) \equiv \mu_1(w) - \mu_0(w) = \mathbb{E}[Y_i^\ast(1) - Y_i^\ast(0) | W_i = w].
-\]</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Parameters</h2></hgroup><article  id="parameters">
-
-<ul>
-<li>The finite-sample average treatment effect: \[
-\tau_{fs} \equiv \frac{1}{N} \sum_{i = 1}^N[Y_i^\ast(1) - Y_i^\ast(0)].
-\]</li>
-<li>It is sometimes useful to estimate the conditional average treatment effect on the value of the pretreatment variables in the finite sample: \[
-\tau_{cond} \equiv \frac{1}{N} \sum \tau_{sp}(W_i).
-\]</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Efficiency bound</h2></hgroup><article  id="efficiency-bound">
-
-<ul>
-<li>The asymptotic sampling variance of any estimator to \(\tau_{sp}\) cannot be smaller than: \[
-\mathbb{V}_{sp}^{eff} \equiv \mathbb{E}\Big[ \frac{\sigma_0^2(W_i)}{1 - e(W_i)} + \frac{\sigma_1^2(W_i)}{e(W_i)} + [\tau_{sp}(W_i) - \tau_{sp}]^2 \Big].
-\]</li>
-<li>The first two terms get bigger as the propensity scores are unbalanced.</li>
-<li>The third term gets bigger as the treatment effects are heterogeneous across the values of the covariates.</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Efficiency bound</h2></hgroup><article  id="efficiency-bound-1">
-
-<ul>
-<li>The asymptotic sampling variance of any estimator to \(\tau_{cond}\) cannot be smaller than: \[
-\mathbb{V}_{cond}^{eff} \equiv \mathbb{E}\Big[ \frac{\sigma_0^2(W_i)}{1 - e(W_i)} + \frac{\sigma_1^2(W_i)}{e(W_i)}\Big].
-\]</li>
-<li>The first two terms get bigger as the propensity scores are unbalanced.</li>
-<li>The term \([\tau_{sp}(W_i) - \tau_{sp}]^2\) does not show up here.</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Estimation strategies</h2></hgroup><article  id="estimation-strategies">
-
-<ul>
-<li><em>Model-based imputation</em>: Imputing the missing potential outcomes by a model such as a linear regression function.</li>
-<li><em>Weighting estimator</em>: Estimating the propensity score and then balance the covariate distribution by using the propensity score as a weight to estimate the treatment effect.</li>
-<li><em>Blocking estimator</em>: Estimating the propensity score and then balance the covariate distribution by using a blocked propensity score as a weight to estimate the treatment effect.</li>
-<li><em>Matching estimator</em>: Find a pair of treated and control units with a similar set of covariates.</li>
-<li><em>Doubly-robust estimator</em>: Combine model-based imputation and weighting estimation.</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Model-based imputation</h2></hgroup><article  id="model-based-imputation">
-
-<ul>
-<li><p>Specify the conditional outcome: \[
-\mathbb{E}[Y_i^\ast(1)|W_i = 0], \mathbb{E}[Y_i^\ast(0)|W_i = 0].
-\]</p></li>
-<li><p>It is common in Economics to assume a linear model: \[
-\mathbb{E}[Y_l^\ast(1)|W_i = 0] = W_i \beta_l, l = 0, 1.
-\]</p></li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Mode-based imputation</h2></hgroup><article  id="mode-based-imputation">
-
-<ul>
-<li>Then, estimate the linear model: \[
-Y_i^{obs} = Z_i \cdot W_i \beta_1 + (1 - Z_i) \cdot W_i \beta_0 + \epsilon_i,
-\] and estimate the super-population or finite-sample average treatment effect by: \[
-\hat{\tau}_{ols} = \frac{1}{N} \sum_{i = 1}^N[Z_i \cdot (Y_i^{obs} - W_i \hat{\beta}_{0, ols}) + (1 - Z_i) \cdot (W_i \hat{\beta}_{1, ols} - Y_i^{obs})].
-\]</li>
-<li>The estimator is inaccurate when the covariates are unbalanced, because: \[
-Y_i^{obs} - W_i \hat{\beta}_{0, ols} = \overline{Y}_1^{obs} - \overline{Y}_0^{obs} - (\overline{W}_1 - \overline{W}_0) \hat{\beta}_{0, ols},
-\] \[
-W_i \hat{\beta}_{1, ols} - Y_i^{obs} = \overline{Y}_1^{obs} - \overline{Y}_0^{obs} - (\overline{W}_1 - \overline{W}_0) \hat{\beta}_{1, ols}.
-\]</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Weighting estimator</h2></hgroup><article  id="weighting-estimator">
-
-<ul>
-<li>Under the unconfoundedness, we have: \[
+<li>The standard error is: \[
 \begin{split}
-\mathbb{E}\Bigg[ \frac{Y_i^{obs} \cdot Z_i}{e(W_i)} \Bigg] 
-&amp;= \mathbb{E}\Bigg[ \mathbb{E}\Bigg[ \frac{Y_i^{obs} \cdot Z_i}{e(W_i)} \Bigg | W_i \Bigg] \Bigg]\\
-&amp;= \mathbb{E}\Bigg[ \mathbb{E}\Bigg[ \frac{Y_i^\ast(1) \cdot Z_i}{e(W_i)} \Bigg | W_i \Bigg] \Bigg]\\
-&amp;= \mathbb{E}\Bigg[  \frac{\mathbb{E}[Y_i^\ast(1) | W_i] \cdot \mathbb{E}[Z_i | W_i]}{e(W_i)}  \Bigg]\\
-&amp;= \mathbb{E}[  \mathbb{E}[Y_i^\ast(1) | W_i] ]\\
-&amp;= \mathbb{E}[Y_i^\ast(1)].
+&amp;\widehat{\mathbb{V}}_{two-way}[\hat{\beta}]\\
+&amp;= (\sum_{i = 1}^N X_i X_i&#39;)^{-1} \sum_{i = 1}^N \sum_{j = 1}^N 1\{\text{$i$, $j$ share any cluster}\} X_i \hat{u}_i \hat{u}_j X_j&#39; (\sum_{i = 1}^N X_i X_i&#39;)^{-1}.
 \end{split}
 \]</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Weighting estimator</h2></hgroup><article  id="weighting-estimator-1">
-
-<ul>
-<li>Similarly, we have: \[
-\mathbb{E}\Bigg[ \frac{Y_i^{obs} \cdot (1 - Z_i)}{1 - e(W_i)} \Bigg] = \mathbb{E}[Y_i^\ast(0)].
+<li>This can be computed as \[
+\widehat{\mathbb{V}}_{two-way}[\hat{\beta}]= \widehat{\mathbb{V}}_{1}[\hat{\beta}] + \widehat{\mathbb{V}}_{2}[\hat{\beta}] - \widehat{\mathbb{V}}_{12}[\hat{\beta}].
 \]</li>
-<li>Then, we can estimate \(\tau_{sp}\) by: \[
-\begin{split}
-\hat{\tau}_{weight} &amp;\equiv \frac{1}{N} \sum_{i = 1}^N \frac{Z_i \cdot Y_i^{obs}}{\hat{e}(W_i)} - \frac{1}{N} \sum_{i = 1}^N \frac{(1 - Z_i) \cdot Y_i^{obs}}{1 - \hat{e}(W_i)}.
-\end{split}
-\]</li>
-<li>This is again imprecise when the covariance distribution is unbalanced, i.e. either \(\hat{e}(W_i)\) or \(1 - \hat{e}(W_i)\) is close to zero.</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Blocking estimator</h2></hgroup><article  id="blocking-estimator">
-
-<ul>
-<li>To avoid extreme values in the propensity score, one may stratify samples according to the value of the propensity score: For \(j = 0, 1, \cdots, J\), \(b_0 = 0 \le \cdots \le b_j \le \cdots \le b_J = 1\), let \(B_i(j)\) be a binary indicator of \(b_{j - 1} &lt; \hat{e}(W_i) \le b_j\).</li>
-<li>Then, define the strata-level treatment effect: \[
-\hat{\tau}^{diff}(j) \equiv \frac{\sum_{i: B_i(j) = 1} Y_i \cdot Z_i}{\sum_{i: B_i(j) = 1} Z_i} - \frac{\sum_{i: B_i(j) = 0} Y_i \cdot (1 - Z_i)}{\sum_{i: B_i(j) = 0} (1 - Z_i)},
-\] to construct: \[
-\hat{\tau}^{diff} \equiv \sum_{j = 1} \frac{N(j)}{N} \hat{\tau}^{diff}(j).
-\]</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Matching estimator</h2></hgroup><article  id="matching-estimator">
-
-<ul>
-<li>Define some metric on the space of covariates and let \(M(i) \subset \{1, \cdots, N\}\) be the \(M\)-nearest units of \(i\) in the opposite group of \(i\).</li>
-<li>Then, define: \[
-\hat{Y}_i(0) = (1 - Z_i) \cdot Y_i^{obs} + Z_i \cdot \frac{1}{M} \sum_{j \in M(i)} Y_j,
-\] \[
-\hat{Y}_i(1) = Z_i \cdot Y_i^{obs} + (1 - Z_i) \cdot \frac{1}{M} \sum_{j \in M(i)} Y_j,
-\] and construct: \[
-\hat{\tau}_{matching} \equiv \frac{1}{N} \sum_{i = 1}^N [\hat{Y}_i(1) - \hat{Y}_i(0)].
-\]</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Doubly-robust estimator</h2></hgroup><article  id="doubly-robust-estimator">
-
-<ul>
-<li>A model-based imputation requires a correctly-specified model of the conditional outcome: \[
-\mathbb{E}[Y_i^\ast(l)|W_i = w], l = 0, 1.
-\]</li>
-<li>A weighting estimator requires a correctly-specified model of the propensity score: \[
-\mathbb{E}\{Z_i|W_i = w\}.
-\]</li>
-<li>A doubly-robust estimator is consistent if either of them are correctly-specified.</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Doubly-robust estimator</h2></hgroup><article  id="doubly-robust-estimator-1">
-
-<ul>
-<li>Estimate \(\mathbb{E}\{Y_i^\ast(1)\}\) by \[
-\frac{1}{N}\sum_{i = 1}^N \hat{g}_1(W_i) + \frac{1}{N} \sum_{i = 1}^N \frac{Z_i \hat{\epsilon}_i}{\hat{e}(W_i)},
-\] where \(\hat{g}_1\) is some estimator of \(\mathbb{E}[Y_i^\ast(1)|W_i = w]\) and \(\hat{e}\) is some estimator and \[
-\hat{\epsilon}_i = Y_i - \hat{g}_1(W_i).
-\] of \(\mathbb{E}\{Z_i = 1|W_i = w\}\) with \(\hat{g}_1 \to g_1\) and \(\hat{e} \to e\) in probability.</li>
-<li>If the conditional outcome is correctly specified, \(g_1(w) = \mathbb{E}[Y_i^\ast(1)|W_i = w]\).</li>
-<li>If the propensity score is correctly specified, \(e(w) = \mathbb{E}\{Z_i = 1|W_i = w\}\).</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Doubly-robust estimator</h2></hgroup><article  id="doubly-robust-estimator-2">
-
-<ul>
-<li>If the conditional outcome is correctly specified: \[
-\begin{split}
- \frac{1}{N} \sum_{i = 1}^N \frac{Z_i \hat{\epsilon}_i}{\hat{e}(W_i)} 
- &amp;\xrightarrow{p} \mathbb{E}\left[\frac{Z_i[Y_i - g_1(W_i)]}{e(W_i)}\right]\\
- &amp;= \mathbb{E}\left[\frac{Z_i[Y_i - \mathbb{E}[Y_i^\ast(1)|W_i]]}{e(W_i)}\right]\\
- &amp;= \mathbb{E}\left[\frac{Z_i[\mathbb{E}[Y_i|Z_i = 1, W_i] - \mathbb{E}[Y_i^\ast(1)|W_i]]}{e(W_i)}\right]\\
- &amp;= 0,
-\end{split}
-\] regardless of whether \(e\) is correctly specified.</li>
-<li>So, the estimator converges to \(\mathbb{E}[\mathbb{E}[Y_i^\ast(1)|W_i]] = \mathbb{E}[Y_i^\ast(1)]\).</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Doubly-robust estimator</h2></hgroup><article  id="doubly-robust-estimator-3">
-
-<ul>
-<li>If the propensity score is correctly specified, the estimator converges to: \[
-\begin{split}
-&amp;\mathbb{E}\left[g_1(W_i) + \frac{Z_iY_i - Z_i g_1(W_i)}{e(W_i)} \right] \\
-&amp;= \mathbb{E}\left[g_1(W_i) + \frac{Z_iY_i - Z_i g_1(W_i)}{\mathbb{E}\{Z_i|W_i\}} \right]\\
-&amp;= \mathbb{E}\left[\frac{Z_iY_i}{\mathbb{E}\{Z_i|W_i\}} \right] + \mathbb{E}\left[\mathbb{E}\left[g_1(Z_i) - \frac{Z_i g_1(W_i)}{\mathbb{E}\{Z_i|W_i\}}|W_i\right] \right]\\
-&amp;= \mathbb{E}\left[\frac{Z_iY_i}{\mathbb{E}\{Z_i|W_i\}} \right]\\
-&amp;= \mathbb{E}[Y_i^\ast(1)].
-\end{split}
-\]</li>
-</ul>
-
-</article></slide><slide class="segue dark nobackground level1"><hgroup class = 'auto-fadein'><h2>Assessing unconfoundedness</h2></hgroup><article  id="assessing-unconfoundedness">
-
-</article></slide><slide class=""><hgroup><h2>Seeking supporting evidence for unconfoundedness</h2></hgroup><article  id="seeking-supporting-evidence-for-unconfoundedness">
-
-<ul>
-<li>The unconfoundedness assumption is not testable.</li>
-<li>Giving up testing it, we try to estimate <em>pseudo</em>-causal estimands with a priori known values, which are typically zero, under assumptions more restrictive than unconfoundedness.</li>
-<li>If these analyses suggest the null hypothesis does not hold, then the unconfoundedness assumption will be viewed less plausible.</li>
-<li>If the unconfoundedness assumption is less plausible, we should conclude that it is not possible to estimate credibly and precisly the causal effects of interest.</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Estimating effects on pseudo-outcomes</h2></hgroup><article  id="estimating-effects-on-pseudo-outcomes">
-
-<ul>
-<li>One approachs is to test the <strong>pseudo-outcome unconfoundedness</strong>: \[
-Z_i \perp \!\!\! \perp W_i^p | W_i^r,
-\] for a partition of the covariates \(W_i = (W_i^p, W_i^r)\).</li>
-<li>Testing this property makes sense if a stronger version of unconfoundedness, <strong>subset unconfoundedness</strong> , is supposed to hold \[
-Z_i \perp \!\!\! \perp (Y_i^\ast(1), Y_i^\ast(0)) | W_i^r.
-\] and \(W_i^p\) is considered to be the proxy to the potential outcome, such as the lagged outcomes.</li>
-<li>This is a design-stage method because the observation of the outcomes is not required.</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Estimating effects of pseudo-treatments</h2></hgroup><article  id="estimating-effects-of-pseudo-treatments">
-
-<ul>
-<li>Suppose that the assignment was such that there was 1 treatment group and 2 control groups. \[
-Z_i =
-\begin{cases}
-1 &amp;\text{   if   } G_i = t\\
-0 &amp;\text{   if   } G_i = c_1, c_2.
-\end{cases}
-\]</li>
-<li>Moreover, suppose that a stronger version of unconfoundedness, <strong>group unconfoundedness</strong>, is supposed to hold: \[
-G_i \perp \!\!\! \perp Y_i^\ast(0), Y_i^\ast(1) | W_i,
-\] which has a testable implication: \[
-G_i \perp \!\!\! \perp Y_i^\ast(0) | W_i, G_i \in \{c_1, c_2\} \Leftrightarrow
-G_i \perp \!\!\! \perp Y_i^{obs} | W_i, G_i \in \{c_1, c_2\}.
-\]</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Robustness to the pretreatment variables</h2></hgroup><article  id="robustness-to-the-pretreatment-variables">
-
-<ul>
-<li>Again assume <strong>subset unconfoundedness</strong>: \[
-Z_i \perp \!\!\! \perp (Y_i^\ast(1), Y_i^\ast(0)) | W_i^r,
-\] for a partition of the covariates \(W_i = (W_i^p, W_i^r)\).</li>
-<li>Then, the estimated treatment effect should be robust to the inclusion of \(W_i^p\).</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Reference</h2></hgroup><article  id="reference">
-
-<ul>
-<li>Chapter 12-13, Guido W. Imbens and Donald B. Rubin, 2015, Causal Inference for Statistics, Social, and Biomedical Sciences, Cambridge University Press.</li>
 </ul></article></slide>
 
 

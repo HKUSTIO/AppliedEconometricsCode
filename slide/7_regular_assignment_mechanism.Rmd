@@ -211,14 +211,27 @@ $$
 - _Weighting estimator_: Estimating the propensity score and then balance the covariate distribution by using the propensity score as a weight to estimate the treatment effect.
 - _Blocking estimator_: Estimating the propensity score and then balance the covariate distribution by using a blocked propensity score as a weight to estimate the treatment effect.
 - _Matching estimator_: Find a pair of treated and control units with a similar set of covariates.
+- _Doubly-robust estimator_: Combine model-based imputation and weighting estimation.
 
 ## Model-based imputation
 
-- It is common in Economics to assume:
+- Specify the conditional outcome:
 $$
-Y_i^{obs} = \tau \cdot Z_i + Z_i \cdot W_i \beta_1 + (1 - Z_i) \cdot W_i \beta_0 + \epsilon_i,
+\mathbb{E}[Y_i^\ast(1)|W_i = 0], \mathbb{E}[Y_i^\ast(0)|W_i = 0].
 $$
-and estiamte the super-population or finite-sample averaget treatment effect by:
+
+- It is common in Economics to assume a linear model:
+$$
+\mathbb{E}[Y_l^\ast(1)|W_i = 0] = W_i \beta_l, l = 0, 1.
+$$
+
+## Mode-based imputation
+
+- Then, estimate the linear model:
+$$
+Y_i^{obs} = Z_i \cdot W_i \beta_1 + (1 - Z_i) \cdot W_i \beta_0 + \epsilon_i,
+$$
+and estimate the super-population or finite-sample average treatment effect by:
 $$
 \hat{\tau}_{ols} = \frac{1}{N} \sum_{i = 1}^N[Z_i \cdot (Y_i^{obs} - W_i \hat{\beta}_{0, ols}) + (1 - Z_i) \cdot (W_i \hat{\beta}_{1, ols} - Y_i^{obs})].
 $$
@@ -252,13 +265,13 @@ $$
 $$
 \mathbb{E}\Bigg[ \frac{Y_i^{obs} \cdot (1 - Z_i)}{1 - e(W_i)} \Bigg] = \mathbb{E}[Y_i^\ast(0)].
 $$
-- Then, we can estiamte $\tau_{sp}$ by:
+- Then, we can estimate $\tau_{sp}$ by:
 $$
 \begin{split}
 \hat{\tau}_{weight} &\equiv \frac{1}{N} \sum_{i = 1}^N \frac{Z_i \cdot Y_i^{obs}}{\hat{e}(W_i)} - \frac{1}{N} \sum_{i = 1}^N \frac{(1 - Z_i) \cdot Y_i^{obs}}{1 - \hat{e}(W_i)}.
 \end{split}
 $$
-- This is againg imprecise when the covariance distribution is unbalanced, i.e. either $\hat{e}(W_i)$ or $1 - \hat{e}(W_i)$ is close to zero.
+- This is again imprecise when the covariance distribution is unbalanced, i.e. either $\hat{e}(W_i)$ or $1 - \hat{e}(W_i)$ is close to zero.
 
 
 ## Blocking estimator
@@ -288,6 +301,59 @@ $$
 \hat{\tau}_{matching} \equiv \frac{1}{N} \sum_{i = 1}^N [\hat{Y}_i(1) - \hat{Y}_i(0)].
 $$
 
+## Doubly-robust estimator
+
+- A model-based imputation requires a correctly-specified model of the conditional outcome:
+$$
+\mathbb{E}[Y_i^\ast(l)|W_i = w], l = 0, 1.
+$$
+- A weighting estimator requires a correctly-specified model of the propensity score:
+$$
+\mathbb{E}\{Z_i|W_i = w\}.
+$$
+- A doubly-robust estimator is consistent if either of them are correctly-specified.
+
+## Doubly-robust estimator
+
+- Estimate $\mathbb{E}\{Y_i^\ast(1)\}$ by
+$$
+\frac{1}{N}\sum_{i = 1}^N \hat{g}_1(W_i) + \frac{1}{N} \sum_{i = 1}^N \frac{Z_i \hat{\epsilon}_i}{\hat{e}(W_i)},
+$$
+where $\hat{g}_1$ is some estimator of $\mathbb{E}[Y_i^\ast(1)|W_i = w]$ and $\hat{e}$ is some estimator and
+$$
+\hat{\epsilon}_i = Y_i - \hat{g}_1(W_i).
+$$
+of $\mathbb{E}\{Z_i = 1|W_i = w\}$ with $\hat{g}_1 \to g_1$ and $\hat{e} \to e$ in probability. 
+- If the conditional outcome is correctly specified, $g_1(w) = \mathbb{E}[Y_i^\ast(1)|W_i = w]$.
+- If the propensity score is correctly specified, $e(w) = \mathbb{E}\{Z_i = 1|W_i = w\}$.
+
+## Doubly-robust estimator
+
+- If the conditional outcome is correctly specified:
+$$
+\begin{split}
+ \frac{1}{N} \sum_{i = 1}^N \frac{Z_i \hat{\epsilon}_i}{\hat{e}(W_i)} 
+ &\xrightarrow{p} \mathbb{E}\left[\frac{Z_i[Y_i - g_1(W_i)]}{e(W_i)}\right]\\
+ &= \mathbb{E}\left[\frac{Z_i[Y_i - \mathbb{E}[Y_i^\ast(1)|W_i]]}{e(W_i)}\right]\\
+ &= \mathbb{E}\left[\frac{Z_i[\mathbb{E}[Y_i|Z_i = 1, W_i] - \mathbb{E}[Y_i^\ast(1)|W_i]]}{e(W_i)}\right]\\
+ &= 0,
+\end{split}
+$$
+regardless of whether $e$ is correctly specified.
+- So, the estimator converges to $\mathbb{E}[\mathbb{E}[Y_i^\ast(1)|W_i]] = \mathbb{E}[Y_i^\ast(1)]$.
+
+## Doubly-robust estimator
+
+- If the propensity score is correctly specified, the estimator converges to:
+$$
+\begin{split}
+&\mathbb{E}\left[g_1(W_i) + \frac{Z_iY_i - Z_i g_1(W_i)}{e(W_i)} \right] \\
+&= \mathbb{E}\left[g_1(W_i) + \frac{Z_iY_i - Z_i g_1(W_i)}{\mathbb{E}\{Z_i|W_i\}} \right]\\
+&= \mathbb{E}\left[\frac{Z_iY_i}{\mathbb{E}\{Z_i|W_i\}} \right] + \mathbb{E}\left[\mathbb{E}\left[g_1(Z_i) - \frac{Z_i g_1(W_i)}{\mathbb{E}\{Z_i|W_i\}}|W_i\right] \right]\\
+&= \mathbb{E}\left[\frac{Z_iY_i}{\mathbb{E}\{Z_i|W_i\}} \right]\\
+&= \mathbb{E}[Y_i^\ast(1)].
+\end{split}
+$$
 
 # Assessing unconfoundedness
 
