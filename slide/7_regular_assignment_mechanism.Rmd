@@ -237,10 +237,10 @@ $$
 $$
 - The estimator is inaccurate when the covariates are unbalanced, because:
 $$
-Y_i^{obs} - W_i \hat{\beta}_{0, ols} = \overline{Y}_1^{obs} - \overline{Y}_0^{obs} - (\overline{W}_1 - \overline{W}_0) \hat{\beta}_{0, ols},
+\overline{Y}_1^{obs} - \overline{W}_1 \hat{\beta}_{0, ols} = \overline{Y}_1^{obs} - \overline{Y}_0^{obs} - (\overline{W}_1 - \overline{W}_0) \hat{\beta}_{0, ols},
 $$
 $$
-W_i \hat{\beta}_{1, ols} - Y_i^{obs} = \overline{Y}_1^{obs} - \overline{Y}_0^{obs} - (\overline{W}_1 - \overline{W}_0) \hat{\beta}_{1, ols}.
+\overline{W}_0 \hat{\beta}_{1, ols} - \overline{Y}_0^{obs} = \overline{Y}_1^{obs} - \overline{Y}_0^{obs} - (\overline{W}_1 - \overline{W}_0) \hat{\beta}_{1, ols}.
 $$
 
 
