@@ -217,12 +217,12 @@ $$
 
 - Specify the conditional outcome:
 $$
-\mathbb{E}[Y_i^\ast(1)|W_i = 0], \mathbb{E}[Y_i^\ast(0)|W_i = 0].
+\mathbb{E}[Y_i^\ast(1)|W_i], \mathbb{E}[Y_i^\ast(0)|W_i].
 $$
 
 - It is common in Economics to assume a linear model:
 $$
-\mathbb{E}[Y_l^\ast(1)|W_i = 0] = W_i \beta_l, l = 0, 1.
+\mathbb{E}[Y_i^\ast(l)|W_i] = W_i \beta_l, l = 0, 1.
 $$
 
 ## Mode-based imputation
