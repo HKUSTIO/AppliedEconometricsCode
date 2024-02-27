@@ -1,0 +1,516 @@
+---
+title: "Cluster-Robust Standard Errors"
+output: 
+  html_document:
+    css: style_do.css
+    number_sections: yes
+    toc: yes
+    toc_depth: '3'
+    toc_float: yes
+    theme: "spacelab" #"default", "bootstrap", "cerulean", "cosmo", "darkly", "flatly",
+                 # "journal", "lumen", "paper", "readable", "sandstone", "simplex",
+                 # "spacelab", "united", "yeti"
+    highlight: "pygments" #"default", "tango", "pygments", "kate", "monochrome",
+                 # "espresso", "zenburn", "haddock", "textmate"
+    df_print: paged
+    code_folding: show
+date: 'Last Update: `r Sys.Date()`'
+---
+
+We will introduce robust inference for cluster correlation using the `clubSandwich` package and the `fwildclusterboot` package.
+
+```{r setup, include=FALSE}
+rm(list = ls())
+knitr::opts_chunk$set(cache = FALSE, echo = TRUE, fig.align = "center")
+library(ggplot2)
+color_main <- scales::viridis_pal(option = "C")(1)
+```
+
+In addition to `set.seed()`, you need to fix `dqrng::dqset.seed()` in `fwildclusterboot`.
+
+The function `return_dgp_cluster` defined in `function_inference` generates `N` observations for `N_C` clusters, and generates `X` following the normal distribution `N(0,1)`, `e` following the normal distribution `N(0,0.1)`, and `Y = 0.5 + X * tau_C + e` by adding cluster-specific normal errors to `e`. Here, `tau_C` gives the value divided from `[-2,2]` to each cluster.
+
+Because the sample size is common for each cluster, the average treatment effect for the entire population is `0`.
+
+# The Case of Quite a Few Clusters
+
+First, set `N_C` to `100`. Using `clubSandwich::vcov` and `clubSandwich::coef_test` for the linear regression output of `lm`, we can obtain the estimated statistics based on cluster-robust variance estimation.
+
+In this case, `vcov` can choose the degree of freedom correction for variance estimation. `CR0` is the one without correction, and `CR3` is the one by jackknife variance estimation.
+
+```{r}
+set.seed(1)
+dqrng::dqset.seed(1)
+N <- 50
+N_C <- 100
+N_M <- 5000
+N_B <- 9999
+```
+
+```{r}
+data <- 
+  AppliedEconometrics::return_dgp_cluster(
+    N = N,
+    N_C = N_C
+  )
+```
+
+```{r}
+lm_fit <- 
+  lm(
+    Y ~ X,
+    data = data
+  )
+```
+
+```{r}
+cat(
+  "Heteroskedasticity-robust t-statistics", 
+  summary(lm_fit)$coefficients[2,3], 
+  "\n"
+)
+
+vc_cr0 <- 
+  clubSandwich::vcovCR(
+    lm_fit,
+    cluster = data$C,
+    type = "CR0"
+  )
+
+vc_cr3 <- 
+  clubSandwich::vcovCR(
+    lm_fit,
+    cluster = data$C,
+    type = "CR3"
+  )
+
+cat(
+  "Cluster-robust t-statistics, CR0", 
+  clubSandwich::coef_test(
+    lm_fit,
+    vc_cr0,
+    coefs = "X"
+  )$tstat, 
+  "\n"
+)
+
+cat(
+  "Cluster-robust t-statistics, CR3", 
+  clubSandwich::coef_test(
+    lm_fit,
+    vc_cr3,
+    coefs = "X"
+  )$tstat, 
+  "\n"
+)
+```
+
+The function `fwildclusterboot::boottest` gives the estimated statistics based on wild cluster-bootstrap.
+
+```{r}
+p_val_w <- 
+  fwildclusterboot::boottest(
+    object = lm_fit,
+    clustid = "C",
+    param = "X",
+    B = N_B,
+    type = "webb"
+  )$p_val
+cat("Wild cluster-bootstrap p-value", p_val_w, "\n")
+```
+
+When `N_C` is `100`, the result of `5000` simulations is as follows.
+
+```{r}
+t_w <- 
+  rep(
+    NA,
+    N_M
+  )
+t_cr0 <- 
+  rep(
+    NA,
+    N_M
+  )
+t_cr3 <- 
+  rep(
+    NA,
+    N_M
+  )
+p_cr_w <- 
+  rep(
+    NA,
+    N_M
+  )
+for (
+  i in 1:N_M
+) {
+  data <- 
+    AppliedEconometrics::return_dgp_cluster(
+      N = N,
+      N_C = N_C
+    )
+
+  lm_fit <- 
+    lm(
+      Y ~ X,
+      data = data
+    )
+  
+  t_w[i] <- summary(lm_fit)$coefficients[2,3]
+
+  vc_cr0 <- 
+    clubSandwich::vcovCR(
+      lm_fit,
+      cluster = data$C,
+      type = "CR0"
+    )
+  
+  vc_cr3 <- 
+    clubSandwich::vcovCR(
+      lm_fit,
+      cluster = data$C,
+      type = "CR3"
+    )
+
+  t_cr0[i] <- 
+    clubSandwich::coef_test(
+      lm_fit,
+      vc_cr0,
+      coefs = "X"
+    )$tstat
+  
+  t_cr3[i] <- 
+    clubSandwich::coef_test(
+      lm_fit,
+      vc_cr3,
+      coefs = "X"
+    )$tstat
+
+  invisible(
+    capture.output(
+      boot_lm <- 
+        fwildclusterboot::boottest(
+          object = lm_fit,
+          clustid = "C",
+          param = "X",
+          B = N_B,
+          type = "webb"
+        )
+      )
+    )
+    
+  invisible(
+    capture.output(
+      p_cr_w[i] <- boot_lm$p_val
+    )
+  )
+}
+```
+
+The (false) rejection probability based on heteroskedasticity-robust variance estimation:
+
+```{r}
+mean(abs(t_w) >= 1.965)
+```
+
+The (false) rejection probability based on cluster-robust variance estimation, CR0:
+
+```{r}
+mean(abs(t_cr0) >= 1.965)
+```
+
+The (false) rejection probability based on cluster-robust variance estimation, CR3:
+
+```{r}
+mean(abs(t_cr3) >= 1.965)
+```
+
+The (false) rejection probability based on wild-cluster bootstrap:
+
+```{r}
+mean(p_cr_w < 0.05)
+```
+
+# The Case of Quite a Few Clusters
+
+When `N_C` is `10`, it is difficult to say that the number of clusters is sufficient for cluster-robust estimation.
+
+In addition, the default `type=rademacher` of `boottest` gives a warning that there are limited values of the statistics when the number of clusters is around `10`. If you use `type=webb`, it gives weights of  `-(1/2)^{1/2}`,`-(3/2)^{1/2}`, `(1/2)^{1/2}`, `(3/2)^{1/2}`, in addition to `-1` and `1`.
+
+[Webb, M. D. 2014. Reworking wild bootstrap based inference for clustered errors.
+Queen’s University, Department of Economics, Working Paper No. 1315](https://ideas.repec.org/p/qed/wpaper/1315.html)
+
+```{r}
+set.seed(1)
+dqrng::dqset.seed(1)
+N <- 50
+N_C <- 10
+N_M <- 5000
+N_B <- 9999
+```
+
+```{r}
+data <- 
+  AppliedEconometrics::return_dgp_cluster(
+    N = N,
+    N_C = N_C
+  )
+```
+
+```{r}
+lm_fit <- 
+  lm(
+    Y ~ X,
+    data = data
+  )
+
+boot_lm <- 
+  fwildclusterboot::boottest(
+    object = lm_fit, 
+    clustid = "C",
+    param = "X",
+    B = N_B
+  )
+
+summary(boot_lm)$statistic
+```
+。
+When `N_C` is `10`, the result of `5000` simulations is as follows.
+
+```{r}
+t_w <- 
+  rep(
+    NA,
+    N_M
+  )
+t_cr0 <- 
+  rep(
+    NA,
+    N_M
+  )
+t_cr3 <- 
+  rep(
+    NA,
+    N_M
+  )
+p_cr_w <- 
+  rep(
+    NA,
+    N_M
+  )
+
+for (
+  i in 1:N_M
+  ) {
+
+  data <- 
+    AppliedEconometrics::return_dgp_cluster(
+      N = N,
+      N_C = N_C
+    )
+
+  lm_fit <- 
+    lm(
+      Y ~ X,
+      data = data
+    )
+
+  t_w[i] <- summary(lm_fit)$coefficients[2,3]
+
+  vc_cr0 <- 
+    clubSandwich::vcovCR(
+      lm_fit,
+      cluster = data$C,
+      type = "CR0"
+    )
+
+  vc_cr3 <- 
+    clubSandwich::vcovCR(
+      lm_fit,
+      cluster = data$C,
+      type = "CR3"
+    )
+
+  t_cr0[i] <- 
+    clubSandwich::coef_test(
+      lm_fit,
+      vc_cr0,
+      coefs = "X"
+    )$tstat
+
+  t_cr3[i] <- 
+    clubSandwich::coef_test(
+      lm_fit,
+      vc_cr3,
+      coefs = "X"
+    )$tstat
+
+  invisible(
+    capture.output(
+      boot_lm <- 
+        fwildclusterboot::boottest(
+          object = lm_fit,
+          clustid = "C",
+          param = "X",
+          B = N_B,
+          type = "webb"
+        )
+      )
+    )
+  invisible(
+    capture.output(
+      p_cr_w[i] <- boot_lm$p_val
+    )
+  )
+}
+```
+
+The (false) rejection probability based on heteroskedasticity-robust variance estimation:
+
+```{r}
+mean(abs(t_w) >= 1.965)
+```
+
+The (false) rejection probability based on cluster-robust variance estimation, CR0:
+
+```{r}
+mean(abs(t_cr0) >= 1.965)
+```
+
+The (false) rejection probability based on cluster-robust variance estimation, CR3:
+
+```{r}
+mean(abs(t_cr3) >= 1.965)
+```
+
+The (false) rejection probability based on wild-cluster bootstrap:
+
+```{r}
+mean(p_cr_w < 0.05)
+```
+
+# The Case of Extremely Few Clusters
+
+When `N_C` is `5`, the result of `5000` simulations is as follows.
+
+```{r}
+set.seed(1)
+dqrng::dqset.seed(1)
+N <- 100
+N_C <- 5
+N_M <- 5000
+N_B <- 9999
+```
+
+```{r}
+t_w <- 
+  rep(
+    NA,
+    N_M
+  )
+t_cr0 <- 
+  rep(
+    NA,
+    N_M
+  )
+t_cr3 <- 
+  rep(
+    NA,
+    N_M
+  )
+p_cr_w <-
+  rep(
+    NA,
+    N_M
+  )
+
+for (
+  i in 1:N_M
+  ) {
+  
+  data <- 
+    AppliedEconometrics::return_dgp_cluster(
+      N = N,
+      N_C = N_C
+    )
+
+  lm_fit <- 
+    lm(
+      Y ~ X,
+      data = data
+    )
+
+  t_w[i] <- summary(lm_fit)$coefficients[2,3]
+
+  vc_cr0 <- 
+    clubSandwich::vcovCR(
+      lm_fit,
+      cluster = data$C,
+      type = "CR0"
+    )
+
+  vc_cr3 <- 
+    clubSandwich::vcovCR(
+      lm_fit,
+      cluster = data$C,
+      type = "CR3"
+    )
+
+  t_cr0[i] <- 
+    clubSandwich::coef_test(
+      lm_fit,
+      vc_cr0,
+      coefs = "X"
+    )$tstat
+  
+  t_cr3[i] <- 
+    clubSandwich::coef_test(
+      lm_fit,
+      vc_cr3,
+      coefs = "X"
+    )$tstat
+
+  invisible(
+    capture.output(
+      boot_lm <- 
+        fwildclusterboot::boottest(
+          object = lm_fit,
+          clustid = "C",
+          param = "X",
+          B = N_B,
+          type = "webb"
+        )
+      )
+    )
+  invisible(
+    capture.output(
+      p_cr_w[i] <- boot_lm$p_val
+    )
+  )
+}
+```
+
+The (false) rejection probability based on heteroskedasticity-robust variance estimation:
+
+```{r}
+mean(abs(t_w) >= 1.965)
+```
+
+The (false) rejection probability based on cluster-robust variance estimation, CR0:
+
+```{r}
+mean(abs(t_cr0) >= 1.965)
+```
+
+The (false) rejection probability based on cluster-robust variance estimation, CR3:
+
+```{r}
+mean(abs(t_cr3) >= 1.965)
+```
+
+The (false) rejection probability based on wild-cluster bootstrap:
+
+```{r}
+mean(p_cr_w < 0.05)
+```
