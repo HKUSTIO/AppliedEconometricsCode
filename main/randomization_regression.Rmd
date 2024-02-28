@@ -51,7 +51,7 @@ tau_population <- 0.2
 
 ## Generating Data
 
-We generate the potential outcomes of the sample based on the above constants and parameters. This operation corresponds to a single random draw. We assume that the individual covariates `x` are generated from a standard normal distribution. We also assume that the potential outcome when there is no treatment depends nonlinearly on `x`, such as $Y_0^\ast(0) = \exp(x) - exp(1/2)$. In this case, note that $\mathbb{E}\{Y_0^\ast(0)\} = 0$, and the average treatment effect in the population remains `tau_population`. We also calculate the average treatment effect `tau` in the randomly drawn sample.
+We generate the potential outcomes of the sample based on the above constants and parameters. This operation corresponds to a single random draw. We assume that the individual covariates `x` are generated from a standard normal distribution. We also assume that the potential outcome when there is no treatment depends nonlinearly on `x`, such as $Y_0^\ast(0) = \exp(x) - \exp(1/2)$. In this case, note that $\mathbb{E}\{Y_0^\ast(0)\} = 0$, and the average treatment effect in the population remains `tau_population`. We also calculate the average treatment effect `tau` in the randomly drawn sample.
 
 ```{r}
 outcome_potential <-
@@ -118,22 +118,35 @@ data_realized %>%
 
 ## Regression Analysis
 
-We conduct regression analysis based on the above data. In the first formulation, we ignore the information of the covariates. Next, we consider a model that is linear in `x` but not correctly formulated. Finally, we consider a correctly formulated model, `exp(x)`.
+We conduct regression analysis based on the above data. In the first formulation, we ignore the information of the covariates. Next, we consider a model that is linear in `x` but not correctly formulated. 
 
+The correctly-specified model is:
+$$
+Y_i = Z_i\tau + (1 - Z_i)[\exp(X_i)-\exp(1/2)]+\epsilon_i,
+$$
+but, to make the coefficient of $Z_i$ equal to $\tau$, we need to define the variable $\dot{X}_i = \exp(X_i)-\exp(1/2)$ and consider the following regression equation:
+$$
+Y_i = - \exp(1/2) + Z_i\tau + \dot{X}_i - Z_i \dot{X}_i + \epsilon_i.
+$$
 
 ```{r}
 result_ols <-
   c(
     "y ~ z",
     "y ~ z + x",
-    "y ~ z + exp(x)"
+    "y ~ z + exp(x)",
+    "y ~ z + x_dot + z:x_dot"
   ) %>%
   purrr::map(as.formula) %>%
   purrr::map(
     .,
     ~ lm(
       formula = .,
-      data = data_realized
+      data = 
+        data_realized %>%
+        dplyr::mutate(
+          x_dot = exp(x) - exp(1/2)
+        )
       )
   )
 ```
@@ -191,7 +204,7 @@ se_hetero <-
 
 ```{r}
 data.frame(
-  model = c("No", "Linear", "Exponential"),
+  model = c("No", "Linear", "Exponential", "Correctly-specified"),
   "Heteroskedasticity-robust standard error" = se_hetero$v
   ) %>%
   kbl() %>%

@@ -3206,7 +3206,7 @@ draw. We assume that the individual covariates <code>x</code> are
 generated from a standard normal distribution. We also assume that the
 potential outcome when there is no treatment depends nonlinearly on
 <code>x</code>, such as <span class="math inline">\(Y_0^\ast(0) =
-\exp(x) - exp(1/2)\)</span>. In this case, note that <span class="math inline">\(\mathbb{E}\{Y_0^\ast(0)\} = 0\)</span>, and the
+\exp(x) - \exp(1/2)\)</span>. In this case, note that <span class="math inline">\(\mathbb{E}\{Y_0^\ast(0)\} = 0\)</span>, and the
 average treatment effect in the population remains
 <code>tau_population</code>. We also calculate the average treatment
 effect <code>tau</code> in the randomly drawn sample.</p>
@@ -3776,22 +3776,33 @@ Analysis</h2>
 <p>We conduct regression analysis based on the above data. In the first
 formulation, we ignore the information of the covariates. Next, we
 consider a model that is linear in <code>x</code> but not correctly
-formulated. Finally, we consider a correctly formulated model,
-<code>exp(x)</code>.</p>
+formulated.</p>
+<p>The correctly-specified model is: <span class="math display">\[
+Y_i = Z_i\tau + (1 - Z_i)[\exp(X_i)-\exp(1/2)]+\epsilon_i,
+\]</span> but, to make the coefficient of <span class="math inline">\(Z_i\)</span> equal to <span class="math inline">\(\tau\)</span>, we need to define the variable
+<span class="math inline">\(\dot{X}_i = \exp(X_i)-\exp(1/2)\)</span> and
+consider the following regression equation: <span class="math display">\[
+Y_i = - \exp(1/2) + Z_i\tau + \dot{X}_i - Z_i \dot{X}_i + \epsilon_i.
+\]</span></p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>result_ols <span class="ot">&lt;-</span></span>
 <span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>  <span class="fu">c</span>(</span>
 <span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>    <span class="st">&quot;y ~ z&quot;</span>,</span>
 <span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>    <span class="st">&quot;y ~ z + x&quot;</span>,</span>
-<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>    <span class="st">&quot;y ~ z + exp(x)&quot;</span></span>
-<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
-<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>  purrr<span class="sc">::</span><span class="fu">map</span>(as.formula) <span class="sc">%&gt;%</span></span>
-<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>  purrr<span class="sc">::</span><span class="fu">map</span>(</span>
-<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a>    .,</span>
-<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a>    <span class="sc">~</span> <span class="fu">lm</span>(</span>
-<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a>      <span class="at">formula =</span> .,</span>
-<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a>      <span class="at">data =</span> data_realized</span>
-<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a>      )</span>
-<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a>  )</span></code></pre></div>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>    <span class="st">&quot;y ~ z + exp(x)&quot;</span>,</span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>    <span class="st">&quot;y ~ z + x_dot + z:x_dot&quot;</span></span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>  purrr<span class="sc">::</span><span class="fu">map</span>(as.formula) <span class="sc">%&gt;%</span></span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a>  purrr<span class="sc">::</span><span class="fu">map</span>(</span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a>    .,</span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a>    <span class="sc">~</span> <span class="fu">lm</span>(</span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a>      <span class="at">formula =</span> .,</span>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a>      <span class="at">data =</span> </span>
+<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a>        data_realized <span class="sc">%&gt;%</span></span>
+<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a>        dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
+<span id="cb9-16"><a href="#cb9-16" tabindex="-1"></a>          <span class="at">x_dot =</span> <span class="fu">exp</span>(x) <span class="sc">-</span> <span class="fu">exp</span>(<span class="dv">1</span><span class="sc">/</span><span class="dv">2</span>)</span>
+<span id="cb9-17"><a href="#cb9-17" tabindex="-1"></a>        )</span>
+<span id="cb9-18"><a href="#cb9-18" tabindex="-1"></a>      )</span>
+<span id="cb9-19"><a href="#cb9-19" tabindex="-1"></a>  )</span></code></pre></div>
 </div>
 <div id="estimated-results" class="section level2" number="2.2">
 <h2><span class="header-section-number">2.2</span> Estimated
@@ -3817,6 +3828,9 @@ formulation of the covariates.</p>
 <th style="text-align:center;">
   (3)
 </th>
+<th style="text-align:center;">
+  (4)
+</th>
 </tr>
 </thead>
 <tbody>
@@ -3833,6 +3847,9 @@ formulation of the covariates.</p>
 <td style="text-align:center;">
 −0.868
 </td>
+<td style="text-align:center;">
+−0.007
+</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -3845,6 +3862,9 @@ formulation of the covariates.</p>
 </td>
 <td style="text-align:center;">
 (0.060)
+</td>
+<td style="text-align:center;">
+(0.014)
 </td>
 </tr>
 <tr>
@@ -3860,6 +3880,9 @@ z
 <td style="text-align:center;">
 0.222
 </td>
+<td style="text-align:center;">
+0.218
+</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -3873,6 +3896,9 @@ z
 <td style="text-align:center;">
 (0.029)
 </td>
+<td style="text-align:center;">
+(0.020)
+</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -3885,6 +3911,8 @@ x
 </td>
 <td style="text-align:center;">
 </td>
+<td style="text-align:center;">
+</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -3893,6 +3921,8 @@ x
 </td>
 <td style="text-align:center;">
 (0.033)
+</td>
+<td style="text-align:center;">
 </td>
 <td style="text-align:center;">
 </td>
@@ -3908,6 +3938,62 @@ exp(x)
 <td style="text-align:center;">
 0.535
 </td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+(0.038)
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+x_dot
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+1.008
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+(0.006)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+z × x_dot
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+−1.011
+</td>
 </tr>
 <tr>
 <td style="text-align:left;box-shadow: 0px 1.5px">
@@ -3917,12 +4003,17 @@ exp(x)
 <td style="text-align:center;box-shadow: 0px 1.5px">
 </td>
 <td style="text-align:center;box-shadow: 0px 1.5px">
-(0.038)
+</td>
+<td style="text-align:center;box-shadow: 0px 1.5px">
+(0.009)
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
 Num.Obs.
+</td>
+<td style="text-align:center;">
+10000
 </td>
 <td style="text-align:center;">
 10000
@@ -3947,6 +4038,9 @@ R2
 <td style="text-align:center;">
 0.374
 </td>
+<td style="text-align:center;">
+0.704
+</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -3960,6 +4054,9 @@ R2 Adj.
 </td>
 <td style="text-align:center;">
 0.374
+</td>
+<td style="text-align:center;">
+0.704
 </td>
 </tr>
 <tr>
@@ -3975,6 +4072,9 @@ AIC
 <td style="text-align:center;">
 35933.8
 </td>
+<td style="text-align:center;">
+28430.7
+</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -3988,6 +4088,9 @@ BIC
 </td>
 <td style="text-align:center;">
 35962.6
+</td>
+<td style="text-align:center;">
+28466.8
 </td>
 </tr>
 <tr>
@@ -4003,6 +4106,9 @@ Log.Lik.
 <td style="text-align:center;">
 −17962.897
 </td>
+<td style="text-align:center;">
+−14210.364
+</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -4017,10 +4123,16 @@ RMSE
 <td style="text-align:center;">
 1.46
 </td>
+<td style="text-align:center;">
+1.00
+</td>
 </tr>
 <tr>
 <td style="text-align:left;">
 Std.Errors
+</td>
+<td style="text-align:center;">
+HC2
 </td>
 <td style="text-align:center;">
 HC2
@@ -4073,7 +4185,7 @@ Standard Errors</h2>
 <span id="cb11-33"><a href="#cb11-33" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
 <span id="cb11-34"><a href="#cb11-34" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">bind_rows</span>()</span></code></pre></div>
 <div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="fu">data.frame</span>(</span>
-<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>  <span class="at">model =</span> <span class="fu">c</span>(<span class="st">&quot;No&quot;</span>, <span class="st">&quot;Linear&quot;</span>, <span class="st">&quot;Exponential&quot;</span>),</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>  <span class="at">model =</span> <span class="fu">c</span>(<span class="st">&quot;No&quot;</span>, <span class="st">&quot;Linear&quot;</span>, <span class="st">&quot;Exponential&quot;</span>, <span class="st">&quot;Correctly-specified&quot;</span>),</span>
 <span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>  <span class="st">&quot;Heteroskedasticity-robust standard error&quot;</span> <span class="ot">=</span> se_hetero<span class="sc">$</span>v</span>
 <span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
 <span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>  <span class="fu">kbl</span>() <span class="sc">%&gt;%</span></span>
@@ -4112,6 +4224,14 @@ Exponential
 </td>
 <td style="text-align:right;">
 0.0291727
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Correctly-specified
+</td>
+<td style="text-align:right;">
+0.0200460
 </td>
 </tr>
 </tbody>
