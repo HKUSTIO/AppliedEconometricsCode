@@ -29,7 +29,7 @@ library(modelsummary)
 color_main <- scales::viridis_pal(option = "C")(1)
 ```
 
-Here we implement the method in "7 Controlling for Covariates and Regression Analysis". The functions called from `AppliedEconometricsCode` are defined in `R/functions_randomized.R`. First, we generate the potential outcomes of the sample, and then we generate the treatment vector and the realized outcomes. We obtain the estimated average treatment effect by regression analysis based on the realized treatment vector and outcomes. Finally, we calculate the standard error of the estimated effect by both the `sandwich` package and manual calculation.
+Here we implement the method in "7 Controlling for Covariates and Regression Analysis". The functions called from `AppliedEconometrics` are defined in `R/functions_randomized.R`. First, we generate the potential outcomes of the sample, and then we generate the treatment vector and the realized outcomes. We obtain the estimated average treatment effect by regression analysis based on the realized treatment vector and outcomes. Finally, we calculate the standard error of the estimated effect by both the `sandwich` package and manual calculation.
 
 # Generating Simulated Data
 
@@ -40,7 +40,7 @@ First, we set the seed, the number of units `N`, and the size of the treatment g
 ```{r}
 set.seed(1)
 N <- 10000
-N_1 <- 500
+N_1 <- 5000
 ```
 
 Second, we set the average treatment effect `tau_population` in the population.
@@ -65,13 +65,13 @@ outcome_potential <-
             exp(x) - 
             exp(1/2)
           ), 
-        sd = 0.1
+        sd = 1
       ),
     y_1 = 
       rnorm(
         N, 
         mean = tau_population, 
-        sd = 0.1
+        sd = 1
       )
   )
 tau <-
@@ -100,7 +100,7 @@ Next, we generate the observed data. To do this, we first generate the treatment
 
 ```{r}
 data_realized <-
-  AppliedEconometricsCode::generate_data_randomized(
+  AppliedEconometrics::generate_data_randomized(
     outcome_potential = outcome_potential,
     N_1 = N_1,
     seed = 1
@@ -140,7 +140,7 @@ result_ols <-
 
 ## Estimated Results
 
-We find that the average treatment effect `tau` $=$ `r tau` in the sample is included in the 95% confidence interval regardless of the correctness of the formulation of the covariates.
+We find that the average treatment effect `tau` $=$ `r tau` in the sample is included in the 95% confidence interval regardless of the correctness of the formulation of the covariates. 
 
 ```{r, warning = FALSE}
 result_ols %>%
