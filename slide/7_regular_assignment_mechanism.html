@@ -3359,10 +3359,10 @@ Z_i \perp \!\!\! \perp Y_i^\ast(0), Y_i^\ast(1) | b(W_i).
 
 <ul>
 <li><p>Specify the conditional outcome: \[
-\mathbb{E}[Y_i^\ast(1)|W_i = 0], \mathbb{E}[Y_i^\ast(0)|W_i = 0].
+\mathbb{E}[Y_i^\ast(1)|W_i], \mathbb{E}[Y_i^\ast(0)|W_i].
 \]</p></li>
 <li><p>It is common in Economics to assume a linear model: \[
-\mathbb{E}[Y_l^\ast(1)|W_i = 0] = W_i \beta_l, l = 0, 1.
+\mathbb{E}[Y_i^\ast(l)|W_i] = W_i \beta_l, l = 0, 1.
 \]</p></li>
 </ul>
 
@@ -3375,9 +3375,9 @@ Y_i^{obs} = Z_i \cdot W_i \beta_1 + (1 - Z_i) \cdot W_i \beta_0 + \epsilon_i,
 \hat{\tau}_{ols} = \frac{1}{N} \sum_{i = 1}^N[Z_i \cdot (Y_i^{obs} - W_i \hat{\beta}_{0, ols}) + (1 - Z_i) \cdot (W_i \hat{\beta}_{1, ols} - Y_i^{obs})].
 \]</li>
 <li>The estimator is inaccurate when the covariates are unbalanced, because: \[
-Y_i^{obs} - W_i \hat{\beta}_{0, ols} = \overline{Y}_1^{obs} - \overline{Y}_0^{obs} - (\overline{W}_1 - \overline{W}_0) \hat{\beta}_{0, ols},
+\overline{Y}_1^{obs} - \overline{W}_1 \hat{\beta}_{0, ols} = \overline{Y}_1^{obs} - \overline{Y}_0^{obs} - (\overline{W}_1 - \overline{W}_0) \hat{\beta}_{0, ols},
 \] \[
-W_i \hat{\beta}_{1, ols} - Y_i^{obs} = \overline{Y}_1^{obs} - \overline{Y}_0^{obs} - (\overline{W}_1 - \overline{W}_0) \hat{\beta}_{1, ols}.
+\overline{W}_0 \hat{\beta}_{1, ols} - \overline{Y}_0^{obs} = \overline{Y}_1^{obs} - \overline{Y}_0^{obs} - (\overline{W}_1 - \overline{W}_0) \hat{\beta}_{1, ols}.
 \]</li>
 </ul>
 

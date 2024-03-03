@@ -3168,7 +3168,7 @@ border-radius: 0px;
 
 <h1 class="title toc-ignore">Randomized Experiment</h1>
 <h3 class="subtitle">Regression Analysis</h3>
-<h4 class="date">Last Update: 2024-02-22</h4>
+<h4 class="date">Last Update: 2024-02-28</h4>
 
 </div>
 
@@ -3206,7 +3206,7 @@ draw. We assume that the individual covariates <code>x</code> are
 generated from a standard normal distribution. We also assume that the
 potential outcome when there is no treatment depends nonlinearly on
 <code>x</code>, such as <span class="math inline">\(Y_0^\ast(0) =
-\exp(x) - exp(1/2)\)</span>. In this case, note that <span class="math inline">\(\mathbb{E}\{Y_0^\ast(0)\} = 0\)</span>, and the
+\exp(x) - \exp(1/2)\)</span>. In this case, note that <span class="math inline">\(\mathbb{E}\{Y_0^\ast(0)\} = 0\)</span>, and the
 average treatment effect in the population remains
 <code>tau_population</code>. We also calculate the average treatment
 effect <code>tau</code> in the randomly drawn sample.</p>
@@ -3244,7 +3244,7 @@ effect <code>tau</code> in the randomly drawn sample.</p>
 <span id="cb3-32"><a href="#cb3-32" tabindex="-1"></a>  <span class="fu">head</span>() <span class="sc">%&gt;%</span></span>
 <span id="cb3-33"><a href="#cb3-33" tabindex="-1"></a>  <span class="fu">kbl</span>() <span class="sc">%&gt;%</span></span>
 <span id="cb3-34"><a href="#cb3-34" tabindex="-1"></a>  <span class="fu">kable_styling</span>()</span></code></pre></div>
-<table class="table" style="margin-left: auto; margin-right: auto;">
+<table class="table" style="color: black; margin-left: auto; margin-right: auto;">
 <thead>
 <tr>
 <th style="text-align:right;">
@@ -3329,16 +3329,16 @@ y_1
 </table>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>outcome_potential <span class="sc">%&gt;%</span></span>
 <span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>  modelsummary<span class="sc">::</span><span class="fu">datasummary_skim</span>()</span></code></pre></div>
-<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
+<table class="table" style="color: black; width: auto !important; margin-left: auto; margin-right: auto;">
 <thead>
 <tr>
 <th style="text-align:left;">
 </th>
 <th style="text-align:right;">
-Unique (#)
+Unique
 </th>
 <th style="text-align:right;">
-Missing (%)
+Missing Pct.
 </th>
 <th style="text-align:right;">
 Mean
@@ -3400,8 +3400,8 @@ stroke-miterlimit: 10.00;
 white-space: pre;
 }
 </style>
-</defs><rect width="100%" height="100%" style="stroke: none; fill: none;"></rect><defs><clipPath id="cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw"><rect x="0.00" y="0.00" width="48.00" height="12.00"></rect></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw)">
-</g><defs><clipPath id="cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw"><rect x="0.00" y="2.88" width="48.00" height="9.12"></rect></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw)"><rect x="-0.17" y="11.65" width="2.97" height="0.0086" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="2.80" y="11.59" width="2.97" height="0.069" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="5.77" y="11.41" width="2.97" height="0.25" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="8.74" y="10.88" width="2.97" height="0.78" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="11.71" y="9.76" width="2.97" height="1.90" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="14.68" y="7.79" width="2.97" height="3.87" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="17.65" y="5.28" width="2.97" height="6.38" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="20.62" y="3.22" width="2.97" height="8.44" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="23.59" y="3.68" width="2.97" height="7.99" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="26.56" y="5.53" width="2.97" height="6.14" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="29.53" y="7.57" width="2.97" height="4.09" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="32.50" y="9.79" width="2.97" height="1.88" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="35.47" y="10.84" width="2.97" height="0.83" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="38.44" y="11.49" width="2.97" height="0.17" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="41.41" y="11.63" width="2.97" height="0.030" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="44.38" y="11.65" width="2.97" height="0.013" style="stroke-width: 0.38; fill: #000000;"></rect></g>
+</defs><rect width="100%" height="100%" style="stroke: none; fill: none;" /><defs><clipPath id="cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw"><rect x="0.00" y="0.00" width="48.00" height="12.00" /></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw)">
+</g><defs><clipPath id="cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw"><rect x="0.00" y="2.88" width="48.00" height="9.12" /></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw)"><rect x="-0.17" y="11.65" width="2.97" height="0.0086" style="stroke-width: 0.38; fill: #000000;" /><rect x="2.80" y="11.59" width="2.97" height="0.069" style="stroke-width: 0.38; fill: #000000;" /><rect x="5.77" y="11.41" width="2.97" height="0.25" style="stroke-width: 0.38; fill: #000000;" /><rect x="8.74" y="10.88" width="2.97" height="0.78" style="stroke-width: 0.38; fill: #000000;" /><rect x="11.71" y="9.76" width="2.97" height="1.90" style="stroke-width: 0.38; fill: #000000;" /><rect x="14.68" y="7.79" width="2.97" height="3.87" style="stroke-width: 0.38; fill: #000000;" /><rect x="17.65" y="5.28" width="2.97" height="6.38" style="stroke-width: 0.38; fill: #000000;" /><rect x="20.62" y="3.22" width="2.97" height="8.44" style="stroke-width: 0.38; fill: #000000;" /><rect x="23.59" y="3.68" width="2.97" height="7.99" style="stroke-width: 0.38; fill: #000000;" /><rect x="26.56" y="5.53" width="2.97" height="6.14" style="stroke-width: 0.38; fill: #000000;" /><rect x="29.53" y="7.57" width="2.97" height="4.09" style="stroke-width: 0.38; fill: #000000;" /><rect x="32.50" y="9.79" width="2.97" height="1.88" style="stroke-width: 0.38; fill: #000000;" /><rect x="35.47" y="10.84" width="2.97" height="0.83" style="stroke-width: 0.38; fill: #000000;" /><rect x="38.44" y="11.49" width="2.97" height="0.17" style="stroke-width: 0.38; fill: #000000;" /><rect x="41.41" y="11.63" width="2.97" height="0.030" style="stroke-width: 0.38; fill: #000000;" /><rect x="44.38" y="11.65" width="2.97" height="0.013" style="stroke-width: 0.38; fill: #000000;" /></g>
 </svg>
 </td>
 </tr>
@@ -3445,8 +3445,8 @@ stroke-miterlimit: 10.00;
 white-space: pre;
 }
 </style>
-</defs><rect width="100%" height="100%" style="stroke: none; fill: none;"></rect><defs><clipPath id="cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw"><rect x="0.00" y="0.00" width="48.00" height="12.00"></rect></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw)">
-</g><defs><clipPath id="cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw"><rect x="0.00" y="2.88" width="48.00" height="9.12"></rect></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw)"><rect x="-2.12" y="11.66" width="4.41" height="0.0014" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="2.29" y="3.22" width="4.41" height="8.44" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="6.70" y="6.76" width="4.41" height="4.91" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="11.11" y="11.28" width="4.41" height="0.38" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="15.52" y="11.61" width="4.41" height="0.057" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="19.93" y="11.65" width="4.41" height="0.012" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="24.35" y="11.65" width="4.41" height="0.0083" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="28.76" y="11.66" width="4.41" height="0.0014" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="33.17" y="11.66" width="4.41" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="37.58" y="11.66" width="4.41" height="0.0028" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="41.99" y="11.66" width="4.41" height="0.0014" style="stroke-width: 0.38; fill: #000000;"></rect></g>
+</defs><rect width="100%" height="100%" style="stroke: none; fill: none;" /><defs><clipPath id="cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw"><rect x="0.00" y="0.00" width="48.00" height="12.00" /></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw)">
+</g><defs><clipPath id="cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw"><rect x="0.00" y="2.88" width="48.00" height="9.12" /></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw)"><rect x="-2.12" y="11.66" width="4.41" height="0.0014" style="stroke-width: 0.38; fill: #000000;" /><rect x="2.29" y="3.22" width="4.41" height="8.44" style="stroke-width: 0.38; fill: #000000;" /><rect x="6.70" y="6.76" width="4.41" height="4.91" style="stroke-width: 0.38; fill: #000000;" /><rect x="11.11" y="11.28" width="4.41" height="0.38" style="stroke-width: 0.38; fill: #000000;" /><rect x="15.52" y="11.61" width="4.41" height="0.057" style="stroke-width: 0.38; fill: #000000;" /><rect x="19.93" y="11.65" width="4.41" height="0.012" style="stroke-width: 0.38; fill: #000000;" /><rect x="24.35" y="11.65" width="4.41" height="0.0083" style="stroke-width: 0.38; fill: #000000;" /><rect x="28.76" y="11.66" width="4.41" height="0.0014" style="stroke-width: 0.38; fill: #000000;" /><rect x="33.17" y="11.66" width="4.41" height="0.00" style="stroke-width: 0.38; fill: #000000;" /><rect x="37.58" y="11.66" width="4.41" height="0.0028" style="stroke-width: 0.38; fill: #000000;" /><rect x="41.99" y="11.66" width="4.41" height="0.0014" style="stroke-width: 0.38; fill: #000000;" /></g>
 </svg>
 </td>
 </tr>
@@ -3490,8 +3490,8 @@ stroke-miterlimit: 10.00;
 white-space: pre;
 }
 </style>
-</defs><rect width="100%" height="100%" style="stroke: none; fill: none;"></rect><defs><clipPath id="cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw"><rect x="0.00" y="0.00" width="48.00" height="12.00"></rect></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw)">
-</g><defs><clipPath id="cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw"><rect x="0.00" y="2.88" width="48.00" height="9.12"></rect></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw)"><rect x="1.41" y="11.65" width="3.05" height="0.017" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="4.45" y="11.51" width="3.05" height="0.15" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="7.50" y="11.25" width="3.05" height="0.42" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="10.55" y="10.27" width="3.05" height="1.39" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="13.60" y="8.62" width="3.05" height="3.04" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="16.65" y="6.24" width="3.05" height="5.42" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="19.70" y="4.34" width="3.05" height="7.33" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="22.74" y="3.22" width="3.05" height="8.44" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="25.79" y="4.23" width="3.05" height="7.43" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="28.84" y="6.57" width="3.05" height="5.09" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="31.89" y="9.23" width="3.05" height="2.43" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="34.94" y="10.51" width="3.05" height="1.15" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="37.99" y="11.25" width="3.05" height="0.42" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="41.04" y="11.56" width="3.05" height="0.10" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="44.08" y="11.65" width="3.05" height="0.0086" style="stroke-width: 0.38; fill: #000000;"></rect></g>
+</defs><rect width="100%" height="100%" style="stroke: none; fill: none;" /><defs><clipPath id="cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw"><rect x="0.00" y="0.00" width="48.00" height="12.00" /></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw)">
+</g><defs><clipPath id="cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw"><rect x="0.00" y="2.88" width="48.00" height="9.12" /></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw)"><rect x="1.41" y="11.65" width="3.05" height="0.017" style="stroke-width: 0.38; fill: #000000;" /><rect x="4.45" y="11.51" width="3.05" height="0.15" style="stroke-width: 0.38; fill: #000000;" /><rect x="7.50" y="11.25" width="3.05" height="0.42" style="stroke-width: 0.38; fill: #000000;" /><rect x="10.55" y="10.27" width="3.05" height="1.39" style="stroke-width: 0.38; fill: #000000;" /><rect x="13.60" y="8.62" width="3.05" height="3.04" style="stroke-width: 0.38; fill: #000000;" /><rect x="16.65" y="6.24" width="3.05" height="5.42" style="stroke-width: 0.38; fill: #000000;" /><rect x="19.70" y="4.34" width="3.05" height="7.33" style="stroke-width: 0.38; fill: #000000;" /><rect x="22.74" y="3.22" width="3.05" height="8.44" style="stroke-width: 0.38; fill: #000000;" /><rect x="25.79" y="4.23" width="3.05" height="7.43" style="stroke-width: 0.38; fill: #000000;" /><rect x="28.84" y="6.57" width="3.05" height="5.09" style="stroke-width: 0.38; fill: #000000;" /><rect x="31.89" y="9.23" width="3.05" height="2.43" style="stroke-width: 0.38; fill: #000000;" /><rect x="34.94" y="10.51" width="3.05" height="1.15" style="stroke-width: 0.38; fill: #000000;" /><rect x="37.99" y="11.25" width="3.05" height="0.42" style="stroke-width: 0.38; fill: #000000;" /><rect x="41.04" y="11.56" width="3.05" height="0.10" style="stroke-width: 0.38; fill: #000000;" /><rect x="44.08" y="11.65" width="3.05" height="0.0086" style="stroke-width: 0.38; fill: #000000;" /></g>
 </svg>
 </td>
 </tr>
@@ -3513,7 +3513,7 @@ outcomes from the realized treatment vector and potential outcomes.</p>
 <span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>  <span class="fu">head</span>() <span class="sc">%&gt;%</span></span>
 <span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>  <span class="fu">kbl</span>() <span class="sc">%&gt;%</span></span>
 <span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a>  <span class="fu">kable_styling</span>()</span></code></pre></div>
-<table class="table" style="margin-left: auto; margin-right: auto;">
+<table class="table" style="color: black; margin-left: auto; margin-right: auto;">
 <thead>
 <tr>
 <th style="text-align:right;">
@@ -3598,16 +3598,16 @@ y
 </table>
 <div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>data_realized <span class="sc">%&gt;%</span></span>
 <span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>  modelsummary<span class="sc">::</span><span class="fu">datasummary_skim</span>()</span></code></pre></div>
-<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
+<table class="table" style="color: black; width: auto !important; margin-left: auto; margin-right: auto;">
 <thead>
 <tr>
 <th style="text-align:left;">
 </th>
 <th style="text-align:right;">
-Unique (#)
+Unique
 </th>
 <th style="text-align:right;">
-Missing (%)
+Missing Pct.
 </th>
 <th style="text-align:right;">
 Mean
@@ -3669,8 +3669,8 @@ stroke-miterlimit: 10.00;
 white-space: pre;
 }
 </style>
-</defs><rect width="100%" height="100%" style="stroke: none; fill: none;"></rect><defs><clipPath id="cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw"><rect x="0.00" y="0.00" width="48.00" height="12.00"></rect></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw)">
-</g><defs><clipPath id="cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw"><rect x="0.00" y="2.88" width="48.00" height="9.12"></rect></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw)"><rect x="-0.17" y="11.65" width="2.97" height="0.0086" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="2.80" y="11.59" width="2.97" height="0.069" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="5.77" y="11.41" width="2.97" height="0.25" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="8.74" y="10.88" width="2.97" height="0.78" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="11.71" y="9.76" width="2.97" height="1.90" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="14.68" y="7.79" width="2.97" height="3.87" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="17.65" y="5.28" width="2.97" height="6.38" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="20.62" y="3.22" width="2.97" height="8.44" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="23.59" y="3.68" width="2.97" height="7.99" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="26.56" y="5.53" width="2.97" height="6.14" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="29.53" y="7.57" width="2.97" height="4.09" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="32.50" y="9.79" width="2.97" height="1.88" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="35.47" y="10.84" width="2.97" height="0.83" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="38.44" y="11.49" width="2.97" height="0.17" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="41.41" y="11.63" width="2.97" height="0.030" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="44.38" y="11.65" width="2.97" height="0.013" style="stroke-width: 0.38; fill: #000000;"></rect></g>
+</defs><rect width="100%" height="100%" style="stroke: none; fill: none;" /><defs><clipPath id="cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw"><rect x="0.00" y="0.00" width="48.00" height="12.00" /></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw)">
+</g><defs><clipPath id="cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw"><rect x="0.00" y="2.88" width="48.00" height="9.12" /></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw)"><rect x="-0.17" y="11.65" width="2.97" height="0.0086" style="stroke-width: 0.38; fill: #000000;" /><rect x="2.80" y="11.59" width="2.97" height="0.069" style="stroke-width: 0.38; fill: #000000;" /><rect x="5.77" y="11.41" width="2.97" height="0.25" style="stroke-width: 0.38; fill: #000000;" /><rect x="8.74" y="10.88" width="2.97" height="0.78" style="stroke-width: 0.38; fill: #000000;" /><rect x="11.71" y="9.76" width="2.97" height="1.90" style="stroke-width: 0.38; fill: #000000;" /><rect x="14.68" y="7.79" width="2.97" height="3.87" style="stroke-width: 0.38; fill: #000000;" /><rect x="17.65" y="5.28" width="2.97" height="6.38" style="stroke-width: 0.38; fill: #000000;" /><rect x="20.62" y="3.22" width="2.97" height="8.44" style="stroke-width: 0.38; fill: #000000;" /><rect x="23.59" y="3.68" width="2.97" height="7.99" style="stroke-width: 0.38; fill: #000000;" /><rect x="26.56" y="5.53" width="2.97" height="6.14" style="stroke-width: 0.38; fill: #000000;" /><rect x="29.53" y="7.57" width="2.97" height="4.09" style="stroke-width: 0.38; fill: #000000;" /><rect x="32.50" y="9.79" width="2.97" height="1.88" style="stroke-width: 0.38; fill: #000000;" /><rect x="35.47" y="10.84" width="2.97" height="0.83" style="stroke-width: 0.38; fill: #000000;" /><rect x="38.44" y="11.49" width="2.97" height="0.17" style="stroke-width: 0.38; fill: #000000;" /><rect x="41.41" y="11.63" width="2.97" height="0.030" style="stroke-width: 0.38; fill: #000000;" /><rect x="44.38" y="11.65" width="2.97" height="0.013" style="stroke-width: 0.38; fill: #000000;" /></g>
 </svg>
 </td>
 </tr>
@@ -3714,8 +3714,8 @@ stroke-miterlimit: 10.00;
 white-space: pre;
 }
 </style>
-</defs><rect width="100%" height="100%" style="stroke: none; fill: none;"></rect><defs><clipPath id="cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw"><rect x="0.00" y="0.00" width="48.00" height="12.00"></rect></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw)">
-</g><defs><clipPath id="cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw"><rect x="0.00" y="2.88" width="48.00" height="9.12"></rect></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw)"><rect x="1.78" y="3.22" width="2.22" height="8.44" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="4.00" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="6.22" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="8.44" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="10.67" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="12.89" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="15.11" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="17.33" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="19.56" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="21.78" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="24.00" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="26.22" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="28.44" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="30.67" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="32.89" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="35.11" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="37.33" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="39.56" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="41.78" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="44.00" y="3.22" width="2.22" height="8.44" style="stroke-width: 0.38; fill: #000000;"></rect></g>
+</defs><rect width="100%" height="100%" style="stroke: none; fill: none;" /><defs><clipPath id="cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw"><rect x="0.00" y="0.00" width="48.00" height="12.00" /></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw)">
+</g><defs><clipPath id="cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw"><rect x="0.00" y="2.88" width="48.00" height="9.12" /></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw)"><rect x="1.78" y="3.22" width="2.22" height="8.44" style="stroke-width: 0.38; fill: #000000;" /><rect x="4.00" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;" /><rect x="6.22" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;" /><rect x="8.44" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;" /><rect x="10.67" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;" /><rect x="12.89" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;" /><rect x="15.11" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;" /><rect x="17.33" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;" /><rect x="19.56" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;" /><rect x="21.78" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;" /><rect x="24.00" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;" /><rect x="26.22" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;" /><rect x="28.44" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;" /><rect x="30.67" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;" /><rect x="32.89" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;" /><rect x="35.11" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;" /><rect x="37.33" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;" /><rect x="39.56" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;" /><rect x="41.78" y="11.66" width="2.22" height="0.00" style="stroke-width: 0.38; fill: #000000;" /><rect x="44.00" y="3.22" width="2.22" height="8.44" style="stroke-width: 0.38; fill: #000000;" /></g>
 </svg>
 </td>
 </tr>
@@ -3759,8 +3759,8 @@ stroke-miterlimit: 10.00;
 white-space: pre;
 }
 </style>
-</defs><rect width="100%" height="100%" style="stroke: none; fill: none;"></rect><defs><clipPath id="cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw"><rect x="0.00" y="0.00" width="48.00" height="12.00"></rect></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw)">
-</g><defs><clipPath id="cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw"><rect x="0.00" y="2.88" width="48.00" height="9.12"></rect></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw)"><rect x="1.13" y="3.22" width="4.53" height="8.44" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="5.66" y="3.75" width="4.53" height="7.91" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="10.19" y="11.41" width="4.53" height="0.25" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="14.71" y="11.62" width="4.53" height="0.038" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="19.24" y="11.66" width="4.53" height="0.0017" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="23.77" y="11.66" width="4.53" height="0.0033" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="28.30" y="11.66" width="4.53" height="0.0017" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="32.83" y="11.66" width="4.53" height="0.00" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="37.35" y="11.66" width="4.53" height="0.0017" style="stroke-width: 0.38; fill: #000000;"></rect><rect x="41.88" y="11.66" width="4.53" height="0.0017" style="stroke-width: 0.38; fill: #000000;"></rect></g>
+</defs><rect width="100%" height="100%" style="stroke: none; fill: none;" /><defs><clipPath id="cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw"><rect x="0.00" y="0.00" width="48.00" height="12.00" /></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwwLjAwfDEyLjAw)">
+</g><defs><clipPath id="cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw"><rect x="0.00" y="2.88" width="48.00" height="9.12" /></clipPath></defs><g clip-path="url(#cpMC4wMHw0OC4wMHwyLjg4fDEyLjAw)"><rect x="1.13" y="3.22" width="4.53" height="8.44" style="stroke-width: 0.38; fill: #000000;" /><rect x="5.66" y="3.75" width="4.53" height="7.91" style="stroke-width: 0.38; fill: #000000;" /><rect x="10.19" y="11.41" width="4.53" height="0.25" style="stroke-width: 0.38; fill: #000000;" /><rect x="14.71" y="11.62" width="4.53" height="0.038" style="stroke-width: 0.38; fill: #000000;" /><rect x="19.24" y="11.66" width="4.53" height="0.0017" style="stroke-width: 0.38; fill: #000000;" /><rect x="23.77" y="11.66" width="4.53" height="0.0033" style="stroke-width: 0.38; fill: #000000;" /><rect x="28.30" y="11.66" width="4.53" height="0.0017" style="stroke-width: 0.38; fill: #000000;" /><rect x="32.83" y="11.66" width="4.53" height="0.00" style="stroke-width: 0.38; fill: #000000;" /><rect x="37.35" y="11.66" width="4.53" height="0.0017" style="stroke-width: 0.38; fill: #000000;" /><rect x="41.88" y="11.66" width="4.53" height="0.0017" style="stroke-width: 0.38; fill: #000000;" /></g>
 </svg>
 </td>
 </tr>
@@ -3776,23 +3776,33 @@ Analysis</h2>
 <p>We conduct regression analysis based on the above data. In the first
 formulation, we ignore the information of the covariates. Next, we
 consider a model that is linear in <code>x</code> but not correctly
-formulated. Finally, we consider a correctly formulated model,
-<code>exp(x) + z:exp(x)</code>.</p>
+formulated.</p>
+<p>The correctly-specified model is: <span class="math display">\[
+Y_i = Z_i\tau + (1 - Z_i)[\exp(X_i)-\exp(1/2)]+\epsilon_i,
+\]</span> but, to make the coefficient of <span class="math inline">\(Z_i\)</span> equal to <span class="math inline">\(\tau\)</span>, we need to define the variable
+<span class="math inline">\(\dot{X}_i = \exp(X_i)-\exp(1/2)\)</span> and
+consider the following regression equation: <span class="math display">\[
+Y_i = - \exp(1/2) + Z_i\tau + \dot{X}_i - Z_i \dot{X}_i + \epsilon_i.
+\]</span></p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>result_ols <span class="ot">&lt;-</span></span>
 <span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>  <span class="fu">c</span>(</span>
 <span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>    <span class="st">&quot;y ~ z&quot;</span>,</span>
 <span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>    <span class="st">&quot;y ~ z + x&quot;</span>,</span>
 <span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>    <span class="st">&quot;y ~ z + exp(x)&quot;</span>,</span>
-<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>    <span class="st">&quot;y ~ z + exp(x) + z:exp(x)&quot;</span></span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>    <span class="st">&quot;y ~ z + x_dot + z:x_dot&quot;</span></span>
 <span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
 <span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>  purrr<span class="sc">::</span><span class="fu">map</span>(as.formula) <span class="sc">%&gt;%</span></span>
 <span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a>  purrr<span class="sc">::</span><span class="fu">map</span>(</span>
 <span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a>    .,</span>
 <span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a>    <span class="sc">~</span> <span class="fu">lm</span>(</span>
 <span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a>      <span class="at">formula =</span> .,</span>
-<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a>      <span class="at">data =</span> data_realized</span>
-<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a>      )</span>
-<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a>  )</span></code></pre></div>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a>      <span class="at">data =</span> </span>
+<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a>        data_realized <span class="sc">%&gt;%</span></span>
+<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a>        dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
+<span id="cb9-16"><a href="#cb9-16" tabindex="-1"></a>          <span class="at">x_dot =</span> <span class="fu">exp</span>(x) <span class="sc">-</span> <span class="fu">exp</span>(<span class="dv">1</span><span class="sc">/</span><span class="dv">2</span>)</span>
+<span id="cb9-17"><a href="#cb9-17" tabindex="-1"></a>        )</span>
+<span id="cb9-18"><a href="#cb9-18" tabindex="-1"></a>      )</span>
+<span id="cb9-19"><a href="#cb9-19" tabindex="-1"></a>  )</span></code></pre></div>
 </div>
 <div id="estimated-results" class="section level2" number="2.2">
 <h2><span class="header-section-number">2.2</span> Estimated
@@ -3804,7 +3814,7 @@ formulation of the covariates.</p>
 <span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>  <span class="fu">modelsummary</span>(</span>
 <span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>    <span class="at">vcov =</span> <span class="st">&quot;HC2&quot;</span></span>
 <span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>  ) </span></code></pre></div>
-<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
+<table class="table" style="color: black; width: auto !important; margin-left: auto; margin-right: auto;">
 <thead>
 <tr>
 <th style="text-align:left;">
@@ -3838,7 +3848,7 @@ formulation of the covariates.</p>
 −0.868
 </td>
 <td style="text-align:center;">
-−1.669
+−0.007
 </td>
 </tr>
 <tr>
@@ -3854,7 +3864,7 @@ formulation of the covariates.</p>
 (0.060)
 </td>
 <td style="text-align:center;">
-(0.018)
+(0.014)
 </td>
 </tr>
 <tr>
@@ -3871,7 +3881,7 @@ z
 0.222
 </td>
 <td style="text-align:center;">
-1.886
+0.218
 </td>
 </tr>
 <tr>
@@ -3887,7 +3897,7 @@ z
 (0.029)
 </td>
 <td style="text-align:center;">
-(0.025)
+(0.020)
 </td>
 </tr>
 <tr>
@@ -3929,7 +3939,6 @@ exp(x)
 0.535
 </td>
 <td style="text-align:center;">
-1.008
 </td>
 </tr>
 <tr>
@@ -3943,12 +3952,38 @@ exp(x)
 (0.038)
 </td>
 <td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+x_dot
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+1.008
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
 (0.006)
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
-z × exp(x)
+z × x_dot
 </td>
 <td style="text-align:center;">
 </td>
@@ -4077,23 +4112,6 @@ Log.Lik.
 </tr>
 <tr>
 <td style="text-align:left;">
-F
-</td>
-<td style="text-align:center;">
-22.334
-</td>
-<td style="text-align:center;">
-624.737
-</td>
-<td style="text-align:center;">
-118.577
-</td>
-<td style="text-align:center;">
-8871.031
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
 RMSE
 </td>
 <td style="text-align:center;">
@@ -4167,12 +4185,12 @@ Standard Errors</h2>
 <span id="cb11-33"><a href="#cb11-33" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
 <span id="cb11-34"><a href="#cb11-34" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">bind_rows</span>()</span></code></pre></div>
 <div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="fu">data.frame</span>(</span>
-<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>  <span class="at">model =</span> <span class="fu">c</span>(<span class="st">&quot;No&quot;</span>, <span class="st">&quot;Linear&quot;</span>, <span class="st">&quot;Exponential&quot;</span>, <span class="st">&quot;Correct&quot;</span>),</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>  <span class="at">model =</span> <span class="fu">c</span>(<span class="st">&quot;No&quot;</span>, <span class="st">&quot;Linear&quot;</span>, <span class="st">&quot;Exponential&quot;</span>, <span class="st">&quot;Correctly-specified&quot;</span>),</span>
 <span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>  <span class="st">&quot;Heteroskedasticity-robust standard error&quot;</span> <span class="ot">=</span> se_hetero<span class="sc">$</span>v</span>
 <span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
 <span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>  <span class="fu">kbl</span>() <span class="sc">%&gt;%</span></span>
 <span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>  <span class="fu">kable_styling</span>()</span></code></pre></div>
-<table class="table" style="margin-left: auto; margin-right: auto;">
+<table class="table" style="color: black; margin-left: auto; margin-right: auto;">
 <thead>
 <tr>
 <th style="text-align:left;">
@@ -4210,7 +4228,7 @@ Exponential
 </tr>
 <tr>
 <td style="text-align:left;">
-Correct
+Correctly-specified
 </td>
 <td style="text-align:right;">
 0.0200460

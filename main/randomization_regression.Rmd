@@ -29,7 +29,7 @@ library(modelsummary)
 color_main <- scales::viridis_pal(option = "C")(1)
 ```
 
-Here we implement the method in "7 Controlling for Covariates and Regression Analysis". The functions called from `AppliedEconometricsCode` are defined in `R/functions_randomized.R`. First, we generate the potential outcomes of the sample, and then we generate the treatment vector and the realized outcomes. We obtain the estimated average treatment effect by regression analysis based on the realized treatment vector and outcomes. Finally, we calculate the standard error of the estimated effect by both the `sandwich` package and manual calculation.
+Here we implement the method in "7 Controlling for Covariates and Regression Analysis". The functions called from `AppliedEconometrics` are defined in `R/functions_randomized.R`. First, we generate the potential outcomes of the sample, and then we generate the treatment vector and the realized outcomes. We obtain the estimated average treatment effect by regression analysis based on the realized treatment vector and outcomes. Finally, we calculate the standard error of the estimated effect by both the `sandwich` package and manual calculation.
 
 # Generating Simulated Data
 
@@ -40,7 +40,7 @@ First, we set the seed, the number of units `N`, and the size of the treatment g
 ```{r}
 set.seed(1)
 N <- 10000
-N_1 <- 500
+N_1 <- 5000
 ```
 
 Second, we set the average treatment effect `tau_population` in the population.
@@ -51,7 +51,7 @@ tau_population <- 0.2
 
 ## Generating Data
 
-We generate the potential outcomes of the sample based on the above constants and parameters. This operation corresponds to a single random draw. We assume that the individual covariates `x` are generated from a standard normal distribution. We also assume that the potential outcome when there is no treatment depends nonlinearly on `x`, such as $Y_0^\ast(0) = \exp(x) - exp(1/2)$. In this case, note that $\mathbb{E}\{Y_0^\ast(0)\} = 0$, and the average treatment effect in the population remains `tau_population`. We also calculate the average treatment effect `tau` in the randomly drawn sample.
+We generate the potential outcomes of the sample based on the above constants and parameters. This operation corresponds to a single random draw. We assume that the individual covariates `x` are generated from a standard normal distribution. We also assume that the potential outcome when there is no treatment depends nonlinearly on `x`, such as $Y_0^\ast(0) = \exp(x) - \exp(1/2)$. In this case, note that $\mathbb{E}\{Y_0^\ast(0)\} = 0$, and the average treatment effect in the population remains `tau_population`. We also calculate the average treatment effect `tau` in the randomly drawn sample.
 
 ```{r}
 outcome_potential <-
@@ -65,13 +65,13 @@ outcome_potential <-
             exp(x) - 
             exp(1/2)
           ), 
-        sd = 0.1
+        sd = 1
       ),
     y_1 = 
       rnorm(
         N, 
         mean = tau_population, 
-        sd = 0.1
+        sd = 1
       )
   )
 tau <-
@@ -100,7 +100,7 @@ Next, we generate the observed data. To do this, we first generate the treatment
 
 ```{r}
 data_realized <-
-  AppliedEconometricsCode::generate_data_randomized(
+  AppliedEconometrics::generate_data_randomized(
     outcome_potential = outcome_potential,
     N_1 = N_1,
     seed = 1
@@ -118,29 +118,42 @@ data_realized %>%
 
 ## Regression Analysis
 
-We conduct regression analysis based on the above data. In the first formulation, we ignore the information of the covariates. Next, we consider a model that is linear in `x` but not correctly formulated. Finally, we consider a correctly formulated model, `exp(x)`.
+We conduct regression analysis based on the above data. In the first formulation, we ignore the information of the covariates. Next, we consider a model that is linear in `x` but not correctly formulated. 
 
+The correctly-specified model is:
+$$
+Y_i = Z_i\tau + (1 - Z_i)[\exp(X_i)-\exp(1/2)]+\epsilon_i,
+$$
+but, to make the coefficient of $Z_i$ equal to $\tau$, we need to define the variable $\dot{X}_i = \exp(X_i)-\exp(1/2)$ and consider the following regression equation:
+$$
+Y_i = - \exp(1/2) + Z_i\tau + \dot{X}_i - Z_i \dot{X}_i + \epsilon_i.
+$$
 
 ```{r}
 result_ols <-
   c(
     "y ~ z",
     "y ~ z + x",
-    "y ~ z + exp(x)"
+    "y ~ z + exp(x)",
+    "y ~ z + x_dot + z:x_dot"
   ) %>%
   purrr::map(as.formula) %>%
   purrr::map(
     .,
     ~ lm(
       formula = .,
-      data = data_realized
+      data = 
+        data_realized %>%
+        dplyr::mutate(
+          x_dot = exp(x) - exp(1/2)
+        )
       )
   )
 ```
 
 ## Estimated Results
 
-We find that the average treatment effect `tau` $=$ `r tau` in the sample is included in the 95% confidence interval regardless of the correctness of the formulation of the covariates.
+We find that the average treatment effect `tau` $=$ `r tau` in the sample is included in the 95% confidence interval regardless of the correctness of the formulation of the covariates. 
 
 ```{r, warning = FALSE}
 result_ols %>%
@@ -191,7 +204,7 @@ se_hetero <-
 
 ```{r}
 data.frame(
-  model = c("No", "Linear", "Exponential"),
+  model = c("No", "Linear", "Exponential", "Correctly-specified"),
   "Heteroskedasticity-robust standard error" = se_hetero$v
   ) %>%
   kbl() %>%
