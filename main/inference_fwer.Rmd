@@ -1,0 +1,1107 @@
+---
+title: "Multiple Testing"
+subtitle: "FWER Control"
+output: 
+  html_document:
+    css: style_do.css
+    number_sections: yes
+    toc: yes
+    toc_depth: '3'
+    toc_float: yes
+    theme: "spacelab" #"default", "bootstrap", "cerulean", "cosmo", "darkly", "flatly",
+                 # "journal", "lumen", "paper", "readable", "sandstone", "simplex",
+                 # "spacelab", "united", "yeti"
+    highlight: "pygments" #"default", "tango", "pygments", "kate", "monochrome",
+                 # "espresso", "zenburn", "haddock", "textmate"
+    df_print: paged
+    code_folding: show
+date: 'Lastu pdate: `r Sys.Date()`'
+---
+
+In this report, we introduce the problem of multiple testing and methods to control FWER.
+
+```{r setup, include=FALSE}
+rm(list = ls())
+knitr::opts_chunk$set(cache = FALSE, echo = TRUE, fig.align = "center")
+library(AppliedEconometricsCode)
+library(foreach)
+library(magrittr)
+library(ggplot2)
+library(kableExtra)
+library(modelsummary)
+color_main <- scales::viridis_pal(option = "C")(1)
+set.seed(1)
+```
+
+# Setting constants
+
+We consider the problem of testing the existence of the average treatment effect for `M` latent outcomes for a sample of size `N` with random assignment of treatment. We consider two data generating processes. First, we consider the case where all null hypotheses are true and control FWER. Second, we consider the case where `M_F` null hypotheses are false and `M-M_F` null hypotheses are true, and calculate FWER and power. The size of the test is `alpha`. We also set the number of simulations to calculate FWER and power to `L`.
+
+```{r}
+N <- 300
+M <- 25
+M_F <- 10
+L <- 100
+alpha <- 0.05
+```
+
+# The failure of type I error control
+
+## Generating data
+
+We generate `M` latent outcomes, each of which is generated from a standard normal distribution independently of the treatment assignment. Therefore, if we consider the null hypothesis that the treatment effect for latent outcome `m` is zero, all of these null hypotheses are true.
+
+```{r}
+z <-
+  (
+    runif(N) >= 0.5
+  )
+df_list <-
+  seq_len(M) %>%
+  purrr::map(
+    ~ tibble::tibble(
+      z = z,
+      y = rnorm(N)
+    )
+  )
+```
+
+## Hypothesis testing
+
+We consider an independent t-test for each observed outcome to test these null hypotheses.
+
+```{r}
+result_list <-
+  df_list %>%
+  purrr::map(
+    ~ lm(
+        formula = y ~ z,
+        data = .
+      )
+  )
+```
+
+Obtain the t-statistics.
+
+```{r}
+t_list <-
+  result_list %>%
+  purrr::map(
+    ~ summary(.) %>%
+      coef() %>%
+      .[
+        "zTRUE",
+        "t value"
+      ]
+  ) %>%
+  purrr::reduce(c)
+```
+
+Obtain the p-values.
+
+```{r}
+p_list <-
+  result_list %>%
+  purrr::map(
+    ~ summary(.) %>%
+      coef() %>%
+      .[
+        "zTRUE",
+        "Pr(>|t|)"
+      ]
+  ) %>%
+  purrr::reduce(c)
+```
+
+## Multiple testing
+
+As we order the t-statistics from the smallest to the largest, we can plot the t-statistics and the critical value at the `r alpha` level.
+
+```{r}
+ggplot(
+  mapping = 
+    aes(
+        x = seq_along(t_list),
+        y = t_list %>% abs() %>% sort()
+    )
+  ) + 
+  geom_point() +
+  geom_hline(
+    yintercept = abs(
+      qt(
+        1 - alpha / 2,
+        df = N - 2
+      )
+    ),
+    color = "red"
+  ) +
+  labs(
+    x = "Rank of the test statistic",
+    y = "Absolute value of the test statistic"
+  ) +
+  theme_classic()
+```
+
+We can also plot the p-values and the critical value at the `r alpha` level.
+
+```{r}
+ggplot(
+  mapping = 
+    aes(
+        x = seq_along(p_list),
+        y = p_list %>% sort()
+    )
+  ) + 
+  geom_point() +
+  geom_hline(
+    yintercept = alpha,
+    color = "red"
+  ) +
+  labs(
+    x = "Rank of the test statistic",
+    y = "p value"
+  ) +
+  theme_classic()
+```
+
+Among these t-tests, the following null hypotheses are rejected at the `r alpha` level.
+
+```{r}
+t_rejected <-
+  t_list %>%
+  abs() %>%
+  .[
+    . > 
+      abs(
+        qt(
+          1 - alpha / 2,
+          df = N - 2
+          )
+      )
+  ]
+t_rejected
+```
+
+As we can see, even if all null hypotheses are true, repeating the test for different latent outcomes makes it more likely to commit a type I error.
+
+# Bonferroni correction
+
+## Correcting the threshold for the p-values
+
+In Bonferroni correction, we control the type I error by lowering the significance level of each test from $\alpha=$`r alpha` to $\alpha/M$`r alpha/M`. When we correct the threshold for the p-values, we can plot the p-values and the corrected threshold at the `r alpha/M` level.
+
+```{r}
+ggplot(
+  mapping = 
+    aes(
+        x = seq_along(p_list),
+        y = p_list %>% sort()
+    )
+  ) + 
+  geom_point() +
+  geom_hline(
+    yintercept = alpha / M,
+    color = "red"
+  ) +
+  labs(
+    x = "Rank of the test statistic",
+    y = "p value"
+  ) +
+  theme_classic()
+```
+
+Among these t-tests, the following null hypotheses are rejected at the `r alpha/M` level.
+
+```{r}
+p_rejected_bonferonni <-
+  p_list %>%
+  .[
+    . < alpha / M 
+  ]
+p_rejected_bonferonni
+```
+
+We can also achieve the same thing by using the `p.adjust` function in R. When this function is given a list of p-values and the `method` option is set to `bonferroni`, the adjusted p-values are returned. We can check whether this value is below the significance level `r alpha`.
+
+```{r}
+p_adjusted_bonferroni <-
+  p.adjust(
+    p = p_list,
+    method = "bonferroni"
+  )
+p_adjusted_bonferroni
+
+p_adjusted_bonferroni -
+  ifelse(
+    p_list * M > 1,
+    1,
+    p_list * M
+  )
+```
+
+## Correcting the threshold for the t-statistics
+
+The same correction can be achieved by directly correcting the rejection region. In this case, we need to find the upper `r alpha/M` point of the t-distribution with the corrected degrees of freedom.
+
+The plot is as follows.
+
+```{r}
+ggplot(
+  mapping = 
+    aes(
+        x = seq_along(t_list),
+        y = t_list %>% abs() %>% sort()
+    )
+  ) + 
+  geom_point() +
+  geom_hline(
+    yintercept = abs(
+      qt(
+        1 - alpha / (2 * M),
+        df = N - 2
+      )
+    ),
+    color = "red"
+  ) +
+  labs(
+    x = "Rank of the test statistic",
+    y = "Absolute value of the test statistic"
+  ) +
+  theme_classic()
+```
+
+The following null hypotheses are rejected at the `r alpha` level.
+
+```{r}
+t_rejected_bonferonni_direct <-
+  t_list %>%
+  abs() %>%
+  .[
+    . > 
+      abs(
+        qt(
+          1 - alpha / (2 * M),
+          df = N - 2
+          )
+      )
+  ]
+t_rejected_bonferonni_direct
+```
+
+## Calculating the FWER
+
+Now, we confirm that Bonferroni correction controls the FWER by repeating the above process `L` times. To do so, we define a function to calculate the t-statistics and then repeat the process `L` times.
+
+```{r}
+t_list_all <-
+  seq_len(L) %>%      
+  purrr::map(
+    ~ compute_t_statistics_null_effect(
+        N = N,
+        M = M,
+        alpha = alpha,
+        seed = .
+      ) 
+  )
+```
+
+Then, we calculate the proportion of the simulations in which at least one null hypothesis is falsely rejected.
+
+The resutl without Bonferroni correction is as follows.
+
+```{r}
+t_rejected_all <-
+  t_list_all %>%
+  purrr::map(
+    function(t_list) {
+      length_rejected <-
+        t_list %>%
+        abs() %>%
+        .[
+          . > 
+            abs(
+              qt(
+                1 - alpha / 2,
+                df = N - 2
+                )
+            )
+        ] %>%
+        length()
+      return(length_rejected > 0)
+    }
+  ) %>%
+  purrr::reduce(c)
+
+fwer <-
+  sum(t_rejected_all) / 
+  length(t_rejected_all)
+
+fwer
+```
+
+We can see that the FWER is much higher than the significance level `r alpha`. 
+
+Next, we calculate the FWER when Bonferroni correction is applied.
+
+```{r}
+t_rejected_bonferonni_all <-
+  t_list_all %>%
+  purrr::map(
+    function(t_list) {
+      length_rejected <-
+        t_list %>%
+        abs() %>%
+        .[
+          . > 
+            abs(
+              qt(
+                1 - alpha / (2 * M),
+                df = N - 2
+                )
+            )
+        ] %>%
+        length()
+      return(length_rejected > 0)
+    }
+  ) %>%
+  purrr::reduce(c)
+
+fwer_bonferonni <-
+  sum(t_rejected_bonferonni_all) / 
+  length(t_rejected_bonferonni_all)
+
+fwer_bonferonni
+```
+
+As we can see, Bonferroni correction controls the FWER at the `r alpha` level.
+
+## Design with false null hypotheses
+
+However, this test is conservative and may fail to reject any null hypothesis even if it is false.
+
+To confirm this, we generate data where `M - M_F` null hypotheses are false and `M_F` null hypotheses are true, and calculate the t-statistics.
+
+```{r}
+z <-
+  (
+    runif(N) >= 0.5
+  )
+df_list_null <-
+  seq_len(M-M_F) %>%
+  purrr::map(
+    ~ tibble::tibble(
+      z = z,
+      y = rnorm(N)
+    )
+  )
+df_list_alternative <- 
+  seq_len(M_F-2) %>%
+  purrr::map(
+    ~ tibble::tibble(
+      z = z,
+      y = rnorm(N) + 0.3*z
+    )
+  )
+
+df_list_alternative <- c(
+  df_list_alternative,
+  seq(M_F-1,M_F) %>%
+  purrr::map(
+    ~ tibble::tibble(
+      z = z,
+      y = rnorm(N) + 0.5*z
+    )
+  )
+)
+```
+
+```{r}
+result_list_null <-
+  df_list_null %>%
+  purrr::map(
+    ~ lm(
+        formula = y ~ z,
+        data = .
+      )
+  )
+
+result_list_alternative <-
+  df_list_alternative %>%
+  purrr::map(
+    ~ lm(
+        formula = y ~ z,
+        data = .
+      )
+  )
+```
+
+```{r}
+t_list_null <-
+  result_list_null %>%
+  purrr::map(
+    ~ summary(.) %>%
+      coef() %>%
+      .[
+        "zTRUE",
+        "t value"
+      ]
+  ) %>%
+  purrr::reduce(c)
+
+t_list_alternative <-
+  result_list_alternative %>%
+  purrr::map(
+    ~ summary(.) %>%
+      coef() %>%
+      .[
+        "zTRUE",
+        "t value"
+      ]
+  ) %>%
+  purrr::reduce(c)
+
+t_list <- c(
+  t_list_null,
+  t_list_alternative
+)
+null_list <- c(
+  rep(
+    "null", 
+    length = length(t_list_null)
+  ),
+  rep(
+    "alternative", 
+    length = length(t_list_alternative)
+  )
+)
+```
+
+```{r}
+p_list_null <-
+  result_list_null %>%
+  purrr::map(
+    ~ summary(.) %>%
+      coef() %>%
+      .[
+        "zTRUE",
+        "Pr(>|t|)"
+      ]
+  ) %>%
+  purrr::reduce(c)
+
+p_list_alternative <-
+  result_list_alternative %>%
+  purrr::map(
+    ~ summary(.) %>%
+      coef() %>%
+      .[
+        "zTRUE",
+        "Pr(>|t|)"
+      ]
+  ) %>%
+  purrr::reduce(c)
+p_list <- c(
+  p_list_null,
+  p_list_alternative
+)
+```
+
+As we order the t-statistics from the smallest to the largest, we can plot the t-statistics and the critical value at the `r alpha` level.
+
+```{r}
+ggplot(
+  mapping = 
+    aes(
+        x = seq_along(t_list),
+        y = t_list[t_list %>% abs() %>% order()] %>% abs(),
+        color = null_list[t_list %>% abs() %>% order()]
+    )
+  ) + 
+  geom_point() +
+  geom_hline(
+    yintercept = abs(
+      qt(
+        1 - alpha / 2,
+        df = N - 2
+      )
+    ),
+    color = "red"
+  ) +
+  scale_color_viridis_d() +
+  labs(
+    x = "Rank of the test statistic",
+    y = "Absolute value of the test statistic",
+    color = "True or false null hypothesis"
+  ) + 
+  theme_classic()
+```
+
+The p values are as follows.
+
+```{r}
+ggplot(
+  mapping = 
+    aes(
+        x = seq_along(p_list),
+        y = p_list[p_list %>% order()],
+        color = null_list[p_list %>% order()]
+    )
+  ) + 
+  geom_point() +
+  geom_hline(
+    yintercept = alpha,
+    color = "red"
+  ) +
+  scale_color_viridis_d() +
+  labs(
+    x = "Rank of the test statistic",
+    y = "p value",
+    color = "True or false null hypothesis"
+  ) +
+  theme_classic()
+```
+
+Among these p values, the following null hypotheses are rejected at the `r alpha` level.
+
+```{r}
+p_rejected <-
+  p_list_alternative %>%
+  abs() %>%
+  .[
+    . < alpha
+  ]
+p_rejected
+```
+
+On the contrary, the following null hypotheses are falsely rejected at the `r alpha` level.
+
+```{r}
+p_rejected_false <-
+  p_list_null %>%
+  abs() %>%
+  .[
+    . < alpha
+  ]
+p_rejected_false
+```
+
+As we compare it with the corrected rejection regtion, it is as follows.
+
+```{r}
+ggplot(
+  mapping = 
+    aes(
+        x = seq_along(t_list),
+        y = t_list[t_list %>% abs() %>% order()] %>% abs(),
+        color = null_list[t_list %>% abs() %>% order()]
+    )
+  ) + 
+  geom_point() +
+  geom_hline(
+    yintercept = abs(
+      qt(
+        1 - alpha / (2 * M),
+        df = N - 2
+      )
+    ),
+    color = "red"
+  ) +
+  scale_color_viridis_d() +
+  labs(
+    x = "Rank of the test statistic",
+    y = "Absolute value of the test statistic",
+    color = "True or false null hypothesis"
+  ) +
+  theme_classic()
+```
+
+Among these corrected testing, the following null hypotheses are rejected.
+
+```{r}
+t_rejected_bonferonni <-
+  t_list_alternative %>%
+  abs() %>%
+  .[
+    . > 
+      abs(
+        qt(
+          1 - alpha / (2 * M),
+          df = N - 2
+          )
+      )
+  ]
+t_rejected_bonferonni
+```
+
+The p values are as follows.
+
+```{r}
+ggplot(
+  mapping = 
+    aes(
+        x = seq_along(p_list),
+        y = p_list[p_list %>% order()],
+        color = null_list[p_list %>% order()]
+    )
+  ) + 
+  geom_point() +
+  geom_hline(
+    yintercept = alpha / M,
+    color = "red"
+  ) +
+  scale_color_viridis_d() +
+  labs(
+    x = "Rank of the test statistic",
+    y = "p value",
+    color = "True or false null hypothesis"
+  ) +
+  theme_classic()
+```
+
+Among the corrected testing, the following null hypotheses are rejected.
+
+```{r}
+p_rejected_bonferonni <-
+  p_list_alternative %>%
+  abs() %>% sort() %>%
+  .[
+    . < alpha / M
+  ]
+p_rejected_bonferonni
+```
+
+On the contrary, the following null hypotheses are falsely rejected.
+
+```{r}
+p_rejected_false_bonferonni <-
+  p_list_null %>%
+  abs() %>%
+  .[
+    . < alpha / M
+  ]
+p_rejected_false_bonferonni
+```
+
+### Calculating the FWER
+
+In the above example, we were able to prevent false rejection by correcting the rejection region, but what about the FWER itself? To verify this, we will functionize the process and repeat it `r L` times.
+
+```{r}
+t_list_null <-
+  seq_len(L) %>%      
+  purrr::map(
+    ~ compute_t_statistics_null_effect(
+        N = N,
+        M = M - M_F,
+        alpha = alpha,
+        seed = .
+      ) 
+  )
+t_list_alternative <- 
+  seq_len(L) %>%      
+  purrr::map(
+    ~ compute_t_statistics_alternative_effect(
+        N = N,
+        M = M_F,
+        alpha = alpha,
+        seed = .
+      ) 
+  )
+```
+
+We calculate the proportion of the simulations in which at least one null hypothesis is falsely rejected. 
+
+First, we calculate the FWER without Bonferonni correction.
+
+```{r}
+t_rejected_null <-
+  t_list_null %>%
+  purrr::map(
+    function(t_list) {
+      length_rejected <-
+        t_list %>%
+        abs() %>%
+        .[
+          . > 
+            abs(
+              qt(
+                1 - alpha / 2,
+                df = N - 2
+                )
+            )
+        ] %>%
+        length()
+      return(length_rejected > 0)
+    }
+  ) %>%
+  purrr::reduce(c)
+
+fwer <-
+  sum(t_rejected_null) / 
+  length(t_rejected_null)
+
+fwer
+```
+
+This FWER is much higher than the significance level `r alpha`. Therefore, without correction, we cannot control the FWER properly.
+
+Then, we calculate the FWER when Bonferroni correction is applied.
+
+```{r}
+t_rejected_bonferonni_null <-
+  t_list_null %>%
+  purrr::map(
+    function(t_list) {
+      length_rejected <-
+        t_list %>%
+        abs() %>%
+        .[
+          . > 
+            abs(
+              qt(
+                1 - alpha / (2 * M),
+                df = N - 2
+                )
+            )
+        ] %>%
+        length()
+      return(length_rejected > 0)
+    }
+  ) %>%
+  purrr::reduce(c)
+
+fwer_bonferonni <-
+  sum(t_rejected_bonferonni_null) / 
+  length(t_rejected_bonferonni_null)
+
+fwer_bonferonni
+```
+
+### Calculating the power
+
+Next, we calculate the power without Bonferonni correction.
+
+To do so, we calculate the proportion of the null hypothesis that are correctly rejected. The proportion without Bonferonni correction is as follows.
+
+```{r}
+t_rejected_alternative <-
+  t_list_alternative %>%
+  purrr::map(
+    function(t_list) {
+      length_rejected <-
+        t_list %>%
+        abs() %>%
+        .[
+          . > 
+            abs(
+              qt(
+                1 - alpha / 2,
+                df = N - 2
+                )
+            )
+        ] %>%
+        length()
+      return(length_rejected)
+    }
+  ) %>%
+  purrr::reduce(c)
+
+power <-
+  sum(t_rejected_alternative) / 
+  (
+    length(t_list_alternative) * 
+      length(t_list_alternative[[1]])
+  )
+
+power
+```
+
+The proportion with Bonferonni correction is as follows.
+
+```{r}
+t_rejected_bonferonni_alternative <-
+  t_list_alternative %>%
+  purrr::map(
+    function(t_list) {
+      length_rejected <-
+        t_list %>%
+        abs() %>%
+        .[
+          . > 
+            abs(
+              qt(
+                1 - alpha / (2 * M),
+                df = N - 2
+                )
+            )
+        ] %>%
+        length()
+      return(length_rejected)
+    }
+  ) %>%
+  purrr::reduce(c)
+
+power_bonferonni <-
+  sum(t_rejected_bonferonni_alternative) / 
+  (
+    length(t_list_alternative) * 
+      length(t_list_alternative[[1]])
+  )
+
+power_bonferonni
+```
+
+The power is slightly lower than the power of `r power` without Bonferroni correction, but it should be noted that without correction, the FWER is `r fwer` and is not controlled at all.
+
+# Bonferroni-Holm Correction
+
+If we use the Bonferroni-Holm correction, we can theoretically reject more null hypotheses than the Bonferroni correction. Let's confirm this.
+
+## Correcting the threshold for the p-values
+
+The p values and the corrected threshold are as follows.
+
+```{r}
+ggplot(
+  mapping = 
+    aes(
+        x = seq_along(p_list),
+        y = p_list[p_list %>% order()],
+        color = null_list[p_list %>% order()]
+    )
+  ) + 
+  geom_point() +
+  geom_hline(
+    yintercept = alpha,
+    color = "red"
+  ) +
+  geom_line(
+    mapping = 
+      aes(
+        x = seq_along(p_list),
+        y = alpha / (M - seq_along(p_list) + 1)
+      ),
+    color = "blue"
+  ) +
+  scale_color_viridis_d() +
+  labs(
+    x = "Rank of the test statistic",
+    y = "p value",
+    color = "True or false null hypothesis"
+  ) +
+  theme_classic()
+```
+
+In this corrected testing, the following null hypotheses are correctly rejected.
+
+```{r}
+p_rejected_bonferonni_holm <-
+  p_list_alternative %>%
+  abs() %>%
+  sort() 
+
+index <-
+  (
+    p_rejected_bonferonni_holm <=
+      alpha / (M - seq_along(p_rejected_bonferonni_holm) + 1)
+  )
+
+index <-
+  index %>%
+  cummin() %>%
+  as.logical()
+
+p_rejected_bonferonni_holm <-
+  p_rejected_bonferonni_holm[
+    index
+  ]
+
+p_rejected_bonferonni_holm
+```
+
+On the contrary, the following null hypotheses are falsely rejected.
+
+```{r}
+p_rejected_false_bonferonni_holm <-
+  p_list_null %>%
+  abs() %>%
+  sort() 
+
+index <-
+  (
+    p_rejected_false_bonferonni_holm <=
+      alpha / (M - seq_along(p_rejected_false_bonferonni_holm) + 1)
+  )
+
+index <-
+  index %>%
+  cummin() %>%
+  as.logical()
+
+p_rejected_false_bonferonni_holm <-
+  p_rejected_false_bonferonni_holm[
+    index
+  ]
+
+p_rejected_false_bonferonni_holm
+```
+
+The rejected null hypotheses are the same as those with Bonferroni correction.
+
+The same thing can be achieved by using the `p.adjust` function in R. When this function is given a list of p-values and the `method` option is set to `holm`, the adjusted p-values are returned. We can check whether this value is below the significance level `r alpha`.
+
+```{r}
+p_adjusted_bonferonni_holm <-
+  p.adjust(
+    p = p_list,
+    method = "holm"
+  )
+p_adjusted_bonferonni_holm
+
+check <-
+  p_list %>%
+  sort() 
+
+check <-
+  check * (M - seq_along(check) + 1)
+
+check <-
+  ifelse(
+    check > 1,
+    1,
+    check
+  )
+
+check <-
+  cummax(
+    check
+  )
+
+p_adjusted_bonferonni_holm %>% sort() - check
+```
+
+## Comparison by t-statistics
+
+We can also compare the corrected testing by the t-statistics.
+
+```{r}
+ggplot(
+  mapping = 
+    aes(
+        x = seq_along(t_list),
+        y = t_list[t_list %>% abs() %>% order()] %>% abs(),
+        color = null_list[t_list %>% abs() %>% order()]
+    )
+  ) + 
+  geom_point() +
+  geom_hline(
+    yintercept = abs(
+      qt(
+        1 - alpha / (2 * M),
+        df = N - 2
+      )
+    ),
+    color = "red"
+  ) +
+  geom_line(
+    mapping = 
+      aes(
+        x = seq_along(t_list),
+        y = abs(
+          qt(
+            1 - alpha / (2 * seq_along(t_list)),
+            df = N - 2
+          )
+        )
+      ),
+    color = "blue"
+  ) +
+  scale_color_viridis_d() +
+  labs(
+    x = "Rank of the test statistic",
+    y = "Absolute value of the test statistic",
+    color = "True or false null hypothesis"
+  ) +
+  theme_classic()
+```
+
+## Compare FWER and power
+
+In the above example, Bonferroni correction and Bonferroni-Holm correction gave the same result. Then, is the FWER and power the same?
+
+Let's calculate the FWER and power with Bonferroni-Holm correction.
+
+```{r}
+t_rejected_bonferonni_holm_null <-
+  t_list_null %>%
+  purrr::map(
+    function(t_list) {
+      length_rejected <-
+        t_list %>%
+        abs() %>%
+        sort(decreasing = TRUE) %>% 
+        .[
+          . >
+            abs(
+              qt(
+                1 - alpha / (2 * (M - seq_along(t_list) + 1)),
+                df = N - 2
+                )
+            )
+        ] %>%
+        length()
+      return(length_rejected > 0)
+    }
+  ) %>%
+  purrr::reduce(c)
+
+FWER_bonferonni_holm <-
+  sum(t_rejected_bonferonni_holm_null) / 
+  length(t_rejected_bonferonni_holm_null)
+
+FWER_bonferonni_holm
+```
+
+```{r}
+t_rejected_bonferonni_holm_alternative <-
+  t_list_alternative %>%
+  purrr::map(
+    function(t_list) {
+      length_rejected <-
+        p_rejected_bonferonni_holm[
+          index
+        ] %>% length()
+
+      length_rejected <-
+        t_list %>%
+        abs() %>%
+        sort(decreasing = TRUE) %>% 
+        .[
+          . >
+            abs(
+              qt(
+                1 - alpha / (2 * (M - seq_along(t_list) + 1)),
+                df = N - 2
+                )
+            )
+        ] %>%
+        length()
+      return(length_rejected)
+    }
+  ) %>%
+  purrr::reduce(c)
+
+power_bonferonni_holm <-
+  sum(t_rejected_bonferonni_holm_alternative) / 
+  (
+    length(t_list_alternative) * 
+      length(t_list_alternative[[1]])
+  )
+
+power_bonferonni_holm
+```
+
+As we can see from the above, Bonferroni-Holm correction also controls the FWER to be less than `r alpha`. Furthermore, it provides slightly better power than the power of Bonferroni correction `r power_bonferonni`.
+
+
+

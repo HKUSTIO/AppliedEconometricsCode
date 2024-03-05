@@ -2,6 +2,13 @@
 
 export(calculate_difference_in_means)
 export(calculate_difference_in_means_stratified)
+export(compute_fdr)
+export(compute_p_value_benjamini_hotchberg)
+export(compute_p_value_benjamini_yekutieli)
+export(compute_p_value_mixed_effect)
+export(compute_t_statistics_alternative_effect)
+export(compute_t_statistics_null_effect)
 export(generate_data_cluster)
 export(generate_data_randomized)
 export(generate_data_stratified)
+export(return_dgp_cluster)
