@@ -1,0 +1,741 @@
+---
+title: "Assignment mechanism with Noncompliers"
+author: "Kohei Kawaguchi, Hong Kong University of Science and Technology"
+output: 
+  ioslides_presentation:
+    widescreen: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
+library(foreach)
+library(magrittr)
+library(ggplot2)
+library(modelsummary)
+library(kableExtra)
+```
+
+<style type="text/css">
+div.footnotes {
+  position: absolute;
+  bottom: 0;
+  margin-bottom: 10px;
+  width: 80%;
+  font-size: 10px;
+}
+body, td {
+   font-size: 14px;
+}
+code.r{
+  font-size: 11px;
+}
+pre {
+  font-size: 11px
+}
+blockquote {
+  background: #f9f9f9;
+  border-left: 5px solid #ccc;
+  margin: 1.5em 10px;
+  padding: 0.5em 1.5em;
+}
+</style>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<script>
+$(document).ready(function() {
+  $('slide:not(.backdrop):not(.title-slide)').append('<div class=\"footnotes\">');
+
+  $('footnote').each(function(index) {
+    var text  = $(this).html();
+    var fnNum = (index+1).toString();
+    $(this).html(fnNum.sup());
+
+    var footnote   = fnNum + '. ' + text + '<br/>';
+    var oldContent = $(this).parents('slide').children('div.footnotes').html();
+    var newContent = oldContent + footnote;
+    $(this).parents('slide').children('div.footnotes').html(newContent);
+  });
+});
+</script>
+
+# Assignment mechanism with Noncompliers
+
+## Noncompliers
+
+- So far, we have assumed that the _assignment_ of treatment implied the _receipt_ of treatment.
+  - Prescribing drug means that the subject takes the drug.
+- However, there are many cases in which a subject assigned to treatment does not receive the treatment.
+  - Supplied supplements on infant mortality to a village but some of the villagers could not receive the supplements.
+- Moreover, there may be cases where subjects not assigned to treatment may receive the treatment.
+  - Men who were not drafted to the Vietnam War volunteered.
+- Subjects whose treatment _receipt_ status differs from treatment _assignment_ status are called _noncompliers_.
+  
+## Intention-to-treat (ITT) and treatment effect
+
+- This problem arises regardless of whether experimental or observational.
+- If the treatment was randomly assigned, the average effect of _assignment_ treatment can be estimated.
+- However, if there are noncompliers, this can differ from the average effect of _receiving_ treatment. 
+- The former is called _intention-to-treat (ITT)_ effect and is distinguished from the latter.
+- ITT effects are informative, but may not be robust to the changes in the compliance behaviors. 
+- In other situations, people's compliance behavior can be different and hence the ITT may change even if the treatment effect is invariant.
+
+## Potential treatment receipt status
+
+- To describe this situation, we introduce variables representing treatment assignment and treatment receipt status.
+- Treatment assignment status: $Z_i$ takes value $1$ if assigned and $0$ otherwise.
+- Treatment receipt status: $D_i$ takes value $1$ if received and $0$ otherwise.
+- The key is that individual treatment receipt status is a function of the individual's treatment assignment status.
+  - A subject may never take the treatment, or always take.
+  - A subject may take the treatment only when assigned treatment, or only when not assigned.
+- This relation is described by the following potential outcome model:
+$$
+D_i = D_i^\ast(Z_i) =
+\begin{cases}
+D_i^\ast(0) & \text{   if   } Z_i = 0\\
+D_i^\ast(1) & \text{   if   } Z_i = 1.
+\end{cases} 
+$$
+
+## Observed and missing treatment status
+
+- We can observe $D_i^\ast(Z_i)$, the treatment receipt status under the observed treatment assignment status.
+- However, we never observe $D_i^\ast(1 - Z_i)$, the treatment receipt status under the missing treatment assignment status.
+
+
+## Extension of the potential outcome model
+
+- The potential outcome is now a function of both treatment assignment and receipt status.
+$$
+Y_i = Y_i^\ast(Z_i, D_i).
+$$
+- We observe:
+$$
+Y_i^\ast[Z_i, D_i^\ast(Z_i)] = Y_i^\ast[1, D_i^\ast(1)], Y_i^\ast[0, D_i^\ast(0)].
+$$
+- However, we never observe:
+$$
+Y_i^\ast[Z_i, D_i^\ast(1 - Z_i)] = Y_i^\ast[1, D_i^\ast(0)], Y_i^\ast[0, D_i^\ast(1)].
+$$
+
+## Random assignment of $Z_i$
+
+- We still assume that the treatment assignment is random.
+- This is true in randomized experiments.
+- We have to justify this in observational studies.
+- __Assumption: Random assignment of $Z_i$__
+$$
+\begin{split}
+&\mathbb{P}[Z_i = 1 | D_i^\ast(0), D_i^\ast(1), Y_i^\ast(0, 0), Y_i^\ast(0, 1), Y_i^\ast(1, 0), Y_i^\ast(1, 1)]\\
+&= \mathbb{P}(Z_i = 1).
+\end{split}
+$$
+
+## Notations
+
+- The subsample sizes by treatment assignment status:
+$$
+N_0 \equiv \sum_{i = 1}^N (1 - Z_i), N_1 \equiv \sum_{i = 1}^N Z_i.
+$$
+- The subsample sizes by treatment receipt status:
+$$
+N_c \equiv \sum_{i = 1}^N (1 - D_i), N_t \equiv \sum_{i = 1}^N D_i.
+$$
+
+## Notations
+
+- The subsample sizes by both treatment assignment and receipt status:
+$$
+N_{0c} \equiv \sum_{i = 1}^N (1 - Z_i) \cdot (1 - D_i), N_{0t} \equiv \sum_{i = 1}^N (1 - Z_i) \cdot D_i.
+$$
+$$
+N_{1c} \equiv \sum_{i = 1}^N Z_i \cdot (1 - D_i), N_{1t} \equiv \sum_{i = 1}^N Z_i \cdot D_i.
+$$
+
+## Notations
+
+- The average outcomes by treatment assignment status:
+$$
+\overline{Y}_0 \equiv \frac{1}{N_0} \sum_{i = 1}^N (1 - Z_i) \cdot Y_i, \overline{Y}_1 \equiv \frac{1}{N_1} \sum_{i = 1}^N Z_i \cdot Y_i.
+$$
+
+- The average treatment receipt by treatment assignment status:
+$$
+\overline{D}_0 \equiv \frac{1}{N_0} \sum_{i = 1}^N (1 - Z_i) \cdot D_i, \overline{D}_1 \equiv \frac{1}{N_1} \sum_{i = 1}^N Z_i \cdot D_i.
+$$
+
+## Notations
+
+- The average outcomes by treatment receipt status:
+$$
+\overline{Y}_c \equiv \frac{1}{N_c} \sum_{i = 1}^N (1 - D_i) \cdot Y_i, \overline{Y}_t \equiv \frac{1}{N_t} \sum_{i = 1}^N D_i \cdot Y_i.
+$$
+
+## Notations
+
+- The average outcomes by both treatment assignment and receipt status:
+$$
+\overline{Y}_{0c} \equiv \frac{1}{N_{0c}} \sum_{i = 1}^N (1 - Z_i) \cdot (1 - D_i) \cdot Y_i.
+$$
+$$
+\overline{Y}_{0t} \equiv \frac{1}{N_{0t}} \sum_{i = 1}^N (1 - Z_i) \cdot D_i \cdot Y_i.
+$$
+$$
+\overline{Y}_{1c} \equiv \frac{1}{N_{1c}} \sum_{i = 1}^N Z_i \cdot (1 - D_i) \cdot Y_i.
+$$
+$$
+\overline{Y}_{1t} \equiv \frac{1}{N_{1t}} \sum_{i = 1}^N Z_i \cdot D_i \cdot Y_i.
+$$
+
+# One-sided noncompliers
+
+## One-sided noncompliers
+
+- Assume that subject never receives treatment unless assigned treatment:
+$$
+D_i^\ast(0) = 0, \forall i.
+$$
+- This holds in most of experiment: subjects will not take new supplements if not supplied.
+
+## Compliance status
+
+- Subjects are divided into latent compliance status according to their value of $D_i^\ast(z)$.
+$$
+G_i \equiv 
+\begin{cases}
+\text{co if   } D_i^\ast(1) = 1 \\
+\text{nc if   } D_i^\ast(1) = 0.
+\end{cases}
+$$
+
+- Underlying compliance status:<footnote> Table 23.2 of Imbens and Rubin (2015) </footnote>
+
+| | $Z_i = 0$ | $Z_i = 1$ |
+|-|-----------|-----------|
+| $D_i = 0$ | nc or co | nc |
+| $D_i = 1$ | - | co | 
+
+
+## Compliance status share
+
+- The subsample sizes of compliers and noncompliers
+$$
+N_{co} \equiv \sum_{i = 1}^N 1_{G_i = co}, N_{nc} \equiv \sum_{i = 1}^N 1_{G_i = nc}.
+$$
+- The sample fractions of compliers and noncompliers
+$$
+\pi_{co} \equiv \frac{N_{co}}{N}, \pi_{nt} \equiv \frac{N_{nc}}{N} = 1 - \pi_{co}.
+$$
+
+
+## Estimate ITT effect for the receipt of treatment
+
+- The ITT for the receipt of treatment:
+$$
+ITT_W \equiv \frac{1}{N}\sum_{i = 1}^N[D_i^\ast(1) - D_i^\ast(0)],
+$$
+can be estimated unbiasedly by the average difference in treatment status:
+$$
+\widehat{ITT}_W \equiv \overline{D}_1 - \overline{D}_0 = \overline{D}_1.
+$$
+- The standard error is also estimated by:
+$$
+\widehat{\mathbb{V}}(\widehat{ITT}_W) \equiv \frac{s_{W, 0}^2}{N_0} + \frac{s_{W, 1}^2}{N_1}.
+$$
+
+## Estimate ITT effect for the outcome
+
+- The ITT for the outcome:
+$$
+ITT_Y \equiv \frac{1}{N}\sum_{i = 1}^N\{Y_i^\ast[1, D_i^\ast(1)] - Y_i^\ast[0, D_i^\ast(0)]\},
+$$
+can be estimated unbiasedly by the average difference in treatment status:
+$$
+\widehat{ITT}_Y \equiv \overline{Y}_1 - \overline{Y}_0.
+$$
+- The standard error is also estimated by:
+$$
+\widehat{\mathbb{V}}(\widehat{ITT}_Y) \equiv \frac{s_{Y, 0}^2}{N_0} + \frac{s_{Y, 1}^2}{N_1}.
+$$
+
+
+## Decomposing $ITT_Y$
+
+- Using the ITT effect for the outcome by compliance status:
+$$
+ITT_{Y, co} \equiv \frac{1}{N_{co}} \sum_{i = 1: G_i = co}\{Y_i^\ast[1, D_i^\ast(1)] - Y_i^\ast[0, D_i^\ast(0)]\}, 
+$$
+and:
+$$
+ITT_{Y, nc} \equiv \frac{1}{N_{nc}} \sum_{i = 1: G_i = nc}\{Y_i^\ast[1, D_i^\ast(1)] - Y_i^\ast[0, D_i^\ast(0)]\},
+$$
+we can decompose $ITT_Y$ as:
+$$
+ITT_Y = ITT_{Y, co} \cdot ITT_W + ITT_{Y, nc} \cdot (1 - ITT_W).
+$$
+
+
+## Unidentification of $ITT_{Y, co}$ and $ITT_{Y, nc}$
+
+- We cannot identify $ITT_{Y, co}$ and $ITT_{Y, nc}$ because we do not know the compliance status of each subject and hence we cannot condition the data on the compliance data.
+- $ITT_{Y, no}$ is not informative, because they never receive the treatment, irrespective of the assignment.
+- $ITT_{Y, co}$ is informative, because this compares the outcome when the treatment is received and not.
+- Then, under what kind of additional assumptions, can we identify $ITT_{Y, co}$?
+
+
+
+## Latent unconfoundedness
+
+- Randomized experiment ensures that the unconfoundedness of $Z_i$, but not $D_i$
+- However, randomized experiment at least ensures the _latent_ unconfoundedness of $D_i$.
+- __Lemma: Latent unconfoundedness of $D_i$__
+  - The random assignment of $Z_i$ implies for $g \in G$:
+$$
+\begin{split}
+&\mathbb{P}[D_i = 1 | Y_i^\ast(0, 0), Y_i^\ast(0, 1), Y_i^\ast(1, 0), Y_i^\ast(1, 1), G_i = g]\\
+&= \mathbb{P}(D_i = 1 | G_i = g).
+\end{split}
+$$
+- For $g = nc$, $D_i$ is always $0$. Therefore, the equation trivially holds
+- For $g = co$, $D_i = Z_i$. Therefore, the random assignment of $Z_i$ implies the unconfoundedness of $D_i$ for compliers.
+
+## Exclusion restriction for noncompliers
+
+- __Assumption : Exclusion restriction for noncompliers__
+  - For all noncompliers:
+  $$
+  Y_i^\ast(0, 0) = Y_i^\ast(1, 0).
+  $$
+- This rules out that an effect of the assignment on the outcome for noncompliers.
+- The random assignment of $Z_i$ _does not_ justify this assumption.
+- This is a _substantive_ assumption to be justified by the contextual knowledge.
+- For example, the double blinding makes subjects unaware of the treatment assignment, and hence _may_ justify this assumption if nicely implemented.
+
+## Exclusion restriction for compliers
+
+- The exclusion restriction for noncompliers is necessary for identifying $ITT_{Y, co}$.
+- The following assumption of exclusion restriction for compliers is not necessary, but only changes the interpretation of $ITT_{Y, co}$:
+- __Assumption: Exclusion restriction for compliers__:
+  - For all compliers, for $w = 0, 1$:
+  $$
+  Y_i^\ast(0, w) = Y_i^\ast(1, w) \equiv Y_i^*(w).
+  $$
+- If this assumption holds:
+$$
+ITT_{Y, co} = \frac{1}{N_{co}} \sum_{i = 1: G_i = co}\{Y_i^*(1) - Y_i^*(0)\},
+$$
+which is purely the effect of changing the treatment receipt status.
+
+
+## Identifying $ITT_{Y, co}$
+
+- The exclusion restriction for noncompliers implies:
+$$
+ITT_{Y, nc} \equiv \frac{1}{N_{nc}} \sum_{i = 1: G_i = nc}\{Y_i^\ast[1, D_i^\ast(1)] - Y_i^\ast[0, D_i^\ast(0)]\} = 0.
+$$
+- Therefore:
+$$
+ITT_Y = ITT_{Y, co} \cdot ITT_W + ITT_{Y, nc} \cdot (1 - ITT_W) = ITT_{Y, co} \cdot ITT_W,
+$$
+and so:
+$$
+ITT_{Y, co} = \frac{ITT_Y}{ITT_W}.
+$$
+- We call this the __local average treatment effect (LATE)__ or __complier average causal effect (CECE)__, $\tau_{late}$.
+
+
+## Moment-based estimator for $\tau_{late}$
+
+- Because we have $\widehat{ITT}_Y$ and $\widehat{ITT}_W$, we can estiamte $\tau_{late}$ by:
+$$
+\widehat{ITT}_{late} \equiv \frac{\widehat{ITT}_Y}{\widehat{ITT}_W}.
+$$
+- The sampling variance is:
+$$
+\begin{split}
+\mathbb{V}(\widehat{ITT}_{late}) &= \frac{1}{ITT_W^2} \cdot \mathbb{V}(\widehat{ITT}_Y) + \frac{ITT_Y^2}{ITT_W^4} \cdot \mathbb{V}(\widehat{ITT}_W) \\
+&- 2 \cdot \frac{ITT_Y}{ITT_W^3} \cdot \mathbb{C}(\widehat{ITT}_Y, \widehat{ITT}_W).
+\end{split}
+$$
+- We can replace with the sample analogues. However, it can by a poor approximation when $ITT_W$ is close to 0.
+
+## Connection to the instrumental variable (IV) estimator
+
+- Take the infinite super-population perspective.
+- Define:
+$$
+\tau_{late} = \mathbb{E}[Y_i^\ast(1) - Y_i^\ast(0)| G_i = co],
+$$
+$$
+\alpha \equiv \mathbb{E}[Y_i^\ast(0)], 
+$$
+$$
+\nu_i \equiv Y_i^\ast(1) - Y_i^\ast(0) - \tau_{late}, 
+$$
+$$
+\epsilon_i \equiv Y_i^\ast(0) - \alpha.
+$$
+
+## Structural equation
+
+- Then, we have a structural equation:
+$$
+Y_i^\ast(w) = \alpha + \tau_{late} \cdot w + \epsilon_i + w \cdot \nu_i.
+$$
+- Then, for observations, we have:
+$$
+Y_i = Y_i^\ast(D_i) = \alpha + \tau_{late} \cdot D_i + \epsilon_i + D_i \cdot \nu_i.
+$$
+- The OLS estimator does not consistently estimate $\tau_{late}$, because $\epsilon_i + D_i \cdot \nu_i$ is potentially correlated with $D_i$.
+
+
+## Conditionam mean zero
+
+- Because of the random assignment of $Z_i$, we have:
+$$
+\mathbb{E}[\epsilon_i|Z_i] = \mathbb{E}[Y_i^\ast(0)|Z_i] - \mathbb{E}[Y_i^\ast(0)] = \mathbb{E}[Y_i^\ast(0)] - \mathbb{E}[Y_i^\ast(0)] = 0.
+$$
+- The one-sided compliance implies:
+$$
+\mathbb{E}[D_i \cdot \nu_i| Z_i = 0] = \mathbb{E}[0 \cdot \nu_i| Z_i = 0] = 0.
+$$
+
+
+
+## Conditional mean zero
+- Moreover, the one-sided noncompliers and the random assignment of $Z_i$ implies:
+$$
+\begin{split}
+&\mathbb{E}[D_i \cdot \nu_i| Z_i = 1]\\
+&= \mathbb{E}[0 \cdot \nu_i | Z_i = 1, D_i = 0] \mathbb{P}(D_i = 0| Z_i = 1)\\
+&+ \mathbb{E}[1 \cdot \nu_i | Z_i = 1, D_i = 1] \mathbb{P}(D_i = 1 | Z_i = 1)\\
+&= \mathbb{E}[\nu_i | Z_i = 1, D_i = 1, G_i = co] \pi_{co}\\
+&= \mathbb{E}[Y_i^\ast(1) - Y_i^\ast(0) - \tau_{late} | Z_i = 1, G_i = co] \pi_{co}\\
+&= \mathbb{E}[Y_i^\ast(1) - Y_i^\ast(0) - \tau_{late} | G_i = co] \pi_{co}\\
+&= 0.
+\end{split}
+$$
+- Therefore, we have the conditional mean zero property:
+$$
+\mathbb{E}[\epsilon_i + D_i \cdot \nu_i| Z_i] = 0.
+$$
+
+## Reduced-form equation
+
+- We can rewrite the structural equation as:
+$$
+\begin{split}
+Y_i 
+&= \alpha + \tau_{late} \cdot \mathbb{E}[D_i|Z_i] - \tau_{late} \cdot \mathbb{E}[D_i|Z_i] + \tau_{late} \cdot D_i\\
+&+ \epsilon_i +  D_i \cdot \nu_i\\
+&= \alpha + \tau_{late} \cdot \mathbb{E}[D_i|Z_i] + \eta_i \\
+&= \alpha + \tau_{late} \cdot \{\pi_0 + \pi_1 \cdot Z_i \} + \eta_i,\\
+&= \alpha + \tau_{late} \cdot \{\pi_0 + \pi_1 \cdot Z_i \} + \eta_i,
+\end{split}
+$$
+where:
+$$
+\pi_0 \equiv \mathbb{E}[D_i|Z_i = 0] = 0,
+$$
+$$
+\pi_1 \equiv \mathbb{E}[D_i|Z_i = 1] - \mathbb{E}[D_i|Z_i = 0] = \mathbb{E}[D_i|Z_i = 1] = \pi_{co}.
+$$
+under the one-sided noncompliers.
+
+## Reduced-form equation
+
+- Therefore, we have the reduced-form equation:
+$$
+Y_i = \alpha + \gamma \cdot Z_i + \eta_i, \gamma \equiv \pi_{co} \cdot \tau_{late}.
+$$
+- We know:
+$$
+\hat{\gamma}_{ols} = \overline{Y}_1 - \overline{Y}_0 = \widehat{ITT}_Y.
+$$
+- Therefore, the instrumental variable estimator for $\tau_{late}$, which is $\hat{\gamma}_{ols}/\hat{\pi}_{co}$, is numerically the same with $\widehat{ITT}_{Y, co}$.
+
+# Two-sided noncompliers
+
+## Generalize compliance behaviors
+
+- In experiments, we may be able to ensure that subjects who are not assigned treatmet do not receives treatment.
+- However, especially in observational studies, subjects may voluntarily take treatment, even if assigned treatment.
+- In such a situation, we need to generalize the compliance status.
+
+
+## Compliance status
+
+- We consider 4 compliance status: Allways takers, never takers, compliers, and defiers.
+$$
+G_i =
+\begin{cases}
+nt &\text{   if   } D_i^\ast(0) = 0, D_i^\ast(1) = 0,\\
+co &\text{   if   } D_i^\ast(0) = 0, D_i^\ast(1) = 1,\\
+df &\text{   if   } D_i^\ast(0) = 1, D_i^\ast(1) = 0,\\
+at &\text{   if   } D_i^\ast(0) = 1, D_i^\ast(1) = 1.
+\end{cases}
+$$
+
+## Underlying compliance status
+
+- The are two underlying compliance status for each pair of $Z_i$ and $D_i$:<footnote> Table 24.3 of Imbens and Rubin (2015) </footnote>
+
+| | $Z_i = 0$ | $Z_i = 1$ |
+|-|-----------|-----------|
+| $D_i = 0$ | nt/co | nt/df |
+| $D_i = 1$ | at/df | at/co |
+
+## ITT effects 
+
+- The ITT analysis is unchanged with the two-sided compliers
+
+
+## Decomposing $ITT_Y$
+
+- With the two-sided noncompliers, $ITT_Y$ is a mixture of ITT effects of 4 compliance status.
+$$
+\begin{split}
+ITT_Y 
+&= ITT_{Y, nt} \cdot \pi_{nt} + ITT_{Y, co} \cdot \pi_{co} \\
+&+ ITT_{Y, df} \cdot \pi_{df} + ITT_{Y, at} \cdot \pi_{at}.
+\end{split}
+$$
+
+
+## Exclusion restrictions for nevertakers and alwaystakers
+
+- __Assumption: Exclusion restriction for nevertakers__
+  - For all nevertakers:
+  $$
+  Y_i^\ast(0, 0) = Y_i^\ast(1, 0).
+  $$
+- __Assumption: Exclusion restriction for alwaystakers__
+  - For all alwaystakers:
+  $$
+  Y_i^\ast(0, 1) = Y_i^\ast(1, 1).
+  $$
+
+## Implications for $ITT_{Y, nt}$ and $ITT_{Y, at}$
+
+$$
+\begin{split}
+ITT_{Y, nt} & = \frac{1}{N_{nt}} \sum_{i: G_i = nt}\{Y_i^\ast[1, D_i^\ast(1)] - Y_i^\ast[0, D_i^\ast(0)] \}\\
+&=\frac{1}{N_{nt}} \sum_{i: G_i = 
+nt}\{Y_i^\ast(1, 0) - Y_i^\ast(0, 0) \}\\
+&=0.
+\end{split}
+$$
+
+$$
+\begin{split}
+ITT_{Y, at} & = \frac{1}{N_{at}} \sum_{i: G_i = at}\{Y_i^\ast[1, D_i^\ast(1)] - Y_i^\ast[0, D_i^\ast(0)] \}\\
+&=\frac{1}{N_{at}} \sum_{i: G_i = at}\{Y_i^\ast(1, 1) - Y_i^\ast(0, 1) \}\\
+&=0.
+\end{split}
+$$
+- Therefore, $ITT_Y$ is a mixture of compliers and defiers.
+
+## Monotonicity
+
+- Moreover, we assume there are no defiers. 
+- This is a substantive assumption that needs to be justified from the contextual knowledge.
+- For example, suppose that:
+  - $Z_i$: draft to the Vietnam war.
+  - $D_i$: go to the Vietnam war.
+  - Compliers: goes to the Vietnam war if drafted, while does not if not drafted.
+  - Defiers: volunteers to the Vietnam war if not drafted, while does not go if drafted.
+- Formally:
+- __Asumption: Monotonicity__
+  - For all subjects $D_i^\ast(1) \ge D_i^\ast(0)$.
+
+
+## Identification of $ITT_{Y, co}$
+
+- Under the exclusion restriction for nevertakes, alwaystakers, and the monotonicity, we have:
+$$
+ITT_Y = ITT_{Y, co} \cdot \pi_{co}.
+$$
+- Moreover:
+$$
+\begin{split}
+ITT_W 
+&= \mathbb{E}[D_i^\ast(1) - D_i^\ast(0)| G_i = nt] \cdot \pi_{nt}\\
+&+ \mathbb{E}[D_i^\ast(1) - D_i^\ast(0)| G_i = at] \cdot \pi_{at}\\
+&+ \mathbb{E}[D_i^\ast(1) - D_i^\ast(0)| G_i = co] \cdot \pi_{co}\\
+&+ \mathbb{E}[D_i^\ast(1) - D_i^\ast(0)| G_i = df] \cdot \pi_{df}\\
+&=\pi_{co}.
+\end{split}
+$$
+
+## Identification of $ITT_{Y, co}$
+
+- Therefore, $ITT_{Y, co}$ is identified as:
+$$
+ITT_{Y, co} = \frac{ITT_Y}{ITT_W}.
+$$
+
+## Estimation and inference
+
+- The estimation and inference is, therefore, the same as the one-sided noncompliers.
+- The connection to the instrumental variable estimation is the same as well.
+
+# Multi-value instrumental variables
+
+## Generalizing the instrumental variable
+
+- The treatment assignment $Z$ is often interpreted as the instrumental variable in econometrics.
+- In econometrics, we often use multi-valued or even continuous variable instead of a binary variable as $Z$.
+- How do we generalize the LATE to the multi-valued instrumental variables?
+
+## Potential outcome and structural selection model
+
+- Consider the following framework:
+$$
+Y^\ast(1) = \mu_1(X) + U_1,
+$$
+$$
+Y^\ast(0) = \mu_0(X) + U_0,
+$$
+$$
+D = 1\{\mu_D(Z, X) \ge V\}.
+$$
+- We observe $Y = Y^\ast(1) \cdot D + Y^\ast(0) \cdot (1 - D)$.
+
+## About the additive separability
+
+- Note that the additive separability of the potential outcome is without loss of generality, because if:
+$$
+Y^\ast(1) = \tilde{\mu}_1(X, \tilde{U}_1),
+$$
+we can redefine:
+$$
+\mu_1(X) \equiv \mathbb{E}[\tilde{\mu}_1(X, \tilde{U}_1)|X],
+$$
+and:
+$$
+U_1 \equiv Y^\ast(1) - \mathbb{E}[\tilde{\mu}_1(X, \tilde{U}_1)|X].
+$$
+
+## Assumptions
+
+1. Instrument independence: $(U_1, U_0, V)  \perp \!\!\! \perp Z | X$.
+1. Exclusion restriction: $\mu_D(Z, X)$ has a non-degenerate distribution given $X$.
+1. Scalar $V$ is continuously distributed.
+1. $\mathbb{E}[|Y^\ast(1)|]$ and $\mathbb{E}[|Y^\ast(0)|]$ are finite.
+1. $0 < \mathbb{P}[D = 1| X] < 1$.
+- Vytlacil (2002) showed that these assumptions are equivalent to the identifying assumptions for LATE.
+- In particular, the threshold crossing selection equation with scalar $V$ can be interpreted as the monotonicity assumption.
+
+## Propensity score
+
+- Under the first assumption, the propensity score can be written as:
+$$
+\begin{split}
+e(z, x) 
+&\equiv \mathbb{P}(D = 1 | z, x) \\
+&= \mathbb{P}[V \le \mu_D(z, x) | z, x]\\
+&= \mathbb{P}\{F_{V|X}(V|x) \le F_{V|X}[\mu_D(z, x)|x]|z, x\}\\
+&= \mathbb{P}\{U_D \le F_{V|X}[\mu_D(z, x)|x]|z, x\}, U_D|X \sim U[0, 1]\\
+&= F_{V|X}[\mu_D(z, x)|x].
+\end{split}
+$$
+- Then, under the third assumption, we have:
+$$
+D =1\{e(Z, X) \ge U_D\}, U_D|X \sim U[0, 1].
+$$
+
+## Marginal treatment effect
+
+- In this framework, define the __marginal treatment effect (MTE)__ as follows:
+$$
+\tau_{mte}(x, u_D) \equiv \mathbb{E}[Y^\ast(1) - Y^\ast(0)| X = x, U_D = u_D],
+$$
+as a function of $(x, u_D)$.
+- We can define the other estimands such as the average treatment effect and local average treatment effect as a function of the marginal treatment effects.
+
+## LATE as a function of MTEs
+
+- For example, we can write LATE as:
+$$
+\begin{split}
+\tau_{late}(x) 
+&= \mathbb{E}[Y^\ast(1) - Y^\ast(0)| X = x, G = co]\\
+&= \mathbb{E}[Y^\ast(1) - Y^\ast(0)| X = x, D(z) = 1, D(z') = 0]\\
+&= \mathbb{E}[Y^\ast(1) - Y^\ast(0)| X = x, U_D \le e(z, x), U_D \ge e(z', x)]\\
+&=\frac{1}{e(z, x) - e(z', x)} \int_{e(z', x)}^{e(z, x)} \tau_{mte}(x, u_D) du_D.
+\end{split}
+$$
+
+## Local IV estimand
+
+- We define the __local IV (LIV) estimand__ as:
+$$
+\tau_{liv}(x, e) \equiv \frac{\partial}{\partial e}\mathbb{E}[Y|X = x, e(Z, x) = e].
+$$
+- We can nonparametrically estimate LIV $\tau_{liv}(x, e)$ at every $e$ in the support of the conditional distribution of $e(Z, X)$ given $X = x$.
+
+## LIV identifies MTE
+
+$$
+\begin{split}
+\mathbb{E}[Y|e(Z) = e] 
+&= \mathbb{E}[Y^\ast(0)| e(z) = e]\\
+&+ \mathbb{E}\{D\cdot[Y^\ast(1) - Y^\ast(0)]| e(z) = e\} \\
+&= \mathbb{E}[Y^\ast(0)| e(z) = e]\\
+&+ \mathbb{E}[Y^\ast(1) - Y^\ast(0)| D = 1, e(z) = e] \cdot \mathbb{P}[D = 1|e(z) = e]\\
+&= \mathbb{E}[Y^\ast(0)| e(z) = e] + \mathbb{E}[Y^\ast(1) - Y^\ast(0)| D = 1, e(z) = e] \cdot e\\
+&= \mathbb{E}[Y^\ast(0)] + \mathbb{E}[Y^\ast(1) - Y^\ast(0)| D = 1, e(z) = e] \cdot e\\
+&= \mathbb{E}[Y^\ast(0)] + (\mu_1 - \mu_0) \cdot e\\
+&+ \mathbb{E}[U_1 - U_0| D = 1, e(z) = e] \cdot e\\
+&= \mathbb{E}[Y^\ast(0)] + (\mu_1 - \mu_0) \cdot e + \mathbb{E}[U_1 - U_0| U_D \le e] \cdot e\\
+&= \mathbb{E}[Y^\ast(0)] + (\mu_1 - \mu_0) \cdot e\\
+&+ \int_0^e \mathbb{E}[U_1 - U_0| U_d = u_D] d u_D.
+\end{split}
+$$
+
+## LIV identifies MTE
+
+- By taking the derivatives with respect to $e$, we have:
+$$
+\begin{split}
+\tau_{liv}(e) 
+&= \frac{\partial}{\partial e} \mathbb{E}[Y|e(Z) = e]  \\
+&= \mu_1 - \mu_0 + \mathbb{E}[U_1 - U_0| U_d = e] \\
+&= \tau_{mte}(e).
+\end{split}
+$$
+
+
+
+## Reference 
+
+- Chapter 23-24, Guido W. Imbens and Donald B. Rubin, 2015, Causal Inference for Statistics, Social, and Biomedical Sciences, Cambridge University Press.
+- Section 9, Athey, Susan, and Guido Imbens. 2016. “The Econometrics of Randomized Experiments.” arXiv [stat.ME]. arXiv. http://arxiv.org/abs/1607.00698.
+- Vytlacil, Edward J. 2002. “Independence, Monotonicity, and Latent Index Models: An Equivalence Result”, Econometrica 70 (1): 331–41.
+- Heckman and Vytlacil (2005) "Structural Equations, Treatment Effects, and Econometric Policy Evaluation", Econometrica 73 (3): 669-738. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
