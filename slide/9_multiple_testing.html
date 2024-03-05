@@ -3160,9 +3160,10 @@ ul.task-list{list-style: none;}
 </article></slide><slide class=""><hgroup><h2>Family-Wise Error Rate (FWER)</h2></hgroup><article  id="family-wise-error-rate-fwer">
 
 <ul>
-<li><strong>Definition</strong>: <em>Family-wise error rate</em>: The probability of rejecting at least one null hypotheses when all null hypotheses are true: \[
-\text{FWER} = \mathbb{P}\{\exists m = 1, \cdots, M, H_0^m \text{ is rejected}|\forall m = 1, \cdots, M, H_0^m\}.
-\]</li>
+<li><p>Suppose that \(H^m, m = 1, \cdots, M_0\) are true null hypotheses and \(H^m, m = M_0 + 1, \cdots, M\) are false null hypotheses.</p></li>
+<li><p><strong>Definition</strong>: <em>Family-wise error rate</em>: The probability of rejecting at least one null hypotheses when all null hypotheses are true: \[
+\text{FWER} = \mathbb{P}\{\exists m = 1, \cdots, M_0, H_0^m \text{ is rejected}|\forall m = 1, \cdots, M_0, H_0^m\}.
+\]</p></li>
 </ul>
 
 </article></slide><slide class=""><hgroup><h2>Bonferroni Correction</h2></hgroup><article  id="bonferroni-correction">
@@ -3171,13 +3172,13 @@ ul.task-list{list-style: none;}
 <li><strong>Bonferroni correction</strong>: The most conservative method to control FWER.</li>
 <li>Depends on the followig inequality: \[
 \begin{split}
-&amp;\mathbb{P}\{\exists m = 1, \cdots, M, H_0^m \text{ is rejected}|\forall m = 1, \cdots, M, H_0^m\}\\
-&amp;\leq \sum_{m=1}^M \mathbb{P}\{H_0^m \text{ is rejected}|H_0^m\} = M \alpha.
+&amp;\mathbb{P}\{\exists m = 1, \cdots, M_0, H_0^m \text{ is rejected}|\forall m = 1, \cdots, M_0, H_0^m\}\\
+&amp;\leq \sum_{m=1}^{M_0} \mathbb{P}\{H_0^m \text{ is rejected}|H_0^m\} = M_0 \alpha.
 \end{split}
 \]</li>
 <li>Therefore, for each hypothesis, if you consider a test with a significance level \(\alpha/M\), then the FWER is no greater than \(\alpha\).</li>
 <li>The above inequality holds regardless of the dependence structure among the tests.</li>
-<li>The Bonferrorni correction: Reject \(H_0^m\) if the piece-wise p-value for \(H_0^m\) is \(p^m \le \alpha/M\).</li>
+<li>The Bonferrorni correction: Reject \(H_0^m\) if the piece-wise p-value for \(H_0^m\) is \(p^m \le \alpha/M\). Then, \(FEWR \le \alpha M_0/M \le \alpha\).</li>
 </ul>
 
 </article></slide><slide class=""><hgroup><h2>Why Bonferroni Correction is Conservative?</h2></hgroup><article  id="why-bonferroni-correction-is-conservative">
@@ -3254,9 +3255,15 @@ ul.task-list{list-style: none;}
 <li>e.g. The inspection of a car assembly line</li>
 <li>e.g. Multiple conditional average treatment effects</li>
 </ul></li>
-<li><strong>Definition</strong>: <em>False Discovery Rate</em>: The expected proportion of null hypotheses that are mistakenly rejected when all null hypotheses are true: \[
-FDR = \mathbb{E}\left\{\frac{\sum_{m = 1}^M1\{H_0^m \text{   is rejected}\}}{M} | \forall m = 1, \cdots, M, H_0^m\right\}
-\]</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>False Discovery Rate (FDR)</h2></hgroup><article  id="false-discovery-rate-fdr-1">
+
+<ul>
+<li><strong>Definition</strong>: <em>False Discovery Rate</em>: The proportion of null hypotheses that are mistakenly rejected among rejected null hypotheses: \[
+FDR = \frac{\sum_{m = 1}^{M_0} 1\{H_0^m \text{   is rejected}\}}{\sum_{m = 1}^M 1\{H_0^m \text{   is rejected}\}},
+\] where \(m = 1, \cdots, M_0\) are true null hypotheses and \(M_0\) is the number of true null hypotheses.</li>
+<li>We consider a procedure that controls for the expected FDR: \(\mathbb{E}[FDR]\).</li>
 </ul>
 
 </article></slide><slide class=""><hgroup><h2>Benjamin-Hotchberg Correction</h2></hgroup><article  id="benjamin-hotchberg-correction">
@@ -3285,7 +3292,12 @@ FDR = \mathbb{E}\left\{\frac{\sum_{m = 1}^M1\{H_0^m \text{   is rejected}\}}{M} 
 
 <ul>
 <li>In general, the Benjamin-Hotchberg correction may not control for the FDR.</li>
-<li>In this case, we can use the bootstrap method to control for the FDR (Romano et al., 2008).</li>
+<li>In this case, we can use either:
+
+<ul>
+<li>Use \(\alpha l/ (M \sum_{s=1}^M 1/ s)\) instead of \(\alpha l/M\) (Benjamini-Yekutieli, 2001).</li>
+<li>The bootstrap method to control for the FDR (Romano et al., 2008).</li>
+</ul></li>
 </ul>
 
 </article></slide><slide class=""><hgroup><h2>References</h2></hgroup><article  id="references">
