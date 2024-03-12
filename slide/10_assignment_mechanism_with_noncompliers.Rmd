@@ -232,15 +232,15 @@ $$
 
 - The ITT for the receipt of treatment:
 $$
-ITT_W \equiv \frac{1}{N}\sum_{i = 1}^N[D_i^\ast(1) - D_i^\ast(0)],
+ITT_D \equiv \frac{1}{N}\sum_{i = 1}^N[D_i^\ast(1) - D_i^\ast(0)],
 $$
 can be estimated unbiasedly by the average difference in treatment status:
 $$
-\widehat{ITT}_W \equiv \overline{D}_1 - \overline{D}_0 = \overline{D}_1.
+\widehat{ITT}_D \equiv \overline{D}_1 - \overline{D}_0 = \overline{D}_1.
 $$
 - The standard error is also estimated by:
 $$
-\widehat{\mathbb{V}}(\widehat{ITT}_W) \equiv \frac{s_{W, 0}^2}{N_0} + \frac{s_{W, 1}^2}{N_1}.
+\widehat{\mathbb{V}}(\widehat{ITT}_D) \equiv \frac{s_{W, 0}^2}{N_0} + \frac{s_{W, 1}^2}{N_1}.
 $$
 
 ## Estimate ITT effect for the outcome
@@ -271,7 +271,7 @@ ITT_{Y, nc} \equiv \frac{1}{N_{nc}} \sum_{i = 1: G_i = nc}\{Y_i^\ast[1, D_i^\ast
 $$
 we can decompose $ITT_Y$ as:
 $$
-ITT_Y = ITT_{Y, co} \cdot ITT_W + ITT_{Y, nc} \cdot (1 - ITT_W).
+ITT_Y = ITT_{Y, co} \cdot ITT_D + ITT_{Y, nc} \cdot (1 - ITT_D).
 $$
 
 
@@ -311,21 +311,6 @@ $$
 - This is a _substantive_ assumption to be justified by the contextual knowledge.
 - For example, the double blinding makes subjects unaware of the treatment assignment, and hence _may_ justify this assumption if nicely implemented.
 
-## Exclusion restriction for compliers
-
-- The exclusion restriction for noncompliers is necessary for identifying $ITT_{Y, co}$.
-- The following assumption of exclusion restriction for compliers is not necessary, but only changes the interpretation of $ITT_{Y, co}$:
-- __Assumption: Exclusion restriction for compliers__:
-  - For all compliers, for $w = 0, 1$:
-  $$
-  Y_i^\ast(0, w) = Y_i^\ast(1, w) \equiv Y_i^*(w).
-  $$
-- If this assumption holds:
-$$
-ITT_{Y, co} = \frac{1}{N_{co}} \sum_{i = 1: G_i = co}\{Y_i^*(1) - Y_i^*(0)\},
-$$
-which is purely the effect of changing the treatment receipt status.
-
 
 ## Identifying $ITT_{Y, co}$
 
@@ -335,29 +320,43 @@ ITT_{Y, nc} \equiv \frac{1}{N_{nc}} \sum_{i = 1: G_i = nc}\{Y_i^\ast[1, D_i^\ast
 $$
 - Therefore:
 $$
-ITT_Y = ITT_{Y, co} \cdot ITT_W + ITT_{Y, nc} \cdot (1 - ITT_W) = ITT_{Y, co} \cdot ITT_W,
+ITT_Y = ITT_{Y, co} \cdot ITT_D + ITT_{Y, nc} \cdot (1 - ITT_D) = ITT_{Y, co} \cdot ITT_D,
 $$
 and so:
 $$
-ITT_{Y, co} = \frac{ITT_Y}{ITT_W}.
+ITT_{Y, co} = \frac{ITT_Y}{ITT_D}.
 $$
-- We call this the __local average treatment effect (LATE)__ or __complier average causal effect (CECE)__, $\tau_{late}$.
+
+## Exclusion restriction for compliers
+
+- The exclusion restriction for noncompliers is necessary for identifying $ITT_{Y, co}$.
+- The following assumption of exclusion restriction for compliers is not necessary, but only changes the interpretation of $ITT_{Y, co}$:
+- __Assumption: Exclusion restriction for compliers__:
+  - For all compliers:
+  $$
+  Y_i^\ast(0, 0) = Y_i^\ast(1, 0), Y_i^\ast(0, 1) = Y_i^\ast(1, 1).
+  $$
+- If this assumption holds:
+$$
+ITT_{Y, co} = \frac{1}{N_{co}} \sum_{i = 1: G_i = co}\{Y_i^*(1) - Y_i^*(0)\},
+$$
+which we call the __local average treatment effect (LATE)__ $\tau_{late}$.
 
 
 ## Moment-based estimator for $\tau_{late}$
 
-- Because we have $\widehat{ITT}_Y$ and $\widehat{ITT}_W$, we can estiamte $\tau_{late}$ by:
+- Because we have $\widehat{ITT}_Y$ and $\widehat{ITT}_D$, we can estiamte $\tau_{late}$ by:
 $$
-\widehat{ITT}_{late} \equiv \frac{\widehat{ITT}_Y}{\widehat{ITT}_W}.
+\widehat{ITT}_{late} \equiv \frac{\widehat{ITT}_Y}{\widehat{ITT}_D}.
 $$
 - The sampling variance is:
 $$
 \begin{split}
-\mathbb{V}(\widehat{ITT}_{late}) &= \frac{1}{ITT_W^2} \cdot \mathbb{V}(\widehat{ITT}_Y) + \frac{ITT_Y^2}{ITT_W^4} \cdot \mathbb{V}(\widehat{ITT}_W) \\
-&- 2 \cdot \frac{ITT_Y}{ITT_W^3} \cdot \mathbb{C}(\widehat{ITT}_Y, \widehat{ITT}_W).
+\mathbb{V}(\widehat{ITT}_{late}) &= \frac{1}{ITT_D^2} \cdot \mathbb{V}(\widehat{ITT}_Y) + \frac{ITT_Y^2}{ITT_D^4} \cdot \mathbb{V}(\widehat{ITT}_D) \\
+&- 2 \cdot \frac{ITT_Y}{ITT_D^3} \cdot \mathbb{C}(\widehat{ITT}_Y, \widehat{ITT}_D).
 \end{split}
 $$
-- We can replace with the sample analogues. However, it can by a poor approximation when $ITT_W$ is close to 0.
+- We can replace with the sample analogues. However, it can by a poor approximation when $ITT_D$ is close to 0.
 
 ## Connection to the instrumental variable (IV) estimator
 
@@ -558,7 +557,7 @@ $$
 - Moreover:
 $$
 \begin{split}
-ITT_W 
+ITT_D 
 &= \mathbb{E}[D_i^\ast(1) - D_i^\ast(0)| G_i = nt] \cdot \pi_{nt}\\
 &+ \mathbb{E}[D_i^\ast(1) - D_i^\ast(0)| G_i = at] \cdot \pi_{at}\\
 &+ \mathbb{E}[D_i^\ast(1) - D_i^\ast(0)| G_i = co] \cdot \pi_{co}\\
@@ -571,7 +570,7 @@ $$
 
 - Therefore, $ITT_{Y, co}$ is identified as:
 $$
-ITT_{Y, co} = \frac{ITT_Y}{ITT_W}.
+ITT_{Y, co} = \frac{ITT_Y}{ITT_D}.
 $$
 
 ## Estimation and inference

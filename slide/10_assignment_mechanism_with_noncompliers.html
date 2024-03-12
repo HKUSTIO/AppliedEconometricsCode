@@ -3387,12 +3387,12 @@ N_{co} \equiv \sum_{i = 1}^N 1_{G_i = co}, N_{nc} \equiv \sum_{i = 1}^N 1_{G_i =
 
 <ul>
 <li>The ITT for the receipt of treatment: \[
-ITT_W \equiv \frac{1}{N}\sum_{i = 1}^N[D_i^\ast(1) - D_i^\ast(0)],
+ITT_D \equiv \frac{1}{N}\sum_{i = 1}^N[D_i^\ast(1) - D_i^\ast(0)],
 \] can be estimated unbiasedly by the average difference in treatment status: \[
-\widehat{ITT}_W \equiv \overline{D}_1 - \overline{D}_0 = \overline{D}_1.
+\widehat{ITT}_D \equiv \overline{D}_1 - \overline{D}_0 = \overline{D}_1.
 \]</li>
 <li>The standard error is also estimated by: \[
-\widehat{\mathbb{V}}(\widehat{ITT}_W) \equiv \frac{s_{W, 0}^2}{N_0} + \frac{s_{W, 1}^2}{N_1}.
+\widehat{\mathbb{V}}(\widehat{ITT}_D) \equiv \frac{s_{W, 0}^2}{N_0} + \frac{s_{W, 1}^2}{N_1}.
 \]</li>
 </ul>
 
@@ -3417,7 +3417,7 @@ ITT_{Y, co} \equiv \frac{1}{N_{co}} \sum_{i = 1: G_i = co}\{Y_i^\ast[1, D_i^\ast
 \] and: \[
 ITT_{Y, nc} \equiv \frac{1}{N_{nc}} \sum_{i = 1: G_i = nc}\{Y_i^\ast[1, D_i^\ast(1)] - Y_i^\ast[0, D_i^\ast(0)]\},
 \] we can decompose \(ITT_Y\) as: \[
-ITT_Y = ITT_{Y, co} \cdot ITT_W + ITT_{Y, nc} \cdot (1 - ITT_W).
+ITT_Y = ITT_{Y, co} \cdot ITT_D + ITT_{Y, nc} \cdot (1 - ITT_D).
 \]</li>
 </ul>
 
@@ -3465,6 +3465,19 @@ Y_i^\ast(0, 0) = Y_i^\ast(1, 0).
 <li>For example, the double blinding makes subjects unaware of the treatment assignment, and hence <em>may</em> justify this assumption if nicely implemented.</li>
 </ul>
 
+</article></slide><slide class=""><hgroup><h2>Identifying \(ITT_{Y, co}\)</h2></hgroup><article  id="identifying-itt_y-co">
+
+<ul>
+<li>The exclusion restriction for noncompliers implies: \[
+ITT_{Y, nc} \equiv \frac{1}{N_{nc}} \sum_{i = 1: G_i = nc}\{Y_i^\ast[1, D_i^\ast(1)] - Y_i^\ast[0, D_i^\ast(0)]\} = 0.
+\]</li>
+<li>Therefore: \[
+ITT_Y = ITT_{Y, co} \cdot ITT_D + ITT_{Y, nc} \cdot (1 - ITT_D) = ITT_{Y, co} \cdot ITT_D,
+\] and so: \[
+ITT_{Y, co} = \frac{ITT_Y}{ITT_D}.
+\]</li>
+</ul>
+
 </article></slide><slide class=""><hgroup><h2>Exclusion restriction for compliers</h2></hgroup><article  id="exclusion-restriction-for-compliers">
 
 <ul>
@@ -3473,42 +3486,28 @@ Y_i^\ast(0, 0) = Y_i^\ast(1, 0).
 <li><strong>Assumption: Exclusion restriction for compliers</strong>:
 
 <ul>
-<li>For all compliers, for \(w = 0, 1\): \[
-Y_i^\ast(0, w) = Y_i^\ast(1, w) \equiv Y_i^*(w).
+<li>For all compliers: \[
+Y_i^\ast(0, 0) = Y_i^\ast(1, 0), Y_i^\ast(0, 1) = Y_i^\ast(1, 1).
 \]</li>
 </ul></li>
 <li>If this assumption holds: \[
 ITT_{Y, co} = \frac{1}{N_{co}} \sum_{i = 1: G_i = co}\{Y_i^*(1) - Y_i^*(0)\},
-\] which is purely the effect of changing the treatment receipt status.</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Identifying \(ITT_{Y, co}\)</h2></hgroup><article  id="identifying-itt_y-co">
-
-<ul>
-<li>The exclusion restriction for noncompliers implies: \[
-ITT_{Y, nc} \equiv \frac{1}{N_{nc}} \sum_{i = 1: G_i = nc}\{Y_i^\ast[1, D_i^\ast(1)] - Y_i^\ast[0, D_i^\ast(0)]\} = 0.
-\]</li>
-<li>Therefore: \[
-ITT_Y = ITT_{Y, co} \cdot ITT_W + ITT_{Y, nc} \cdot (1 - ITT_W) = ITT_{Y, co} \cdot ITT_W,
-\] and so: \[
-ITT_{Y, co} = \frac{ITT_Y}{ITT_W}.
-\]</li>
-<li>We call this the <strong>local average treatment effect (LATE)</strong> or <strong>complier average causal effect (CECE)</strong>, \(\tau_{late}\).</li>
+\] which we call the <strong>local average treatment effect (LATE)</strong> \(\tau_{late}\).</li>
 </ul>
 
 </article></slide><slide class=""><hgroup><h2>Moment-based estimator for \(\tau_{late}\)</h2></hgroup><article  id="moment-based-estimator-for-tau_late">
 
 <ul>
-<li>Because we have \(\widehat{ITT}_Y\) and \(\widehat{ITT}_W\), we can estiamte \(\tau_{late}\) by: \[
-\widehat{ITT}_{late} \equiv \frac{\widehat{ITT}_Y}{\widehat{ITT}_W}.
+<li>Because we have \(\widehat{ITT}_Y\) and \(\widehat{ITT}_D\), we can estiamte \(\tau_{late}\) by: \[
+\widehat{ITT}_{late} \equiv \frac{\widehat{ITT}_Y}{\widehat{ITT}_D}.
 \]</li>
 <li>The sampling variance is: \[
 \begin{split}
-\mathbb{V}(\widehat{ITT}_{late}) &amp;= \frac{1}{ITT_W^2} \cdot \mathbb{V}(\widehat{ITT}_Y) + \frac{ITT_Y^2}{ITT_W^4} \cdot \mathbb{V}(\widehat{ITT}_W) \\
-&amp;- 2 \cdot \frac{ITT_Y}{ITT_W^3} \cdot \mathbb{C}(\widehat{ITT}_Y, \widehat{ITT}_W).
+\mathbb{V}(\widehat{ITT}_{late}) &amp;= \frac{1}{ITT_D^2} \cdot \mathbb{V}(\widehat{ITT}_Y) + \frac{ITT_Y^2}{ITT_D^4} \cdot \mathbb{V}(\widehat{ITT}_D) \\
+&amp;- 2 \cdot \frac{ITT_Y}{ITT_D^3} \cdot \mathbb{C}(\widehat{ITT}_Y, \widehat{ITT}_D).
 \end{split}
 \]</li>
-<li>We can replace with the sample analogues. However, it can by a poor approximation when \(ITT_W\) is close to 0.</li>
+<li>We can replace with the sample analogues. However, it can by a poor approximation when \(ITT_D\) is close to 0.</li>
 </ul>
 
 </article></slide><slide class=""><hgroup><h2>Connection to the instrumental variable (IV) estimator</h2></hgroup><article  id="connection-to-the-instrumental-variable-iv-estimator">
@@ -3732,7 +3731,7 @@ ITT_Y = ITT_{Y, co} \cdot \pi_{co}.
 \]</li>
 <li>Moreover: \[
 \begin{split}
-ITT_W 
+ITT_D 
 &amp;= \mathbb{E}[D_i^\ast(1) - D_i^\ast(0)| G_i = nt] \cdot \pi_{nt}\\
 &amp;+ \mathbb{E}[D_i^\ast(1) - D_i^\ast(0)| G_i = at] \cdot \pi_{at}\\
 &amp;+ \mathbb{E}[D_i^\ast(1) - D_i^\ast(0)| G_i = co] \cdot \pi_{co}\\
@@ -3746,7 +3745,7 @@ ITT_W
 
 <ul>
 <li>Therefore, \(ITT_{Y, co}\) is identified as: \[
-ITT_{Y, co} = \frac{ITT_Y}{ITT_W}.
+ITT_{Y, co} = \frac{ITT_Y}{ITT_D}.
 \]</li>
 </ul>
 
@@ -3795,7 +3794,7 @@ U_1 \equiv Y^\ast(1) - \mathbb{E}[\tilde{\mu}_1(X, \tilde{U}_1)|X].
 </article></slide><slide class=""><hgroup><h2>Assumptions</h2></hgroup><article  id="assumptions">
 
 <ol>
-<li>Instrument independence: \((U_1, U_0, V) \perp \!\!\! \perp Z | X\).</li>
+<li>Instrument independence: \((U_1, U_0, V)  \perp \!\!\! \perp Z | X\).</li>
 <li>Exclusion restriction: \(\mu_D(Z, X)\) has a non-degenerate distribution given \(X\).</li>
 <li>Scalar \(V\) is continuously distributed.</li>
 <li>\(\mathbb{E}[|Y^\ast(1)|]\) and \(\mathbb{E}[|Y^\ast(0)|]\) are finite.</li>
