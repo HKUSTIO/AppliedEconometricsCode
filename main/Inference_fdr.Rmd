@@ -1,0 +1,506 @@
+---
+title: "Multiple Testing"
+subtitle: "FDR Control"
+output: 
+  html_document:
+    css: style_do.css
+    number_sections: yes
+    toc: yes
+    toc_depth: '3'
+    toc_float: yes
+    theme: "spacelab" #"default", "bootstrap", "cerulean", "cosmo", "darkly", "flatly",
+                 # "journal", "lumen", "paper", "readable", "sandstone", "simplex",
+                 # "spacelab", "united", "yeti"
+    highlight: "pygments" #"default", "tango", "pygments", "kate", "monochrome",
+                 # "espresso", "zenburn", "haddock", "textmate"
+    df_print: paged
+    code_folding: show
+#date: '2022-04-19'
+date: 'Last update: `r Sys.Date()`'
+---
+
+In this section, we introduce an example of the multiple testing problem and the FDR control method.
+
+```{r setup, include=FALSE}
+rm(list = ls())
+knitr::opts_chunk$set(cache = FALSE, echo = TRUE, fig.align = "center")
+library(AppliedEconometrics)
+library(foreach)
+library(magrittr)
+library(ggplot2)
+color_main <- scales::viridis_pal(option = "C")(1)
+```
+
+# Setting constants and parameters
+
+First, we set the constants for the simulation. `N` is the sample size, `M` is the number of null hypotheses, `M_0` is the number of true null hypotheses, `L` is the number of simulations, and `alpha` is the significance level.`
+
+```{r}
+set.seed(1)
+N <- 500
+M <- 60
+M_0 <- 45
+L <- 100
+alpha <- 0.05
+tau_population <- 0.2
+```
+
+# Failure to control the type I error
+
+## Generating data
+
+We first fix the seed and generate samples from a randomized experiment. We generate a treatment assignment variable from a uniform random number, multiply it by the average treatment effect `tau_population`, and add independent standard normal distributions to make the observed outcomes. However, at this time, the first `r M - M_0` latent results have a treatment effect, and the remaining `r M_0` latent results do not have a treatment effect.
+
+```{r}
+z <- 
+  (
+    runif(N) >= 0.5
+  )
+df_list_1 <-
+  seq_len(M - M_0) %>%
+  purrr::map(
+    ~ tibble::tibble(
+        z = z,
+        y = rnorm(N) + tau_population * z
+      )
+  ) 
+df_list_0 <-
+  seq_len(M_0) %>%
+  purrr::map(
+    ~ tibble::tibble(
+        z = z,
+        y = rnorm(N)
+      )
+  )
+df_list <-
+  c(
+    df_list_1, 
+    df_list_0
+  )
+```
+
+## Hypothesis testing
+
+We perform `r M` independent linear regressions to test each null hypothesis. We then calculate the t-value and p-value of the regression coefficient.
+
+```{r}
+result_list_1 <-
+  df_list_1 %>%
+  purrr::map(
+    ~ lm(
+        formula = y ~ z, 
+        data = .
+      )
+  )
+result_list_0 <-
+  df_list_0 %>%
+  purrr::map(
+    ~ lm(
+        formula = y ~ z, 
+        data = .
+      )
+  )
+```
+
+```{r}
+t_list_1 <-
+  result_list_1 %>%
+  purrr::map(
+    ~ summary(.) %>%
+      coef() %>%
+      .[
+        "zTRUE",
+        "t value"
+      ]
+  ) %>%
+  purrr::reduce(c)
+t_list_0 <-
+  result_list_0 %>%
+  purrr::map(
+    ~ summary(.) %>%
+      coef() %>%
+      .[
+        "zTRUE",
+        "t value"
+      ]
+  ) %>%
+  purrr::reduce(c)
+```
+
+```{r}
+p_list_1 <-
+  result_list_1 %>%
+  purrr::map(
+    ~ summary(.) %>%
+      coef() %>%
+      .[
+        "zTRUE",
+        "Pr(>|t|)"
+      ]
+  ) %>%
+  purrr::reduce(c)
+p_list_0 <-
+  result_list_0 %>%
+  purrr::map(
+    ~ summary(.) %>%
+      coef() %>%
+      .[
+        "zTRUE",
+        "Pr(>|t|)"
+      ]
+  ) %>%
+  purrr::reduce(c)
+```
+
+
+## FDR
+
+We plot the absolute values of the test statistics of the `r M - M_0` null hypotheses that are false in ascending order. We also show the rejection region corresponding to the significance level `r alpha`.
+
+```{r}
+ggplot(
+  mapping = 
+    aes(
+        x = seq_along(t_list_1),
+        y = t_list_1 %>% abs() %>% sort()
+    )
+  ) + 
+  geom_point() +
+  geom_hline(
+    yintercept = abs(
+      qnorm(
+        1 - alpha / 2
+      )
+    ),
+    color = "red"
+  ) +
+  labs(
+    x = "Rank of the test statistic",
+    y = "Absolute value of the test statistic"
+  ) +
+  theme_classic()
+```
+
+We also plot the p-values in the same way, and the result is as follows.
+
+```{r}
+ggplot(
+  mapping = 
+    aes(
+        x = seq_along(p_list_1),
+        y = p_list_1 %>% sort()
+    )
+  ) + 
+  geom_point() +
+  geom_hline(
+    yintercept = alpha,
+    color = "red"
+  ) +
+  labs(
+    x = "Rank of the test statistic",
+    y = "p-value"
+  ) +
+  theme_classic()
+```
+
+Next, we plot the absolute values of the test statistics of the `r M_0` null hypotheses that are true in ascending order. We also show the rejection region corresponding to the significance level `r alpha`.
+
+```{r}
+ggplot(
+  mapping = 
+    aes(
+        x = seq_along(t_list_0),
+        y = t_list_0 %>% abs() %>% sort()
+    )
+  ) + 
+  geom_point() +
+  geom_hline(
+    yintercept = abs(
+      qnorm(
+        1 - alpha / 2
+      )
+    ),
+    color = "red"
+  ) +
+  labs(
+    x = "Rank of the test statistic",
+    y = "Absolute value of the test statistic"
+  ) +
+  theme_classic()
+```
+
+We also plot the p-values in the same way, and the result is as follows.
+
+```{r}
+ggplot(
+  mapping = 
+    aes(
+        x = seq_along(p_list_0),
+        y = p_list_0 %>% sort()
+    )
+  ) + 
+  geom_point() +
+  geom_hline(
+    yintercept = alpha,
+    color = "red"
+  ) +
+  labs(
+    x = "Rank of the test statistic",
+    y = "p-value"
+  ) +
+  theme_classic()
+```
+
+We list the test statistics of the null hypotheses that are correctly rejectegd among the `r M - M_0` null hypotheses.
+
+```{r}
+t_list_rejected_1 <-
+  t_list_1[
+    t_list_1 %>% abs() > 
+    abs(qnorm(1 - alpha / 2))
+  ]
+t_list_rejected_1
+```
+
+On the other hand, we list the test statistics of the null hypotheses that are incorrectly rejected among the `r M_0` null hypotheses.
+
+```{r}
+t_list_rejected_0 <-
+  t_list_0[
+    t_list_0 %>% abs() > 
+    abs(qnorm(1 - alpha / 2))
+  ]
+t_list_rejected_0
+```
+
+The FDR is the proportion of null hypotheses that are incorrectly rejected among the rejected null hypotheses. Specifically, it is calculated as follows.
+
+```{r}
+fdr <- 
+  t_list_rejected_0 %>% length() / (
+    t_list_rejected_1 %>% length() +
+    t_list_rejected_0 %>% length()
+  )
+fdr
+```
+
+# FDR control
+
+Now let's apply the method to control the FDR.
+
+## Benjamini-Hochberg correction
+
+The Benjamini-Hochberg method orders the p-values in ascending order as $p^{(1)}, \cdots, p^{(M)}$, and then starts from $l = M$, and if $p^{(l)}$ is less than $\alpha l/M$, all tests with p-values smaller than $p^{(l)}$ are rejected.
+
+```{r}
+p_list_sorted <- 
+  c(
+    p_list_1,
+    p_list_0
+  ) %>%
+  sort()
+i <- M
+flag_continue <- TRUE
+while (
+  flag_continue & i > 1
+) {
+  test <- p_list_sorted[i] <= (i / M) * alpha
+  if (
+    test
+  ) {
+    flag_continue <- FALSE
+  }
+  i <- i - 1
+}
+```
+
+The number of rejected null hypotheses and the p-value threshold are as follows.
+
+```{r}
+i
+p_list_sorted[i]
+```
+
+The test statistics of the null hypotheses that are correctly rejected among the `r M - M_0` false null hypotheses are those with p-values less than the threshold.
+
+```{r}
+p_list_rejected_benjamini_hotchberg_1 <-
+  p_list_1[
+    p_list_1 <= p_list_sorted[i]
+  ]
+p_list_rejected_benjamini_hotchberg_1
+```
+
+The test statistics of the null hypotheses that are incorrectly rejected among the `r M_0` true null hypotheses are those with p-values less than the threshold.
+
+```{r}
+p_list_rejected_benjamini_hotchberg_0 <-
+  p_list_0[
+    p_list_0 <= p_list_sorted[i]
+  ]
+p_list_rejected_benjamini_hotchberg_0
+```
+
+Therefore, the FDR is as follows.
+  
+```{r}
+fdr_benjamini_hotchberg <-
+  p_list_rejected_benjamini_hotchberg_0 %>% length() / (
+    p_list_rejected_benjamini_hotchberg_1 %>% length() +
+    p_list_rejected_benjamini_hotchberg_0 %>% length()
+  )
+fdr_benjamini_hotchberg
+```
+
+The FDR was `r fdr` earlier, but the FDR by the Benjamini-Hochberg method is `r fdr_benjamini_hotchberg`, which is slightly lower.
+
+To confirm this, we will write the function for the data generation process, perform `r L` simulations, and calculate the expected value of the FDR.
+
+```{r}
+p_list_all <-
+  seq_len(L) %>%
+  purrr::map(
+    ~ compute_p_value_mixed_effect(
+        N = N,
+        M = M,
+        M_0 = M_0,
+        tau_population = tau_population,
+        seed = .
+      )
+  )
+```
+
+Moreover, we will write the function to calculate the p-value threshold by the Benjamini-Hochberg method and apply it to the simulation results.
+
+```{r}
+p_value_all <-
+  p_list_all %>%
+  purrr::map(
+    ~ compute_p_value_benjamini_hotchberg(
+        p_list_1 = .$p_list_1,
+        p_list_0 = .$p_list_0,
+        alpha = alpha
+      )
+  )
+```
+
+We will also write the function to calculate the FDR and apply it to the simulation results.
+
+```{r}
+fdr_expected <-
+ purrr::map2(
+    p_list_all,
+    p_value_all,
+    ~ compute_fdr(
+        p_list_1 = .x$p_list_1,
+        p_list_0 = .x$p_list_0,
+        p_value = .y
+    )
+ ) %>%
+ purrr::reduce(c) %>%
+ mean()
+
+fdr_expected
+```
+
+In this way, we can see that the expected FDR is controlled to a value smaller than `r fdr_expected` and `r alpha`.
+
+## Benjamini-Yekutieli correction
+
+The Benjamini-Hotchberg correction above has been theoretically shown to control the FDR to some extent when the tests are independent or when there is a certain positive correlation (Positive Regression Dependence), but it cannot control the FDR for general correlations. On the other hand, the following Benjamini-Yakutieli method has been shown to control the FDR for any correlation.
+
+```{r}
+p_list_sorted <- 
+  c(
+    p_list_1,
+    p_list_0
+  ) %>%
+  sort()
+i <- M
+flag_continue <- TRUE
+while (
+  flag_continue & i > 1
+) {
+  test <- 
+    (
+      p_list_sorted[i] <= (i / M) * alpha / sum(1 / seq_len(M))
+    )
+  if (
+    test
+  ) {
+    flag_continue <- FALSE
+  }
+  i <- i - 1
+}
+```
+
+The number of rejected null hypotheses and the p-value threshold are as follows.
+
+```{r}
+i
+p_list_sorted[i]
+```
+
+The test statistics of the null hypotheses that are correctly rejected among the `r M - M_0` false null hypotheses are those with p-values less than the threshold.
+
+```{r}
+p_list_rejected_benjamini_yekutieli_1 <-
+  p_list_1[
+    p_list_1 <= p_list_sorted[i]
+  ]
+p_list_rejected_benjamini_yekutieli_1
+```
+
+The test statistics of the null hypotheses that are incorrectly rejected among the `r M_0` true null hypotheses are those with p-values less than the threshold.
+
+```{r}
+p_list_rejected_benjamini_yekutieli_0 <-
+  p_list_0[
+    p_list_0 <= p_list_sorted[i]
+  ]
+p_list_rejected_benjamini_yekutieli_0
+```
+
+Therefore, the FDR is as follows.
+  
+```{r}
+fdr_benjamini_yekutieli <-
+  p_list_rejected_benjamini_yekutieli_0 %>% length() / (
+    p_list_rejected_benjamini_yekutieli_1 %>% length() +
+    p_list_rejected_benjamini_yekutieli_0 %>% length()
+  )
+fdr_benjamini_yekutieli
+```
+
+When we apply it to the simulation data of `r L` times and calculate the expected FDR, we get the following.
+
+```{r}
+p_value_all <-
+  p_list_all %>%
+  purrr::map(
+    ~ compute_p_value_benjamini_yekutieli(
+        p_list_1 = .$p_list_1,
+        p_list_0 = .$p_list_0,
+        alpha = alpha
+      )
+  )
+```
+
+```{r}
+fdr_expected <-
+ purrr::map2(
+    p_list_all,
+    p_value_all,
+    ~ compute_fdr(
+        p_list_1 = .x$p_list_1,
+        p_list_0 = .x$p_list_0,
+        p_value = .y
+    )
+ ) %>%
+ purrr::reduce(c) %>%
+ mean()
+
+fdr_expected
+```
+
+Thus, the rejection probability becomes smaller than `r alpha`, but is too conservative.
