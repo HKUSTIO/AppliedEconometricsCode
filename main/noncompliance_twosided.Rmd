@@ -1,0 +1,363 @@
+---
+title: "Non-compliance"
+subtitle: "Two-sided non-compliance"
+output: 
+  html_document:
+    css: style_do.css
+    number_sections: yes
+    toc: yes
+    toc_depth: '3'
+    toc_float: yes
+    theme: "spacelab" #"default", "bootstrap", "cerulean", "cosmo", "darkly", "flatly",
+                 # "journal", "lumen", "paper", "readable", "sandstone", "simplex",
+                 # "spacelab", "united", "yeti"
+    highlight: "pygments" #"default", "tango", "pygments", "kate", "monochrome",
+                 # "espresso", "zenburn", "haddock", "textmate"
+    df_print: paged
+    code_folding: show
+#date: '2022-03-30'
+date: 'Last update: `r Sys.Date()`'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(cache = FALSE, echo = TRUE, fig.align = "center")
+library(AppliedEconometrics)
+library(foreach)
+library(magrittr)
+library(ggplot2)
+library(kableExtra)
+color_main <- scales::viridis_pal(option = "C")(1)
+```
+
+
+Here, we implement the method for estimating treatment assignment effects and local average treatment effects in the case of "Two-sided non-compliance" in the chapter on "Non-compliance". The function called from `AppliedEconometrics` is defined in `R/functions_noncompliance.R`. First, we generate latent outcomes from the sample, and then we generate the treatment vector and observed outcomes. At this point, we consider a situation where the average treatment effect varies by compliance type. Based on the realized treatment assignment vector, treatment receipt vector, and observed outcomes, we estimate the treatment assignment effect on treatment receipt and outcomes. Subsequently, using these estimated values, we estimate the local average treatment effect.
+
+
+In case of two-sided non-compliance, it is necessary to have no defiers in order to estimate the local average treatment effect. To confirm this, we generate data with defiers and data without defiers, and compare the estimation results.
+
+# Generating simulation data
+
+## Setting constants and parameters
+
+First, fix the seed and set the number of individuals `N`, the number of draws in the Monte Carlo simulation `R`, and the size of the treatment group `N_1`. The set of compliance types is given by `G`.
+
+
+```{r}
+set.seed(1)
+N <- 1000
+N_1 <- 500
+G <- 
+  c(
+    "nt",
+    "co",
+    "at",
+    "df"
+  )
+```
+
+Next, set the average treatment effect `tau_population` in the population.
+
+```{r}
+tau_population <- 
+  c(
+    1, 
+    2, 
+    3, 
+    4
+  )
+```
+
+
+## Generating data
+
+Generate latent outcomes from the sample based on the constants and parameters defined above. This operation corresponds to one random draw. Calculate the average treatment effect `tau` in the randomly drawn sample. Compliance types are represented by `g`.
+
+```{r}
+outcome_potential <-
+  1:length(G) %>%
+  purrr::map(
+    function (n) {
+      df <-
+        tibble::tibble(
+          g = G[n],
+          y_0 = 
+            rnorm(
+              N / length(G), 
+              mean = 0, 
+              sd = 1
+            ),
+          y_1 = 
+            rnorm(
+              N / length(G), 
+              mean = tau_population[n], 
+              sd = 1
+            )
+        )
+      return(df)
+    }
+  ) %>%
+  dplyr::bind_rows()
+
+tau <-
+  outcome_potential %>%
+  dplyr::group_by(g) %>%
+  dplyr::summarise(
+    tau = 
+      mean(
+        y_1 - y_0
+      )
+  ) %>%
+  dplyr::ungroup() 
+
+outcome_potential %>%
+  head() %>%
+  kbl() %>%
+  kable_styling()
+
+outcome_potential %>%
+  modelsummary::datasummary_skim()
+
+tau
+```
+
+
+Now, in this setup, defiers exist. As seen in the following analysis, the average treatment effect cannot be estimated accurately with this data. Therefore, let's also generate data where defiers do not exist.
+
+```{r}
+outcome_potential_nodefier <-
+  outcome_potential %>%
+  dplyr::filter(g != "df")
+```
+
+
+Next, generate the observed data. To do this, first generate the treatment assignment vector `z`. Based on this treatment assignment vector and compliance type, generate the treatment receipt vector `d`. This operation corresponds to one randomization experiment. Note that the realized data does not include the compliance type `g`. Prepare data with and without defiers.
+
+```{r}
+data_realized <-
+  AppliedEconometrics::generate_data_noncompliance_twoside(
+    outcome_potential = outcome_potential,
+    N_1 = N_1,
+    seed = 1
+  ) 
+data_realized %>%
+  head() %>%
+  kbl() %>%
+  kable_styling()
+data_realized %>%
+  modelsummary::datasummary_skim()
+```
+
+```{r}
+data_realized_nodefier <-
+  AppliedEconometrics::generate_data_noncompliance_twoside(
+    outcome_potential = outcome_potential_nodefier,
+    N_1 = N_1,
+    seed = 1
+  ) 
+data_realized_nodefier %>%
+  head() %>%
+  kbl() %>%
+  kable_styling()
+data_realized_nodefier %>%
+  modelsummary::datasummary_skim()
+```
+
+
+# Analysis
+
+## Manually calculating $\tilde{\tau}_D$
+
+Calculate the probability of receiving treatment when treatment is assigned based on the observed data. This will be the estimated value of the treatment assignment effect $\tilde{\tau}_D$.
+
+```{r}
+tau_tilde_d <-
+  data_realized %>%
+  dplyr::filter(
+    z == 1
+  ) %>%
+  dplyr::summarise(
+    d = 
+      sum(d) / 
+      length(d)
+    ) %>%
+  dplyr::pull(d)
+tau_tilde_d
+```
+
+```{r}
+tau_tilde_d_nodefier <-
+  data_realized_nodefier %>%
+  dplyr::filter(
+    z == 1
+  ) %>%
+  dplyr::summarise(
+    d = 
+      sum(d) / 
+      length(d)
+  ) %>%
+  dplyr::pull(d)
+tau_tilde_d_nodefier
+```
+
+## Estimating $\tilde{\tau}_D$ by regression analysis
+
+Equivalent estimates are obtained through regression analysis.
+
+```{r}
+data_realized %>%
+  lm(
+    data = .,
+    formula = d ~ z
+  ) %>%
+  modelsummary::modelsummary(
+    fmt = 6
+  )
+```
+
+
+```{r}
+data_realized_nodefier %>%
+  lm(
+    data = .,
+    formula = d ~ z
+  ) %>%
+  modelsummary::modelsummary(
+    fmt = 6
+  )
+```
+
+## Manually calculating $\tilde{\tau}_Y$
+
+Calculate the difference in the average outcome based on the observed data. This will be the estimated value of the treatment assignment effect $\tilde{\tau}_Y$.
+
+```{r}
+tau_tilde_y <-
+  data_realized %>%
+  dplyr::group_by(z) %>%
+  dplyr::summarise(
+    y = mean(y)
+  ) %>%
+  dplyr::ungroup() %>%
+  dplyr::summarise(
+    y = 
+    sum(y * z) - 
+    sum(y * (1 - z))
+  ) %>%
+  dplyr::pull(y)
+tau_tilde_y
+```
+
+```{r}
+tau_tilde_y_nodefier <-
+  data_realized_nodefier %>%
+  dplyr::group_by(z) %>%
+  dplyr::summarise(
+    y = mean(y)
+  ) %>%
+  dplyr::ungroup() %>%
+  dplyr::summarise(
+    y = 
+      sum(y * z) - 
+      sum(y * (1 - z))
+  ) %>%
+  dplyr::pull(y)
+tau_tilde_y_nodefier
+```
+
+## Estimating $\tilde{\tau}_Y$ by regression analysis
+
+Equivalent estimates are obtained through regression analysis.
+
+```{r}
+data_realized %>%
+  lm(
+    data = .,
+    formula = y ~ z
+  ) %>%
+  modelsummary::modelsummary(
+    fmt = 6
+  )
+```
+
+```{r}
+data_realized_nodefier %>%
+  lm(
+    data = .,
+    formula = y ~ z
+  ) %>%
+  modelsummary::modelsummary(
+    fmt = 6
+  )
+```
+
+## Manually calculating $\tilde{\tau}_{Y, co} = \tau_{late}$
+
+Next, we obtain an estimate of the local average treatment effect by dividing the treatment assignment effect of the outcome by the treatment assignment effect of the treatment receipt. We confirm that this result is close to the average treatment effect of the compliers.
+
+```{r}
+tau_late <-
+  tau_tilde_y / 
+  tau_tilde_d
+tau_late
+```
+
+```{r}
+tau_late_nodefier <-
+  tau_tilde_y_nodefier / 
+  tau_tilde_d_nodefier
+tau_late_nodefier
+```
+
+
+## Estimating $\tilde{\tau}_{Y, co} = \tau_{late}$ by two-stage least squares method
+
+Equivalent estimates are obtained through two-stage least squares method. Inference is more efficient using regression analysis.
+
+```{r}
+data_realized %>%
+  estimatr::iv_robust(
+    data = .,
+    formula = y ~ d | z
+  ) %>%
+  modelsummary::modelsummary(
+    fmt = 6
+  )
+```
+
+
+```{r}
+data_realized_nodefier %>%
+  estimatr::iv_robust(
+    data = .,
+    formula = y ~ d | z
+  ) %>%
+  modelsummary::modelsummary(
+    fmt = 6
+  )
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
