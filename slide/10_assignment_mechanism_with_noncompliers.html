@@ -3068,21 +3068,18 @@ var loadDeck = function(event) {
   });
 };
 
-if (!window.Shiny) {
-  // If Shiny is loaded, the slide deck is initialized in ioslides template
-
-  if (document.readyState !== "loading" &&
-      document.querySelector('slides') === null) {
-    // if the document is done loading but our element hasn't yet appeared, defer
-    // loading of the deck
-    window.setTimeout(function() {
-      loadDeck(null);
-    }, 0);
-  } else {
-    // still loading the DOM, so wait until it's finished
-    document.addEventListener("DOMContentLoaded", loadDeck);
-  }
+if (document.readyState !== "loading" &&
+    document.querySelector('slides') === null) { 
+  // if the document is done loading but our element hasn't yet appeared, defer
+  // loading of the deck
+  window.setTimeout(function() {
+    loadDeck(null);
+  }, 0);
+} else {
+  // still loading the DOM, so wait until it's finished
+  document.addEventListener("DOMContentLoaded", loadDeck);
 }
+
 
 
 </script>
@@ -3794,7 +3791,7 @@ U_1 \equiv Y^\ast(1) - \mathbb{E}[\tilde{\mu}_1(X, \tilde{U}_1)|X].
 </article></slide><slide class=""><hgroup><h2>Assumptions</h2></hgroup><article  id="assumptions">
 
 <ol>
-<li>Instrument independence: \((U_1, U_0, V)  \perp \!\!\! \perp Z | X\).</li>
+<li>Instrument independence: \((U_1, U_0, V) \perp \!\!\! \perp Z | X\).</li>
 <li>Exclusion restriction: \(\mu_D(Z, X)\) has a non-degenerate distribution given \(X\).</li>
 <li>Scalar \(V\) is continuously distributed.</li>
 <li>\(\mathbb{E}[|Y^\ast(1)|]\) and \(\mathbb{E}[|Y^\ast(0)|]\) are finite.</li>
@@ -3922,11 +3919,6 @@ D =1\{e(Z, X) \ge U_D\}, U_D|X \sim U[0, 1].
        window.jQuery(document).on('slideenter', function(e) {
          window.jQuery(e.target).trigger('shown');
       });
-    }
-    if (window.Shiny) {
-      // Initialize slides when this script appears on the page, since it
-      // indicates that the <slides> markup has been fully loaded.
-      window.loadDeck();
     }
   })();
 </script>
