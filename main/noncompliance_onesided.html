@@ -3182,7 +3182,7 @@ border-radius: 0px;
 <p>In this section, we implement the estimation of the intent-to-treat
 effect and the local average treatment effect in the case of one-sided
 compliance in the chapter “Non-compliance”. The functions called from
-<code>AppliedEconometrics</code> are defined in
+<code>AppliedEconometricsCode</code> are defined in
 <code>R/functions_noncompliance.R</code>. First, we generate the latent
 outcomes of the sample, and then generate the treatment vector and the
 realized outcomes. When doing so, we consider a situation where the
@@ -3564,7 +3564,7 @@ receipt vector <code>d</code>. This operation corresponds to one
 randomization experiment. Note that the realized data does not include
 the compliance type <code>g</code>.</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>data_realized_excluded <span class="ot">&lt;-</span></span>
-<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>  AppliedEconometrics<span class="sc">::</span><span class="fu">generate_data_noncompliance_oneside</span>(</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>  <span class="fu">generate_data_noncompliance_oneside</span>(</span>
 <span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>    <span class="at">outcome_potential =</span> outcome_potential,</span>
 <span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>    <span class="at">N_1 =</span> N_1,</span>
 <span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>    <span class="at">seed =</span> <span class="dv">1</span>,</span>
@@ -3894,7 +3894,7 @@ white-space: pre;
 </tbody>
 </table>
 <div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>data_realized_included <span class="ot">&lt;-</span></span>
-<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>  AppliedEconometrics<span class="sc">::</span><span class="fu">generate_data_noncompliance_oneside</span>(</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>  <span class="fu">generate_data_noncompliance_oneside</span>(</span>
 <span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>    <span class="at">outcome_potential =</span> outcome_potential,</span>
 <span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>    <span class="at">N_1 =</span> N_1,</span>
 <span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>    <span class="at">seed =</span> <span class="dv">1</span>,</span>

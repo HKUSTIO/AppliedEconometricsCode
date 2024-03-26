@@ -20,7 +20,7 @@ date: 'Last updated: `r Sys.Date()`'
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(cache = FALSE, echo = TRUE, fig.align = "center")
-library(AppliedEconometrics)
+library(AppliedEconometricsCode)
 library(foreach)
 library(magrittr)
 library(ggplot2)
@@ -134,7 +134,7 @@ Next, we generate the observed data. To do this, we first generate the treatment
 
 ```{r}
 data_realized <-
-  CausalInferenceTextbook::generate_data_noncompliance_twoside(
+  generate_data_noncompliance_twoside(
     outcome_potential = outcome_potential,
     N_1 = N_1,
     seed = 1
@@ -149,7 +149,7 @@ data_realized %>%
 
 ```{r}
 data_realized_nodefier <-
-  CausalInferenceTextbook::generate_data_noncompliance_twoside(
+  generate_data_noncompliance_twoside(
     outcome_potential = outcome_potential_nodefier,
     N_1 = N_1,
     seed = 1

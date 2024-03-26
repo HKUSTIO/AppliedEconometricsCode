@@ -21,6 +21,7 @@ date: 'Last update: `r Sys.Date()`'
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(cache = FALSE, echo = TRUE, fig.align = "center")
+library(AppliedEconometricsCode)
 library(foreach)
 library(magrittr)
 library(ggplot2)
@@ -28,7 +29,7 @@ library(kableExtra)
 color_main <- scales::viridis_pal(option = "C")(1)
 ```
 
-In this section, we implement the estimation of the intent-to-treat effect and the local average treatment effect in the case of one-sided compliance in the chapter "Non-compliance". The functions called from `AppliedEconometrics` are defined in `R/functions_noncompliance.R`. First, we generate the latent outcomes of the sample, and then generate the treatment vector and the realized outcomes. When doing so, we consider a situation where the average treatment effect differs for each compliance type. Based on the realized treatment assignment vector, the realized treatment receipt vector, and the realized outcomes, we estimate the treatment receipt and the treatment assignment effect. Next, using these estimated values, we estimate the local average treatment effect.
+In this section, we implement the estimation of the intent-to-treat effect and the local average treatment effect in the case of one-sided compliance in the chapter "Non-compliance". The functions called from `AppliedEconometricsCode` are defined in `R/functions_noncompliance.R`. First, we generate the latent outcomes of the sample, and then generate the treatment vector and the realized outcomes. When doing so, we consider a situation where the average treatment effect differs for each compliance type. Based on the realized treatment assignment vector, the realized treatment receipt vector, and the realized outcomes, we estimate the treatment receipt and the treatment assignment effect. Next, using these estimated values, we estimate the local average treatment effect.
 
 In the case of non-compliance, the exclusion restriction is necessary to estimate the local average treatment effect. To confirm this, we generate data that satisfies the exclusion restriction and data that does not satisfy the exclusion restriction, and compare the estimation results.
 
@@ -119,7 +120,7 @@ Next, we generate the observed data. To do this, we first generate the treatment
 
 ```{r}
 data_realized_excluded <-
-  AppliedEconometrics::generate_data_noncompliance_oneside(
+  generate_data_noncompliance_oneside(
     outcome_potential = outcome_potential,
     N_1 = N_1,
     seed = 1,
@@ -136,7 +137,7 @@ data_realized_excluded %>%
 
 ```{r}
 data_realized_included <-
-  AppliedEconometrics::generate_data_noncompliance_oneside(
+  generate_data_noncompliance_oneside(
     outcome_potential = outcome_potential,
     N_1 = N_1,
     seed = 1,

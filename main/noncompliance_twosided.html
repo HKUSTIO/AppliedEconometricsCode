@@ -3545,7 +3545,7 @@ randomized experiment. Note that the realized data does not include the
 compliance type <code>g</code>. We prepare data both with and without
 defiers.</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>data_realized <span class="ot">&lt;-</span></span>
-<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>  CausalInferenceTextbook<span class="sc">::</span><span class="fu">generate_data_noncompliance_twoside</span>(</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>  <span class="fu">generate_data_noncompliance_twoside</span>(</span>
 <span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>    <span class="at">outcome_potential =</span> outcome_potential,</span>
 <span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>    <span class="at">N_1 =</span> N_1,</span>
 <span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>    <span class="at">seed =</span> <span class="dv">1</span></span>
@@ -3808,7 +3808,7 @@ white-space: pre;
 </tbody>
 </table>
 <div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>data_realized_nodefier <span class="ot">&lt;-</span></span>
-<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>  CausalInferenceTextbook<span class="sc">::</span><span class="fu">generate_data_noncompliance_twoside</span>(</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>  <span class="fu">generate_data_noncompliance_twoside</span>(</span>
 <span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>    <span class="at">outcome_potential =</span> outcome_potential_nodefier,</span>
 <span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>    <span class="at">N_1 =</span> N_1,</span>
 <span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>    <span class="at">seed =</span> <span class="dv">1</span></span>
