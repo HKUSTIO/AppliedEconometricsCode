@@ -142,7 +142,7 @@ F_{U|X}(u|0_+) = F_{U|X}(u|X = 0_-)
 $$
 because 
 $$
-F_{U|X}(u|x) = \int_{s \le u} g_{U|X}(s|x) ds, g_{U|X}(u|x) = \frac{f_X(x)}{f_{X|U}(x|u) g_U(u)}.
+F_{U|X}(u|x) = \int_{s \le u} g_{U|X}(s|x) ds, g_{U|X}(u|x) = \frac{f_{X|U}(x|u) g_U(u)}{f_X(x)}.
 $$
 - The second condition implies the continuity of the conditional expectation at $X = 0$.
 
