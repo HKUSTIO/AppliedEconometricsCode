@@ -1,6 +1,6 @@
 ---
 title: "Non-compliance"
-subtitle: "Two-sided non-compliance"
+subtitle: "Two-sided"
 output: 
   html_document:
     css: style_do.css
@@ -15,8 +15,7 @@ output:
                  # "espresso", "zenburn", "haddock", "textmate"
     df_print: paged
     code_folding: show
-#date: '2022-03-30'
-date: 'Last update: `r Sys.Date()`'
+date: 'Last updated: `r Sys.Date()`'
 ---
 
 ```{r setup, include=FALSE}
@@ -29,18 +28,17 @@ library(kableExtra)
 color_main <- scales::viridis_pal(option = "C")(1)
 ```
 
+Here, we implement the estimation methods for the treatment assignment effect and the local average treatment effect in the case of "3 two-sided non-compliers" in the chapter on "Non-compliers". The functions called from `AppliedEconometrics` are defined in `R/functions_noncompliance.R`. 
 
-Here, we implement the method for estimating treatment assignment effects and local average treatment effects in the case of "Two-sided non-compliance" in the chapter on "Non-compliance". The function called from `AppliedEconometrics` is defined in `R/functions_noncompliance.R`. First, we generate latent outcomes from the sample, and then we generate the treatment vector and observed outcomes. At this point, we consider a situation where the average treatment effect varies by compliance type. Based on the realized treatment assignment vector, treatment receipt vector, and observed outcomes, we estimate the treatment assignment effect on treatment receipt and outcomes. Subsequently, using these estimated values, we estimate the local average treatment effect.
+First, we generate the potential outcomes of the sample, and then, we generate the treatment vector and the observed outcomes. At this time, we consider a situation where the average treatment effect differs for each compliance type. Based on the realized treatment assignment vector, treatment receipt vector, and observed outcomes, we estimate the treatment receipt and the treatment assignment effect on the outcome. Next, we use those estimates to estimate the local average treatment effect.
 
-
-In case of two-sided non-compliance, it is necessary to have no defiers in order to estimate the local average treatment effect. To confirm this, we generate data with defiers and data without defiers, and compare the estimation results.
+In the case of two-sided non-compliers, the absence of defiers is necessary to estimate the local average treatment effect. To verify this point, we generate data with and without the presence of defiers and compare the estimation results.
 
 # Generating simulation data
 
 ## Setting constants and parameters
 
-First, fix the seed and set the number of individuals `N`, the number of draws in the Monte Carlo simulation `R`, and the size of the treatment group `N_1`. The set of compliance types is given by `G`.
-
+First, we set the seed, the number of individuals `N`, the number of draws in the Monte Carlo simulation `R`, and the size of the treatment group `N_1`. The set of compliance types is given by `G`.
 
 ```{r}
 set.seed(1)
@@ -55,7 +53,7 @@ G <-
   )
 ```
 
-Next, set the average treatment effect `tau_population` in the population.
+Next, we set the average treatment effect on the outcome `tau_population` in the population.
 
 ```{r}
 tau_population <- 
@@ -70,7 +68,7 @@ tau_population <-
 
 ## Generating data
 
-Generate latent outcomes from the sample based on the constants and parameters defined above. This operation corresponds to one random draw. Calculate the average treatment effect `tau` in the randomly drawn sample. Compliance types are represented by `g`.
+The above constants and parameters are used to generate the potential outcomes of the sample. This operation is a single random draw. The finite-sample average treatment effect `tau` is also calculated for the random draw. The compliance types are represented by `g`.
 
 ```{r}
 outcome_potential <-
@@ -117,11 +115,13 @@ outcome_potential %>%
 outcome_potential %>%
   modelsummary::datasummary_skim()
 
-tau
+tau %>%
+  kbl() %>%
+  kable_styling()
 ```
 
 
-Now, in this setup, defiers exist. As seen in the following analysis, the average treatment effect cannot be estimated accurately with this data. Therefore, let's also generate data where defiers do not exist.
+Now, in this setting, there are defiers. As we will see in the following analysis, the average treatment effect cannot be accurately estimated with this data. Therefore, let's also generate data without any defiers.
 
 ```{r}
 outcome_potential_nodefier <-
@@ -130,11 +130,11 @@ outcome_potential_nodefier <-
 ```
 
 
-Next, generate the observed data. To do this, first generate the treatment assignment vector `z`. Based on this treatment assignment vector and compliance type, generate the treatment receipt vector `d`. This operation corresponds to one randomization experiment. Note that the realized data does not include the compliance type `g`. Prepare data with and without defiers.
+Next, we generate the observed data. To do this, we first generate the treatment assignment vector `z`. Based on this treatment assignment vector and the compliance type, we generate the treatment receipt vector `d`. This operation corresponds to a single randomized experiment. Note that the realized data does not include the compliance type `g`. We prepare data both with and without defiers.
 
 ```{r}
 data_realized <-
-  AppliedEconometrics::generate_data_noncompliance_twoside(
+  CausalInferenceTextbook::generate_data_noncompliance_twoside(
     outcome_potential = outcome_potential,
     N_1 = N_1,
     seed = 1
@@ -149,7 +149,7 @@ data_realized %>%
 
 ```{r}
 data_realized_nodefier <-
-  AppliedEconometrics::generate_data_noncompliance_twoside(
+  CausalInferenceTextbook::generate_data_noncompliance_twoside(
     outcome_potential = outcome_potential_nodefier,
     N_1 = N_1,
     seed = 1
@@ -165,43 +165,42 @@ data_realized_nodefier %>%
 
 # Analysis
 
+
 ## Manually calculating $\tilde{\tau}_D$
 
-Calculate the probability of receiving treatment when treatment is assigned based on the observed data. This will be the estimated value of the treatment assignment effect $\tilde{\tau}_D$.
+Based on the observed data, calculate the difference in the probability of receiving the treatment when it is assigned versus when it is not assigned. This serves as the estimated effect of treatment assignment on treatment receipt, denoted as $\tilde{\tau}_D$.
 
 ```{r}
 tau_tilde_d <-
   data_realized %>%
-  dplyr::filter(
-    z == 1
-  ) %>%
   dplyr::summarise(
-    d = 
-      sum(d) / 
-      length(d)
+       d = 
+        sum(d * z) / sum(z) - 
+        sum(d * (1 - z)) / sum(1 - z)
     ) %>%
   dplyr::pull(d)
 tau_tilde_d
 ```
 
+Thus, in cases where defiers are present, the value of $\tilde{\tau}_D$ significantly differs from the share of compliers (`r 1/4`).
+
 ```{r}
 tau_tilde_d_nodefier <-
   data_realized_nodefier %>%
-  dplyr::filter(
-    z == 1
-  ) %>%
   dplyr::summarise(
     d = 
-      sum(d) / 
-      length(d)
+      sum(d * z) / sum(z) - 
+      sum(d * (1 - z)) / sum(1 - z)
   ) %>%
   dplyr::pull(d)
 tau_tilde_d_nodefier
 ```
 
-## Estimating $\tilde{\tau}_D$ by regression analysis
+On the other hand, in cases without defiers, the value of $\tilde{\tau}_D$ is close to the share of compliers (`r 2/3`).
 
-Equivalent estimates are obtained through regression analysis.
+## Estimating $\tilde{\tau}_D$ using regression analysis
+
+The same estimate can be obtained by regression analysis.
 
 ```{r}
 data_realized %>%
@@ -228,20 +227,15 @@ data_realized_nodefier %>%
 
 ## Manually calculating $\tilde{\tau}_Y$
 
-Calculate the difference in the average outcome based on the observed data. This will be the estimated value of the treatment assignment effect $\tilde{\tau}_Y$.
+Based on the observed data, calculate the difference in the average of the outcomes. This serves as the estimated effect of treatment assignment on the outcome, denoted as $\tilde{\tau}_Y$.
 
 ```{r}
 tau_tilde_y <-
   data_realized %>%
-  dplyr::group_by(z) %>%
-  dplyr::summarise(
-    y = mean(y)
-  ) %>%
-  dplyr::ungroup() %>%
   dplyr::summarise(
     y = 
-    sum(y * z) - 
-    sum(y * (1 - z))
+    sum(y * z) / sum(z) - 
+    sum(y * (1 - z)) / sum(1 - z)
   ) %>%
   dplyr::pull(y)
 tau_tilde_y
@@ -250,23 +244,18 @@ tau_tilde_y
 ```{r}
 tau_tilde_y_nodefier <-
   data_realized_nodefier %>%
-  dplyr::group_by(z) %>%
-  dplyr::summarise(
-    y = mean(y)
-  ) %>%
-  dplyr::ungroup() %>%
   dplyr::summarise(
     y = 
-      sum(y * z) - 
-      sum(y * (1 - z))
+      sum(y * z) / sum(z) - 
+      sum(y * (1 - z)) / sum(1 - z)
   ) %>%
   dplyr::pull(y)
 tau_tilde_y_nodefier
 ```
 
-## Estimating $\tilde{\tau}_Y$ by regression analysis
+## Estimating $\tilde{\tau}_Y$ using regression analysis
 
-Equivalent estimates are obtained through regression analysis.
+The same estimate can be obtained by regression analysis.
 
 ```{r}
 data_realized %>%
@@ -292,7 +281,7 @@ data_realized_nodefier %>%
 
 ## Manually calculating $\tilde{\tau}_{Y, co} = \tau_{late}$
 
-Next, we obtain an estimate of the local average treatment effect by dividing the treatment assignment effect of the outcome by the treatment assignment effect of the treatment receipt. We confirm that this result is close to the average treatment effect of the compliers.
+Next, calculate the estimated value of the local average treatment effect by dividing the treatment assignment effect on the outcome by the treatment assignment effect on treatment receipt.
 
 ```{r}
 tau_late <-
@@ -301,6 +290,8 @@ tau_late <-
 tau_late
 ```
 
+Thus, in cases where defiers are present, the value of $\tilde{\tau}_{Y, co}$ significantly differs from the average treatment effect on the outcome (`r 2`).
+
 ```{r}
 tau_late_nodefier <-
   tau_tilde_y_nodefier / 
@@ -308,10 +299,12 @@ tau_late_nodefier <-
 tau_late_nodefier
 ```
 
+On the other hand, in cases without defiers, the value of $\tilde{\tau}_{Y, co}$ is close to the average treatment effect on the outcome (`r 2`).
 
-## Estimating $\tilde{\tau}_{Y, co} = \tau_{late}$ by two-stage least squares method
 
-Equivalent estimates are obtained through two-stage least squares method. Inference is more efficient using regression analysis.
+## Estimating $\tilde{\tau}_{Y, co} = \tau_{late}$ using two-stage least squares
+
+The same estimate can be obtained by using two-stage least squares. Estimation of the estimation error is more efficient when regression analysis is used.
 
 ```{r}
 data_realized %>%
