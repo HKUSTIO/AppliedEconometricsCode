@@ -235,7 +235,7 @@ tau_tilde_y_excluded
 
 ```{r}
 tau_tilde_y_included <-
-  data_realized_excluded %>%
+  data_realized_included %>%
   dplyr::group_by(z) %>%
   dplyr::summarise(
     y = mean(y)
@@ -285,8 +285,8 @@ tau_late_excluded
 
 ```{r}
 tau_late_included <-
-  tau_tilde_y_excluded / 
-  tau_tilde_d_excluded
+  tau_tilde_y_included / 
+  tau_tilde_d_included
 tau_late_included
 ```
 
