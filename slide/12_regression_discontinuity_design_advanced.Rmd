@@ -1,0 +1,426 @@
+---
+title: "Regression Discontinuity Design"
+subtitle: "Advanced topics"
+author: "Kohei Kawaguchi, Hong Kong University of Science and Technology"
+output: 
+  ioslides_presentation:
+    css: styles.css
+    widescreen: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
+library(AppliedEconometrics)
+library(magrittr)
+library(foreach)
+library(ggplot2)
+library(kableExtra)
+```
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<script>
+$(document).ready(function() {
+  $('slide:not(.backdrop):not(.title-slide)').append('<div class=\"footnotes\">');
+
+  $('footnote').each(function(index) {
+    var text  = $(this).html();
+    var fnNum = (index+1).toString();
+    $(this).html(fnNum.sup());
+
+    var footnote   = fnNum + '. ' + text + '<br/>';
+    var oldContent = $(this).parents('slide').children('div.footnotes').html();
+    var newContent = oldContent + footnote;
+    $(this).parents('slide').children('div.footnotes').html(newContent);
+  });
+});
+</script>
+
+```{r, echo = FALSE}
+tidy.rdrobust <- function(object, ...){
+    ret <- data.frame(term = row.names(object$coef), 
+                      estimate = object$coef[, 1], 
+                      std.error = object$se[, 1], 
+                      statistic = object$z[, 1],
+                      p.value = object$pv[, 1], 
+                      conf.low = object$ci[,1],
+                      conf.high = object$ci[, 2])
+    row.names(ret) <- NULL
+    ret
+}
+
+glance.rdrobust <- function(object, ...){
+    ret <- data.frame(nobs.left = object$N[1],
+                      nobs.right = object$N[2],
+                      nobs.effective.left = object$N_h[1],
+                      nobs.effective.right = object$N_h[2],
+                      cutoff = object$c,
+                      order.regression = object$q,
+                      order.bias = object$q,
+                      kernel = object$kernel,
+                      bwselect = object$bwselect)
+        ret
+}
+```
+
+# Fuzzy Regression Discontinuity Design 
+
+## Treatment assignment and recipt
+
+- The treatment assignment is still determined by:
+$$
+Z_i = 1\{X_i \ge 0\}
+$$
+- However, the receipt of treatment may be different from the assignment of the treatment, because of one-sided or two-sided non-compliance.
+- The potential receipt of treatment is $D_i^\ast(Z_i)$ and the observed receipt of the treatment is:
+$$
+D_i = Z_i \cdot D_i^\ast(1) + (1 - Z_i) \cdot D_i^\ast(0).
+$$
+
+## Fuzzy RDD with one-sided non-compliance <footnote> Figure 4.1 of Cattaneo et al. (2021) </footnote>
+
+```{r, out.width = "50%", echo = FALSE}
+knitr::include_graphics("../figuretable/10_fig_1.png")
+```
+
+## Potential outcome
+
+- Each unit has potential outcome $Y_i^\ast(D_i)$.
+- The observed outcome is $Y_i = D_i \cdot Y_i^\ast(1) + (1 - D_i) \cdot Y_i^\ast(0)$.
+- This already assumes the exclusion restriction of $Z_i$.
+- Assume that $\{Y_i^\ast(1), Y_i^\ast(0), D_i^\ast(1), D_i^\ast(0), X_i\}_{i = 1}^n$ is a random sample from a super population.
+
+## Assumptions
+
+- __Local monotonicity__: there exists a neighborhood around $x = 0$ such that any individual in the population has one of the following compliance status:
+  - Complier: $D_i^\ast(1) = 1, D_i^\ast(0) = 0$.
+  - Always taker: $D_i^\ast(1) = D_i^\ast(0) = 1$.
+  - Never taker: $D_i^\ast(1) = D_i^\ast(0) = 0$.
+- __Continuity__: $\mathbb{E}[Y_i^\ast(1)|X_i = x]$, $\mathbb{E}[Y_i^\ast(0)|X_i = x]$, $\mathbb{E}[D_i^\ast(1)|X_i = x]$, and $\mathbb{E}[D_i^\ast(0)|X_i = x]$ are continuous at $x = 0$.
+- __First-stage__: $\mathbb{E}[D_i^\ast(1) - D_i^\ast(0)|X_i = 0] > 0$.
+
+## Intent-to-treat effect
+
+- The sharp RD estimator of the effect of treatment assignment $Z_i$ on the outcome $Y_i$ now estimate:
+$$
+\begin{split}
+&\lim_{x \downarrow 0} \mathbb{E}[Y_i|X_i = x] - \lim_{x \uparrow 0} \mathbb{E}[Y_i|X_i = x]\\
+&= \lim_{x \downarrow 0} \mathbb{E}\{D_i^\ast(1) \cdot Y_i^\ast(1) + [1 - D_i^\ast(1)] \cdot Y_i^\ast(0) |X_i = x\}\\
+&- \lim_{x \uparrow 0} \mathbb{E}[D_i^\ast(0) \cdot Y_i^\ast(1) + [1 - D_i^\ast(0)] \cdot Y_i^\ast(0)|X_i = x]\\
+&= \mathbb{E}\{D_i^\ast(1) \cdot Y_i^\ast(1) + [1 - D_i^\ast(1)] \cdot Y_i^\ast(0) |X_i = 0\}\\
+&- \mathbb{E}[D_i^\ast(0) \cdot Y_i^\ast(1) + [1 - D_i^\ast(0)] \cdot Y_i^\ast(0)|X_i = 0]\\
+&= \mathbb{E}\{[D_i^\ast(1) - D_i^\ast(0)] \cdot [Y_i^\ast(1) - Y_i^\ast(0)]| X_i = 0\}.
+\end{split}
+$$
+- We call this _intent-to-treat effect_ and denote by $\tau_{itt}$.
+
+## First-stage effect
+
+- We can estimate the effect of being assigned to treatment on receiving the treatment:
+$$
+\begin{split}
+&\lim_{x \downarrow 0} \mathbb{E}[D_i | X_i = x] - \lim_{x \uparrow 0} \mathbb{E}[D_i | X_i = x]\\
+&= \lim_{x \downarrow 0} \mathbb{E}[D_i^\ast(1) | X_i = x] - \lim_{x \uparrow 0} \mathbb{E}[D_i^\ast(0) | X_i = x]\\
+&= \mathbb{E}[D_i^\ast(1) | X_i = 0] - \mathbb{E}[D_i^\ast(0) | X_i = 0].
+\end{split}
+$$
+- We call this _first-stage effect_ and denote by $\tau_{fs}$.
+- $\tau_{itt}$ and $\tau_{fs}$ are both sharp RD parameters and inherit the properties we have discussed so far.
+
+## LATE
+
+- Under the local monotonicity assumption, we can show:
+$$
+\begin{split}
+&\mathbb{E}\{[D_i^\ast(1) - D_i^\ast(0)] \cdot [Y_i^\ast(1) - Y_i^\ast(0)]| X_i = 0\}\\
+&= \mathbb{E}\{[D_i^\ast(1) - D_i^\ast(0)] \cdot [Y_i^\ast(1) - Y_i^\ast(0)]| X_i = 0, D_i^\ast(1) > D_i^\ast(0)\}\\
+&\times \mathbb{P}[D_i^\ast(1) > D_i^\ast(0)| X_i = 0]\\
+&= \mathbb{E}[Y_i^\ast(1) - Y_i^\ast(0)| X_i = 0, D_i^\ast(1) > D_i^\ast(0)] \mathbb{E}[D_i^\ast(1) - D_i^\ast(0)| X_i = 0].
+\end{split}
+$$
+
+## LATE
+
+- Therefore, under the first stage assumption, we have:
+$$
+\begin{split}
+\tau_{frd} 
+&\equiv \mathbb{E}[Y_i^\ast(1) - Y_i^\ast(0)| X_i = 0, D_i^\ast(1) > D_i^\ast(0)] \\
+&= \frac{\lim_{x \downarrow 0} \mathbb{E}[Y_i|X_i = x] - \lim_{x \uparrow 0} \mathbb{E}[Y_i|X_i = x]}{\lim_{x \downarrow 0} \mathbb{E}[D_i | X_i = x] - \lim_{x \uparrow 0} \mathbb{E}[D_i | X_i = x]}\\
+&= \frac{\tau_{itt}}{\tau_{fs}}.
+\end{split}
+$$
+
+## Biac-correction and robust standard error
+
+- We first estimate $\tau_{itt}$ and $\tau_{fs}$ with a band width $h$ to obtain $\hat{\tau}_{itt}(h)$ and $\hat{\tau}_{fs}(h)$.
+- Then, we can estimate $\tau_{frd}$ by $\hat{\tau}_{frd}(h) \equiv \hat{\tau}_{itt}(h) / \hat{\tau}_{fs}(h)$.
+- How do we choose the bandwidth? How to correct the bias? How to construct a robust standard error?
+- The fuzzy RD estimator is a linear combination of two sharp RD estimators plus a higher-order reminder term:
+$$
+\hat{\tau}_{frd}(h) - \tau_{frd} = \frac{\hat{\tau}_{itt}(h) - \tau_{itt}}{\tau_{fs}} - \tau_{itt} \cdot \frac{\hat{\tau}_{fs}(h) - \tau_{fs}}{\tau_{fs}^2} + R.
+$$
+- Therefore, the ideas are essentially the same.
+
+## Cash transfer's effect on the birth outcome
+
+- Amarante et al. (2016).
+- Uruguay's Plan de Atencion Nacional a la Emergencia Social (PANES).
+- A monthly cash transfer of UY$1,360 if the income score of the mother is below a certain threshold.
+- How does this affect the birth outcome such as the event of low birth weight?
+
+## Load data
+
+```{r, echo = FALSE}
+df_raw <- 
+  haven::read_dta(
+    "../input/amarante_2016/anonymized_data/peso4_anonymized.dta"
+  )
+df_raw %>% 
+  dplyr::select(
+    bajo2500, 
+    newind, 
+    ing_ciud_txu_hh9
+  ) %>%
+  modelsummary::datasummary_skim(
+    histogram = FALSE, 
+    fmt = 3
+  )
+df <- 
+  df_raw %>% 
+  dplyr::mutate(
+    y = bajo2500, 
+    x = newind, 
+    d = (ing_ciud_txu_hh9 > 0)
+  ) %>% 
+  dplyr::select(y, x, d) %>% 
+  tidyr::drop_na()
+```
+
+## Receipt of the treatment
+
+```{r, out.width = "40%", echo = FALSE, warning = FALSE, message = FALSE}
+rdrobust::rdplot(
+  y = df$d, 
+  x = df$x, 
+  c = 0, 
+  binselect = "qspr", 
+  x.label = "Normalized income", 
+  y.label = "Receipt of the income transfer"
+)
+```
+
+## Indicator of low birth weight
+
+```{r, out.width = "40%", echo = FALSE, warning = FALSE, message = FALSE}
+rdrobust::rdplot(
+  y = df$y, 
+  x = df$x, 
+  c = 0, 
+  binselect = "qspr", 
+  x.label = "Normalized income", 
+  y.label = "Low birth weight"
+)
+```
+
+## The local average treatment effect of cash transfer on the low birthweight
+
+```{r, results = "asis", echo = FALSE, warning = FALSE, message = FALSE}
+result <- 
+  rdrobust::rdrobust(
+    y = df$y, 
+    x = df$x, 
+    c = 0, 
+    fuzzy = df$d, 
+    bwselect = "mserd", 
+    kernel = "triangular", 
+    all = TRUE, 
+    masspoints = "off"
+  )
+cbind(
+  result$coef, 
+  result$se
+) %>% kbl() %>% 
+kable_styling()
+```
+
+
+# Regression Kink Design
+
+## The Effect of unemployment insurance on unemployment duration
+
+- Card et al. (2015).
+- Job losers in Austria who have worked at least 52 weeks in the past 24 months are eligible for UI benefits.
+- The rate depends on their average daily earnings in the base year for their benefit claim.
+- The UI benefit is calculated as 55% of net daily earnings, subject to a maximum benefit level.
+- This creates a piecewise linear relationship between the base year earnings and UI benefits.
+
+## A kink in the relationship between the base year earnings and the average daily UI benefit<footnote>Figure 2 of Card et al. (2015) </footnote>
+
+
+```{r, out.width = "40%", echo = FALSE}
+knitr::include_graphics("../figuretable/10_fig_2.png")
+```
+
+## The effect of UI benefit on the unemployment duration
+
+- Suppose that the UI benefit affects the unemployment duration.
+- Furthermore, assume that the effect is continuous at the kink point.
+- In this case, if the derivative of the UI benefit with respect to the base year salary changes at the kink point, then the derivative of the unemployment duration with respect to the base year salary will also change at the kink point.
+- Moreover, if there is no other variable that changes the derivative of the unemployment duration at the kink point, then the latter kink should be caused by the former kink.
+
+## A kink in the relationship between the base year earnings and the unemployment duration<footnote>Figure 3 of Card et al. (2015) </footnote>
+
+
+```{r, out.width = "40%", echo = FALSE}
+knitr::include_graphics("../figuretable/10_fig_3.png")
+```
+
+## Generalized non-separable model
+
+- Consider the following model:
+$$
+Y = y(B, V, U),
+$$
+where:
+- $Y$ is an outcome (e.g. unemployment duration).
+- $B$ is a continuous regressor of interest (e.g. UI benefit).
+- $V$ is another observed covariate (e.g. base year earnings).
+- $U$ is an unobserved heterogeneity.
+
+
+## Treatment-on-treated (TT)
+
+- For $B = b, V = v$, we define the _treatment-on-treated (TT)_ parameter as:
+$$
+TT_{b|v}(b, v) \equiv \int \frac{\partial y(b, v, u)}{\partial b} dF_{U|B = b, V = v}(u),
+$$
+where $F_{U|B = b, V = v}$ is the cumulative distribution function of $U$ conditional on $B = b$ and $V = v$.
+- The TT gives the average effect of a marginal increase in $b$ at some specific value of the pair $(b, v)$, .e.g the average of the derivative of the unemployment duration with respect to the UI benefit.
+
+## Sharp regression kink design (RKD)
+
+- $B$ is a known function of $V$: $B = b(V)$.
+- The cutoff is at $v = 0$.
+- In addition to some regularity conditions:
+- __Assumptions__:
+  - $y(\cdot, \cdot, \cdot)$ is continuous and partially differentiable w.r.t. the first and second arguments.
+  - $\partial y(\cdot, \cdot, \cdot)/\partial b$ is continuous in a neighborhood of the cutoff.
+  - $\partial y(\cdot, \cdot, \cdot)/\partial v$ is continuous in a neighborhood of the cutoff.
+  - $b(\cdot)$ is everywhere continuous and continuously differentiable in a neighborhood of the cutoff point, but $\lim_{v \downarrow 0} b'(v) \neq \lim_{v \uparrow 0} b'(v)$.
+  - $f_{V|U = u}(v)$ is positive for a non-trivial sub-population and $\partial f_{V|U = u}(v)/\partial v$ is continuous in a neighborhood of the cutoff.
+
+## Sharp RKD estimator of TT
+
+- Then, we can identify TT by:
+$$
+TT[b(0), 0] = \frac{\lim_{v \downarrow 0} \frac{d \mathbb{E}[Y|V = v]}{\partial v} - \lim_{v \uparrow 0} \frac{d \mathbb{E}[Y|V = v]}{\partial v}}{ \lim_{v \downarrow 0} b'(v) - \lim_{v \uparrow 0} b'(v)}.
+$$
+  
+## Derivation
+
+$$
+\begin{split}
+&\lim_{v \downarrow 0} \frac{d \mathbb{E}[Y|V = v]}{\partial v}\\
+&= \lim_{v \downarrow 0} \frac{d}{dv} \int y[b(v), v, u] \frac{f_{V|U = u}(v)}{f_V(v)} d F_U(u)\\
+&= \lim_{v \downarrow 0} \int \frac{d}{dv} y[b(v), v, u] \frac{f_{V|U = u}(v)}{f_V(v)} d F_U(u)\\
+&= \lim_{v \downarrow 0} b'(v) \int \frac{\partial}{\partial b} y[b(v), v, u] \frac{f_{V|U = u}(v)}{f_V(v)} d F_U(u)\\
+&+ \int \Bigg[ \frac{\partial }{\partial v} y[b(v), v, u] \frac{f_{V|U = u}(v)}{f_V(v)} + y[b(v), v, u] \frac{\partial}{\partial v} \frac{f_{V|U = u}(v)}{f_V(v)}  \Bigg] d F_U(u).
+\end{split}
+$$
+
+## Derivation
+
+$$
+\begin{split}
+& \lim_{v \downarrow 0} \frac{d \mathbb{E}[Y|V = v]}{\partial v} - \lim_{v \uparrow 0} \frac{d \mathbb{E}[Y|V = v]}{\partial v}\\
+&= \lim_{v \downarrow 0} b'(v) \int \frac{\partial}{\partial b} y[b(v), v, u] \frac{f_{V|U = u}(v)}{f_V(v)} d F_U(u) \\
+&- \lim_{v \uparrow 0} b'(v) \int \frac{\partial}{\partial b} y[b(v), v, u] \frac{f_{V|U = u}(v)}{f_V(v)} d F_U(u)\\
+&= \Bigg[\lim_{v \downarrow 0} b'(v) - \lim_{v \uparrow 0} b'(v)\Bigg]\cdot \int \frac{\partial}{\partial b} y[b(0), 0, u] \frac{f_{V|U = u}(0)}{f_V(0)} d F_U(u)\\
+&= \Bigg[\lim_{v \downarrow 0} b'(v) - \lim_{v \uparrow 0} b'(v)\Bigg] \cdot TT[b(0), 0].
+\end{split}
+$$
+
+
+## Estimation and inference of sharp RKD
+
+- The ideas are the same with the local polynomial estimation, the optimal bandwidth selection, bias correction, and the robust standard errors of the sharp RDD parameter.
+
+# Diescrete Score
+
+## Discrete score
+
+- The score variable has been treated as a continuous variable so far.
+- However, the score variable are discrete in many applications.
+- For example, years with the year of a policy change.
+- Lee and Card (2008) recommended to regard a discrete point as a cluster and use a cluster-robust standard error for inference.
+- However, it is no longer recommended because this assumption contradicts with random sampling and does not necessarily improve the coverage rate of the confidence interval.
+
+## Hölder Class
+
+- Consider a class of smooth regression functions.
+- __Definition__: _Second-order Hölder class_.
+$$
+\mathcal{M}(M_H) = \left\{ \mu: \mid |\mu'(x) - \mu'(y)| \leq M_H |x - y|, \forall x, y \in \mathbb{R}_{+}, x, y \in \mathbb{R}_{-} \right\}.
+$$
+
+## Honest confidence interval
+
+- __Definition__: _Honest confidence interval with respect to $\mathcal{M}$_.
+$$
+\lim\inf_{n \to \infty} \inf_{\mu \in \mathcal{M}} \mathbb{P}\left\{ \mu_+(0) - \mu_-(0) \in CI(1 - \alpha) \right\} \geq 1 - \alpha.
+$$
+- The solution to the previous problem is not unique.
+- We construct an honest confidence interval with the minimal interval.
+- `RDHonnest` implements this method.
+
+
+# Geographic RDD
+
+## RDD with multiple scores
+
+- Keele and Titunik (2015).
+- Geographic RDD is a special case of RDD with multiple scores.
+- There are some substantive features in the geographic RDD:
+- Compound treatments: multiple geographic borders often coincide.
+- Definition of distance: locations and the distance to the borders.
+
+## Setting
+
+- The geographic location of unit $i$ is $S_i = (S_{1i}, S_{2i})$.
+- $\mathcal{B}$ is the collection of boundary points.
+- $b \in \mathcal{B}$ is a single point on the boundary.
+- $\mathcal{A}_t$ and $\mathcal{A}_c$ are the sets that collect the locations that treatment is assignment and not: $T(s) = 1$ if $s \in \mathcal{A}_t$ and $T(s) = 0$ if $s \in \mathcal{A}_c$.
+- Potential outcomes: $Y_i^\ast(1)$ and $Y_i^\ast(0)$.
+- Observed outcomes: $Y_i = Z_i \cdot Y_i^\ast(1) + (1 - Z_i) \cdot Y_i^\ast(0)$.
+
+
+## Continuity assumption
+
+- __Assumption__:
+  - The conditional regression functions are continuous in $s$ at all points $b$ in $\mathcal{B}$:
+  $$
+  \lim_{s \to b} \mathbb{E}[Y_i^\ast(1)| S_i = s] = \mathbb{E}[Y_i^\ast(1)| S_i = b].
+  $$
+  $$
+  \lim_{s \to b} \mathbb{E}[Y_i^\ast(0)| S_i = s] = \mathbb{E}[Y_i^\ast(0)| S_i = b].
+  $$
+
+## Geographic treatment effect curve
+
+- If $T(S_i) = 1$ if $S_i \in \mathcal{A}_t$ and $T(S_i) = 0$ if $S_i \in \mathcal{A}_c$ for all units, then:
+$$
+\begin{split}
+\tau(b) 
+&\equiv \mathbb{E}[Y_i^\ast(1) - Y_i^\ast(0) | S_i = b] \\
+&= \lim_{s \in \mathcal{A}_t \to b} \mathbb{E}[Y_i | S_i = s] - \lim_{s \in \mathcal{A}_c \to b} \mathbb{E}[Y_i | S_i = s].
+\end{split}
+$$
+- By integrating along the boundary points, we can identify the average treatment effect on the boundary.
+- Estimation and inference are essentially the same with the sharp RDD parameters with a single score.
+
+## Reference
+
+- Amarante, Verónica, Marco Manacorda, Edward Miguel, and Andrea Vigorito. 2016. “Do Cash Transfers Improve Birth Outcomes? Evidence from Matched Vital Statistics, Program, and Social Security Data.” American Economic Journal: Economic Policy 8 (2): 1–43.
+- Card, David, David S. Lee, Zhuan Pei, and Andrea Weber. 2015. “Inference on Causal Effects in a Generalized Regression Kink Design.” Econometrica: Journal of the Econometric Society 83 (6): 2453–83.
+- Cattaneo, Matias D., Nicolas Idrobo, and Rocio Titiunik. 2021. “A Practical Introduction to Regression Discontinuity Designs: Volume II.”.
+- Keele, Luke J., and Rocío Titiunik. 2015. “Geographic Boundaries as Regression Discontinuities.” Political Analysis: An Annual Publication of the Methodology Section of the American Political Science Association 23 (1): 127–55.

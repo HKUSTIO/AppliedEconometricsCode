@@ -1,0 +1,148 @@
+
+---
+title: "Regression Discontinuity"
+subtitle: "Geographic Regression Discontinuity"
+output: 
+  html_document:
+    css: style_do.css
+    number_sections: yes
+    toc: yes
+    toc_depth: '3'
+    toc_float: yes
+    theme: "spacelab" #"default", "bootstrap", "cerulean", "cosmo", "darkly", "flatly",
+                 # "journal", "lumen", "paper", "readable", "sandstone", "simplex",
+                 # "spacelab", "united", "yeti"
+    highlight: "pygments" #"default", "tango", "pygments", "kate", "monochrome",
+                 # "espresso", "zenburn", "haddock", "textmate"
+    df_print: paged
+    code_folding: show
+date: 'Last update: `r Sys.Date()`'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(cache = FALSE, echo = TRUE, fig.align = "center")
+library(AppliedEconometrics)
+library(foreach)
+library(magrittr)
+library(ggplot2)
+library(kableExtra)
+library(modelsummary)
+color_main <- scales::viridis_pal(option = "C")(1)
+```
+
+## Set simulation parameters
+
+```{r}
+set.seed(1)
+N <- 10000
+cutoff <- c(0, 0)
+beta <- 50
+df <-
+  tibble::tibble(
+    longitude = rnorm(N, 0, 10),
+    latitude = rnorm(N, 0, 10)
+  ) %>%
+  dplyr::mutate(
+    outcome_0 = longitude + latitude + rnorm(length(longitude)),
+    outcome_1 = outcome_0 + beta + rnorm(length(outcome_0)),
+    treatment = (longitude < cutoff[1]) & (latitude < cutoff[2]),
+    outcome = outcome_0 * (1 - treatment) + outcome_1 * treatment
+  )
+```
+
+## Treated and control group
+
+```{r, eval = FALSE}
+df %>%
+  ggplot(
+    aes(
+      x = longitude,
+      y = latitude,
+      color = treatment
+    )
+  ) +
+  geom_point() +
+  scale_colour_viridis_d() +
+  theme_classic()
+```
+
+
+## Treated and control group
+
+```{r, echo = FALSE}
+df %>%
+  ggplot(
+    aes(
+      x = longitude,
+      y = latitude,
+      color = treatment
+    )
+  ) +
+  geom_point() +
+  scale_colour_viridis_d() +
+  theme_classic()
+```
+
+## Outcome
+
+```{r, eval = FALSE}
+df %>%
+  ggplot(
+    aes(
+      x = longitude,
+      y = latitude,
+      colour = outcome
+    )
+  ) +
+  geom_point() +
+  scale_colour_viridis_c() +
+  theme_classic()
+```
+
+## Outcome
+
+```{r, echo = FALSE}
+df %>%
+  ggplot(
+    aes(
+      x = longitude,
+      y = latitude,
+      colour = outcome
+    )
+  ) +
+  geom_point() +
+  scale_colour_viridis_c() +
+  theme_classic()
+```
+
+## Estimate the treatment effect at the boundary
+
+```{r}
+result <-
+  rdmulti::rdms(
+    Y = df$outcome,
+    X = df$longitude,
+    X2 = df$latitude,
+    zvar = df$treatment,
+    C = 0,
+    C2 = 0,
+    bwselectvec = c("mserd", "mserd"),
+    kernelvec = c("triangular", "triangular")
+  )
+```
+
+## Estimate the treatment effect at the boundary
+
+```{r}
+result <-
+  rdmulti::rdms(
+    Y = df$outcome,
+    X = df$longitude,
+    X2 = df$latitude,
+    zvar = df$treatment,
+    C = 0,
+    C2 = -20,
+    bwselectvec = c("mserd", "mserd"),
+    kernelvec = c("triangular", "triangular")
+  )
+```
