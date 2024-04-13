@@ -65,7 +65,7 @@ generate_dgp_lee <-
           ) - 
           1,
         y =
-          AppliedEconometrics::specify_mu_lee(
+          AppliedEconometricsCode::specify_mu_lee(
             s = s
           )
           + rnorm(
@@ -89,7 +89,7 @@ generate_dgp_lee_fuzzy <-
         z = (s >= 0),
         d = (stats::qnorm(0.3*(0.5+0.5*s) + 0.6*z) >= stats::rnorm(n=N)),
         y =
-          AppliedEconometrics::specify_mu_lee_fuzzy(
+          AppliedEconometricsCode::specify_mu_lee_fuzzy(
             s = s,
             d = d)
           + rnorm(

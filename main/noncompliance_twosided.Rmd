@@ -28,7 +28,7 @@ library(kableExtra)
 color_main <- scales::viridis_pal(option = "C")(1)
 ```
 
-Here, we implement the estimation methods for the treatment assignment effect and the local average treatment effect in the case of "3 two-sided non-compliers" in the chapter on "Non-compliers". The functions called from `AppliedEconometrics` are defined in `R/functions_noncompliance.R`. 
+Here, we implement the estimation methods for the treatment assignment effect and the local average treatment effect in the case of "3 two-sided non-compliers" in the chapter on "Non-compliers". The functions called from `AppliedEconometricsCode` are defined in `R/functions_noncompliance.R`. 
 
 First, we generate the potential outcomes of the sample, and then, we generate the treatment vector and the observed outcomes. At this time, we consider a situation where the average treatment effect differs for each compliance type. Based on the realized treatment assignment vector, treatment receipt vector, and observed outcomes, we estimate the treatment receipt and the treatment assignment effect on the outcome. Next, we use those estimates to estimate the local average treatment effect.
 

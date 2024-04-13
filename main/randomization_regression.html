@@ -3175,7 +3175,7 @@ border-radius: 0px;
 
 <p>Here we implement the method in “7 Controlling for Covariates and
 Regression Analysis”. The functions called from
-<code>AppliedEconometrics</code> are defined in
+<code>AppliedEconometricsCode</code> are defined in
 <code>R/functions_randomized.R</code>. First, we generate the potential
 outcomes of the sample, and then we generate the treatment vector and
 the realized outcomes. We obtain the estimated average treatment effect
@@ -3504,7 +3504,7 @@ the treatment vector <code>z</code>. This operation corresponds to a
 single randomized experiment. Furthermore, we calculate the realized
 outcomes from the realized treatment vector and potential outcomes.</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>data_realized <span class="ot">&lt;-</span></span>
-<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>  AppliedEconometrics<span class="sc">::</span><span class="fu">generate_data_randomized</span>(</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>  AppliedEconometricsCode<span class="sc">::</span><span class="fu">generate_data_randomized</span>(</span>
 <span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>    <span class="at">outcome_potential =</span> outcome_potential,</span>
 <span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>    <span class="at">N_1 =</span> N_1,</span>
 <span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>    <span class="at">seed =</span> <span class="dv">1</span></span>

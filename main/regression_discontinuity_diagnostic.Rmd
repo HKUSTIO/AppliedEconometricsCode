@@ -30,7 +30,7 @@ library(rdrobust)
 color_main <- scales::viridis_pal(option = "C")(1)
 ```
 
-Here, we implement the estimation method for sharp regression discontinuity design using the `rdrobust` package. The functions called from `AppliedEconometrics` are defined in `R/functions_rdrobust.R`. Below, we generate samples based on Lee (2008), set options for the `rdrobust` package, and explain the interpretation of the results. Additionally, we conduct a density test, which is the verification process for local randomization, based on the `rddensity` package.
+Here, we implement the estimation method for sharp regression discontinuity design using the `rdrobust` package. The functions called from `AppliedEconometricsCode` are defined in `R/functions_rdrobust.R`. Below, we generate samples based on Lee (2008), set options for the `rdrobust` package, and explain the interpretation of the results. Additionally, we conduct a density test, which is the verification process for local randomization, based on the `rddensity` package.
 
 # Lee (2008)
 

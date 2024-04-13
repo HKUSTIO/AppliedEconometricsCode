@@ -30,7 +30,7 @@ library(modelsummary)
 color_main <- scales::viridis_pal(option = "C")(1)
 ```
 
-Here, we implement the estimation method for sharp regression discontinuity design using a discrete score with the `RDHonest` package. The functions called from `AppliedEconometrics` are defined in `R/functions_rdrobust.R` and `R/functions_rdhonest.R`.
+Here, we implement the estimation method for sharp regression discontinuity design using a discrete score with the `RDHonest` package. The functions called from `AppliedEconometricsCode` are defined in `R/functions_rdrobust.R` and `R/functions_rdhonest.R`.
 
 The `RDHonest` package needs to be installed from GitHub. To do this, run the following code.
 
