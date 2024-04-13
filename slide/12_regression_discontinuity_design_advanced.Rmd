@@ -10,7 +10,7 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
-library(AppliedEconometrics)
+library(AppliedEconometricsCode)
 library(magrittr)
 library(foreach)
 library(ggplot2)

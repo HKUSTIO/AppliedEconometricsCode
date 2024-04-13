@@ -23,7 +23,7 @@ In this report, we introduce the problem of multiple testing and methods to cont
 ```{r setup, include=FALSE}
 rm(list = ls())
 knitr::opts_chunk$set(cache = FALSE, echo = TRUE, fig.align = "center")
-library(AppliedEconometrics)
+library(AppliedEconometricsCode)
 library(foreach)
 library(magrittr)
 library(ggplot2)

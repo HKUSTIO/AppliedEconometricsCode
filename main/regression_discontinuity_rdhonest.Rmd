@@ -21,7 +21,7 @@ date: 'Last Update: `r Sys.Date()`'
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(cache = FALSE, echo = TRUE, fig.align = "center")
-library(AppliedEconometrics)
+library(AppliedEconometricsCode)
 library(foreach)
 library(magrittr)
 library(ggplot2)
