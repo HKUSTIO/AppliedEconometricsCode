@@ -1,0 +1,316 @@
+---
+title: "Difference in Differences"
+subtitle: "2 x 2 Design"
+author: "Kohei Kawaguchi, Hong Kong University of Science and Technology"
+output: 
+  ioslides_presentation:
+    widescreen: true
+bibliography: reference.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
+library(magrittr)
+library(foreach)
+library(ggplot2)
+library(kableExtra)
+```
+
+
+
+<style type="text/css">
+div.footnotes {
+  position: absolute;
+  bottom: 0;
+  margin-bottom: 10px;
+  width: 80%;
+  font-size: 10px;
+}
+body, td {
+   font-size: 14px;
+}
+code.r{
+  font-size: 11px;
+}
+pre {
+  font-size: 11px
+}
+blockquote {
+  background: #f9f9f9;
+  border-left: 5px solid #ccc;
+  margin: 1.5em 10px;
+  padding: 0.5em 1.5em;
+}
+</style>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<script>
+$(document).ready(function() {
+  $('slide:not(.backdrop):not(.title-slide)').append('<div class=\"footnotes\">');
+
+  $('footnote').each(function(index) {
+    var text  = $(this).html();
+    var fnNum = (index+1).toString();
+    $(this).html(fnNum.sup());
+
+    var footnote   = fnNum + '. ' + text + '<br/>';
+    var oldContent = $(this).parents('slide').children('div.footnotes').html();
+    var newContent = oldContent + footnote;
+    $(this).parents('slide').children('div.footnotes').html(newContent);
+  });
+});
+</script>
+
+# 2 x 2 design Difference in Differences (DID)
+
+## Repeated cross-section
+
+- Data are repeated cross sections.
+- $(Y_i, T_i, G_i)$, $i = 1, \cdots, N$.
+- Period: $T_i \in \{0, 1\}$.
+- Group: $G_i \in \{0, 1\}$.
+- Treatment: $D_i = T_i \cdot G_i$.
+- Potential outcomes: $Y_i^\ast(0), Y_i^\ast(1)$.
+- Observed outcome: $Y_i = D_i \cdot Y_i^\ast(1) + (1 - D_i) \cdot Y_i^\ast(0)$.
+
+## Implicit restrictions
+
+- Potentially, in 2 x 2 design, there can be 4 treatment status:
+  - $(1, 1)$
+  - $(1, 0)$
+  - $(0, 1)$
+  - $(0, 0)$.
+- The previous setting assumes that there are only
+  - $G_i = 1: (0, 1)$
+  - $G_i = 0: (0, 0)$.
+- Moreover, the potential outcomes are assumed to depend only on this period's treatment:
+  - $Y_i = Y_i^\ast(0)$ for $T_i = 0$ regardless of whether $G_i = 0$ or $1$.
+- The latter restriction is referred to as _no anticipation assumption_.
+
+## Average Treatment Effect on Treated
+
+- The treatment is given only for $G_i = 1$ and in $T_i = 1$.
+- The paremter of interest in this case is:
+$$
+\tau_{ATT} = \mathbb{E}(Y_i^\ast(1) - Y_i^\ast(0)| G_i = 1, T_i = 1).
+$$
+and called _average treatment effect on treated (ATT)_.
+
+## Repeated cros-section 2 x 2 DID parameter
+
+- In this settin,g we can identify the followin parameter:
+$$
+\begin{split}
+\tau_{DID} 
+&= [\mathbb{E}(Y_i| G_i = 1, T_i = 1) - \mathbb{E}(Y_i| G_i = 1, T_i = 0)] \\
+&- [\mathbb{E}(Y_i| G_i = 0, T_i = 1) - \mathbb{E}(Y_i| G_i = 0, T_i = 0)].
+\end{split}
+$$
+
+- We can estimate this parameter as an OLS estimator $\hat{\tau}_{DID}$ of:
+$$
+Y_i = \alpha + \beta G_i + \gamma T_i + \tau \cdot G_i \cdot T_i + \epsilon_i.
+$$
+
+## In terms of potential outcomes:
+
+$$
+\begin{split}
+\tau_{DID} 
+&= [\mathbb{E}(Y_i| G_i = 1, T_i = 1) - \mathbb{E}(Y_i| G_i = 1, T_i = 0)]\\
+&- [\mathbb{E}(Y_i| G_i = 0, T_i = 1) - \mathbb{E}(Y_i| G_i = 0, T_i = 0)]\\
+&= [\mathbb{E}(Y_i^\ast(1)| G_i = 1, T_i = 1) - \mathbb{E}(Y_i^\ast(0)| G_i = 1, T_i = 0)]\\
+&- [\mathbb{E}(Y_i^\ast(0)| G_i = 0, T_i = 1) - \mathbb{E}(Y_i^\ast(0)| G_i = 0, T_i = 0)]\\
+&+ [\mathbb{E}(Y_i^\ast(0)|G_i = 1, T_i = 1) - \mathbb{E}(Y_i^\ast(0)|G_i = 1, T_i = 1)]\\
+&= \tau_{ATT}\\
+&+ [\mathbb{E}(Y_i^\ast(0)|G_i = 1, T_i = 1) -  \mathbb{E}(Y_i^\ast(0)| G_i = 1, T_i = 0)]\\
+&- [\mathbb{E}(Y_i^\ast(0)| G_i = 0, T_i = 1) - \mathbb{E}(Y_i^\ast(0)| G_i = 0, T_i = 0)],
+\end{split}
+$$
+- $\tau_{DID}$ is $\tau_{ATT}$ plus the difference in the trends between two groups.
+
+## Parallel trend assumption
+
+- Assume parallel trends between two groups:
+$$
+\begin{split}
+&\mathbb{E}(Y_i^\ast(0)|G_i = 1, T_i = 1) -  \mathbb{E}(Y_i^\ast(0)| G_i = 1, T_i = 0)]\\
+&= [\mathbb{E}(Y_i^\ast(0)| G_i = 0, T_i = 1) - \mathbb{E}(Y_i^\ast(0)| G_i = 0, T_i = 0)].
+\end{split}
+$$
+- Then, the DID parameter is the average treatment effect on treated:
+$$
+\tau_{DID} = \tau_{ATT}.
+$$
+
+## Panel data
+
+- Data are panel data.
+- $(Y_{it}, G_{it})$, $i = 1, \cdots, N$.
+- Period: $t \in \{0, 1\}$.
+- Group: $G_i \in \{0, 1\}$.
+- Treatment: $D_{it} = t \cdot G_i$.
+- Potential outcomes: $Y_{it}(0), Y_{it}(1)$.
+- Observed outcome: $Y_{it} = D_{it} \cdot Y_{it}(1) + (1 - D_{it}) \cdot Y_{it}(0)$.
+
+## Implicit restrictions
+
+- Potentially, in 2 x 2 design, there can be 4 treatment status:
+  - $(1, 1)$
+  - $(1, 0)$
+  - $(0, 1)$
+  - $(0, 0)$.
+- The previous setting assumes that there are only
+  - $G_i = 1: (0, 1)$
+  - $G_i = 0: (0, 0)$.
+- Moreover, the potential outcomes are assumed to depend only on this period's treatment:
+  - $Y_{i0} = Y_i^\ast(0)$ regardless of whether $G_i = 0$ or $1$.
+- The latter restriction is referred to as _no anticipation assumption_.
+
+## Average Treatment Effect on Treated
+
+- The treatment is given only for $G_i = 1$ and in $T_i = 1$.
+- The paremter of interest in this case is:
+$$
+\tau_{ATT} = \mathbb{E}(Y_{i1}^\ast(1) - Y_{i1}^\ast(0)| G_i = 1).
+$$
+and called _average treatment effect on treated (ATT)_.
+
+
+## Panel 2x2 DID parameter
+- In this settin, we can identify:
+$$
+\begin{split}
+\tau_{DID} 
+&= \mathbb{E}(Y_{i1} - Y_{i0}| G_i = 1) - \mathbb{E}(Y_{i1} - Y_{i0}| G_i = 0).
+\end{split}
+$$
+- We can estimate this parameter as a two-way fixed-effect estimator $\hat{\tau}_{DID}$ of:
+$$
+Y_{it} = \mu_i + \lambda_t + \tau \cdot G_i \cdot t + \epsilon_{it}.
+$$
+
+## In terms of potential outcomes:
+
+$$
+\begin{split}
+\tau_{DID} 
+&= \mathbb{E}(Y_{i1} - Y_{i0}| G_i = 1) - \mathbb{E}(Y_{i1} - Y_{i0}| G_i = 0)\\
+&= \mathbb{E}(Y_{i1}(1) - Y_{i0}(0)| G_i = 1) - \mathbb{E}(Y_{i1}(0) - Y_{i0}(0)| G_i = 0)\\
+&+ \mathbb{E}(Y_{i1}(0) - Y_{i1}(0)|G_i = 1)\\
+&= \tau_{ATT}\\
+&+ \mathbb{E}(Y_{i1}(0) - Y_{i0}(0)|G_i = 1) - \mathbb{E}(Y_{i1}(0) - Y_{i0}(0)| G_i = 0).
+\end{split}
+$$
+
+## Parallel trend assumption
+
+- The parallel trend assumption in the panel case is:
+$$
+\mathbb{E}(Y_{i1}(0) - Y_{i0}(0)|G_i = 1) = \mathbb{E}(Y_{i1}(0) - Y_{i0}(0)| G_i = 0).
+$$
+
+- This holds when:
+$$
+Y_{it}(1) - Y_{it}(0) \perp\!\!\!\!\perp G_i.
+$$
+- Under this assumption, the DID parameter is the average treatment effect on treated:
+$$
+\tau_{DID} = \tau_{ATT}.
+$$
+
+# Semiparametric DID
+
+## Parallel trend assumption conditional on covariates
+
+- Suppose that the parallel trend assumption holds only conditional on covariate $X_{i}$:
+$$
+\mathbb{E}(Y_{i1}(0) - Y_{i0}(0)|G_i = 1, X_i) = \mathbb{E}(Y_{i1}(0) - Y_{i0}(0)| G_i = 0, X_i).
+$$
+- How do we exploit this assumption?
+- One way is to assume the following parametric model:
+$$
+Y_{it} = \mu_i + X_i'\lambda_t + \tau \cdot G_i \cdot t + \epsilon_{it}.
+$$
+- Can we exploit this assumption without assuming any parametric model?
+- How to construct the counterfactual values when $D_i = 0$ for each $X_i$?
+
+## Outcome regression (OR) approach
+
+- Heckman et al. (1997).
+- Estimate the outcome for untreated:
+$$
+\mu_{0t}(X_i) \equiv \mathbb{E}(Y_{it}| G_i = 0, X_i)
+$$
+by parametric model, a kernel estimator, or local polynomical estimator to get $\hat{\mu}_{0t}(X_i)$.
+- Then, construct DID estimator:
+$$
+\hat{\tau}^{OR} = \frac{1}{N_1}\sum_{i: G_i = 1} [ Y_{i1} - Y_{i0} - (\hat{\mu}_{01}(X_i) - \hat{\mu}_{00}(X_i))].
+$$
+- This approach relies on the correct estimation of regression function $\mu_{0t}(\cdot)$.
+
+## Inverse probability weight (IPW) approach
+
+- Abadie (2005).
+- Let $p(X_i) = \mathbb{P}(G_i = 1| X_i)$ is the propensity score.
+- We have:
+$$
+\begin{split}
+&\mathbb{E}[Y_{i1} - Y_{i0}| G_i = 1, X_i] - \mathbb{E}[Y_{i1} - Y_{i0}| G_i = 0, X_i]\\
+&= \frac{1}{p(X_i)} \mathbb{E}[G_i \cdot (Y_{i1} - Y_{i0})| X_i] - \frac{1}{1 - p(X_i)} \mathbb{E}[(1 - G_i) \cdot (Y_{i1} - Y_{i0})| X_i]\\
+&= \mathbb{E}\Bigg[\left(\frac{G_i}{p(X_i)} -  \frac{1 - G_i}{1 - p(X_i)} \right) \cdot (Y_{i1} - Y_{i0}) \Bigg | X_i   \Bigg].
+\end{split}
+$$
+
+
+## Inverse probability weight (IPW) approach
+
+- The average treatment effect on treated under the conditional paralel trend assumption is:
+$$
+\begin{split}
+&= \mathbb{E}[Y_{i1}(1) - Y_{i1}(0)|G_i = 1] \\
+&= \int \mathbb{E}[Y_{i1}(1) - Y_{i1}(0)|G_i = 1, X_i] d\mathbb{P}(X_i|G_i = 1)\\
+&= \int \{\mathbb{E}[Y_{i1} - Y_{i0}| G_i = 1, X_i] - \mathbb{E}[Y_{i1} - Y_{i0}| G_i = 0, X_i]\}  d\mathbb{P}(X_i|G_i = 1)\\
+&= \int \mathbb{E}\Bigg[\left(\frac{G_i}{p(X_i)} -  \frac{1 - G_i}{1 - p(X_i)} \right) \cdot (Y_{i1} - Y_{i0}) \Bigg | X_i   \Bigg] d\mathbb{P}(X_i|G_i = 1)\\
+&= \int \mathbb{E}\Bigg[\left(\frac{G_i}{p(X_i)} -  \frac{1 - G_i}{1 - p(X_i)} \right) \cdot (Y_{i1} - Y_{i0}) \cdot \frac{p(X_i)}{\mathbb{P}(G_i = 1)} \Bigg | X_i   \Bigg] d\mathbb{P}(X_i)
+\end{split}
+$$
+
+## Inverse probability weight (IPW) approach
+$$
+\begin{split}
+&= \mathbb{E}\Bigg[\left(\frac{G_i}{p(X_i)} -  \frac{1 - G_i}{1 - p(X_i)} \right) \cdot (Y_{i1} - Y_{i0}) \cdot \frac{p(X_i)}{\mathbb{P}(G_i = 1)} \Bigg]\\
+&= \mathbb{E}\Bigg[\left(\frac{G_i}{\mathbb{P}(G_i = 1)} - \frac{\frac{p(X_i)(1 - G_i)}{1 - p(X_i)}}{\mathbb{E}\left[\frac{p(X_i)(1 - G_i)}{1 - p(X_i)}\right]} \right) \cdot (Y_{i1} - Y_{i0}) \Bigg].
+\end{split}
+$$
+
+
+## Inverse probability weight (IPW) approach
+
+- We first estimate the propensity score $p(\cdot)$ by a parametric model, kernel or local polynomial estimator to obtain $\hat{p}(\cdot)$.
+- Then, we can estimate the average treatment effect on treated as:
+$$
+\hat{\tau}^{IPW} = \frac{1}{N} \sum_{i = 1}^N \Bigg[\left(\frac{G_i}{\mathbb{P}(G_i = 1)} - \frac{\frac{\hat{p}(X_i)(1 - G_i)}{1 - \hat{p}(X_i)}}{\mathbb{E}\left[\frac{\hat{p}(X_i)(1 - G_i)}{1 - \hat{p}(X_i)}\right]} \right) \cdot (Y_{i1} - Y_{i0}) \Bigg]
+$$
+- This relies on the correct estimation of propensity score $p(\cdot)$.
+
+
+## Doubly-robust (DR) approach
+
+- Anna and Zhao (2020) combines both approaches.
+- Combine both methods:
+$$
+\begin{split}
+\hat{\tau}^{IPW} = \frac{1}{N} \sum_{i = 1}^N &\Bigg[\left(\frac{G_i}{\mathbb{P}(G_i = 1)} - \frac{\frac{\hat{p}(X_i)(1 - G_i)}{1 - \hat{p}(X_i)}}{\mathbb{E}\left[\frac{\hat{p}(X_i)(1 - G_i)}{1 - \hat{p}(X_i)}\right]} \right)\\
+& \cdot [Y_{i1} - Y_{i0} - (\hat{\mu}_{01}(X_i) - \hat{\mu}_{00}(X_i))] \Bigg]
+\end{split}
+$$
+
+
+## Reference
+
+- Abadie, Alberto. 2005. “Semiparametric Difference-in-Differences Estimators.” The Review of Economic Studies 72 (1): 1–19.
+- Sant’Anna, Pedro H. C., and Jun Zhao. 2020. “Doubly Robust Difference-in-Differences Estimators.” Journal of Econometrics 219 (1): 101–22.
+- Heckman, James J., Hidehiko Ichimura, and Petra E. Todd. 1997. “Matching As An Econometric Evaluation Estimator: Evidence from Evaluating a Job Training Programme.” The Review of Economic Studies 64 (4): 605–54.
+- LaLonde, Robert J. 1986. “Evaluating the Econometric Evaluations of Training Programs with Experimental Data.” The American Economic Review 76 (4): 604–20.
