@@ -3212,13 +3212,13 @@ $(document).ready(function() {
 <li>\((0, 1)\)</li>
 <li>\((0, 0)\).</li>
 </ul></li>
-<li>The previous setting assumes that there are only
+<li>There are only two treatment status:
 
 <ul>
 <li>\(G_i = 1: (0, 1)\)</li>
 <li>\(G_i = 0: (0, 0)\).</li>
 </ul></li>
-<li>Moreover, the potential outcomes are assumed to depend only on this period’s treatment:
+<li>Or, the potential outcomes are assumed to depend only on this period’s treatment:
 
 <ul>
 <li>\(Y_i = Y_i^\ast(0)\) for \(T_i = 0\) regardless of whether \(G_i = 0\) or \(1\).</li>
@@ -3238,16 +3238,24 @@ $(document).ready(function() {
 </article></slide><slide class=""><hgroup><h2>Repeated cros-section 2 x 2 DID parameter</h2></hgroup><article  id="repeated-cros-section-2-x-2-did-parameter">
 
 <ul>
-<li><p>In this settin,g we can identify the followin parameter: \[
+<li>In this settin,g we can identify the followin parameter: \[
 \begin{split}
 \tau_{DID} 
 &amp;= [\mathbb{E}(Y_i| G_i = 1, T_i = 1) - \mathbb{E}(Y_i| G_i = 1, T_i = 0)] \\
 &amp;- [\mathbb{E}(Y_i| G_i = 0, T_i = 1) - \mathbb{E}(Y_i| G_i = 0, T_i = 0)].
 \end{split}
-\]</p></li>
-<li><p>We can estimate this parameter as an OLS estimator \(\hat{\tau}_{DID}\) of: \[
+\]</li>
+<li>We can estimate this parameter as an OLS estimator \(\hat{\tau}_{DID}\) of: \[
 Y_i = \alpha + \beta G_i + \gamma T_i + \tau \cdot G_i \cdot T_i + \epsilon_i.
-\]</p></li>
+\] \[
+\begin{split}
+\Leftarrow \mathbb{E}(Y_i|G_i, T_i ) &amp;= \mathbb{E}(Y_i|G_i = 0, T_i = 0) +\\
+&amp;+ G_i [\mathbb{E}(Y_i|G_i = 1, T_i = 0) - \mathbb{E}(Y_i|G_i = 0, T_i = 0)]\\
+&amp;+ T_i [\mathbb{E}(Y_i|G_i = 0, T_i = 1) - \mathbb{E}(Y_i|G_i = 0, T_i = 0)]\\
+&amp;+ G_i T_i [\mathbb{E}(Y_i|G_i = 1, T_i = 1) - \mathbb{E}(Y_i|G_i = 0, T_i = 1)\\
+&amp; - \mathbb{E}(Y_i|G_i = 1, T_i = 0) + \mathbb{E}(Y_i|G_i = 0, T_i = 0)]
+\end{split}
+\]</li>
 </ul>
 
 </article></slide><slide class=""><hgroup><h2>In terms of potential outcomes:</h2></hgroup><article  id="in-terms-of-potential-outcomes">
@@ -3303,16 +3311,16 @@ Y_i = \alpha + \beta G_i + \gamma T_i + \tau \cdot G_i \cdot T_i + \epsilon_i.
 <li>\((0, 1)\)</li>
 <li>\((0, 0)\).</li>
 </ul></li>
-<li>The previous setting assumes that there are only
+<li>There are only two treatment status:
 
 <ul>
 <li>\(G_i = 1: (0, 1)\)</li>
 <li>\(G_i = 0: (0, 0)\).</li>
 </ul></li>
-<li>Moreover, the potential outcomes are assumed to depend only on this period’s treatment:
+<li>Or, the potential outcomes are assumed to depend only on this period’s treatment:
 
 <ul>
-<li>\(Y_{i0} = Y_i^\ast(0)\) regardless of whether \(G_i = 0\) or \(1\).</li>
+<li>\(Y_i = Y_i^\ast(0)\) for \(T_i = 0\) regardless of whether \(G_i = 0\) or \(1\).</li>
 </ul></li>
 <li>The latter restriction is referred to as <em>no anticipation assumption</em>.</li>
 </ul>
@@ -3337,6 +3345,14 @@ Y_i = \alpha + \beta G_i + \gamma T_i + \tau \cdot G_i \cdot T_i + \epsilon_i.
 \]</li>
 <li>We can estimate this parameter as a two-way fixed-effect estimator \(\hat{\tau}_{DID}\) of: \[
 Y_{it} = \mu_i + \lambda_t + \tau \cdot G_i \cdot t + \epsilon_{it}.
+\] \[
+\begin{split}
+\Leftarrow \mathbb{E}(Y_{it}|G_i) &amp;= \mathbb{E}(Y_{i0}|G_i = 0) +\\
+&amp;+ G_i [\mathbb{E}(Y_{i0}|G_i = 1) - \mathbb{E}(Y_{i0}|G_i = 0)]\\
+&amp;+ t [\mathbb{E}(Y_{i1}|G_i = 0) - \mathbb{E}(Y_{i0}|G_i = 0)]\\
+&amp;+ G_i t [\mathbb{E}(Y_{i1}|G_i = 1) - \mathbb{E}(Y_{i1}|G_i = 0)\\
+&amp; - \mathbb{E}(Y_{i0}|G_i = 1) + \mathbb{E}(Y_{i0}|G_i = 0)]
+\end{split}
 \]</li>
 </ul>
 

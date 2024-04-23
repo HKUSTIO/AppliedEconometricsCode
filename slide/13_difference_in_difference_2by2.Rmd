@@ -81,10 +81,10 @@ $(document).ready(function() {
   - $(1, 0)$
   - $(0, 1)$
   - $(0, 0)$.
-- The previous setting assumes that there are only
+- There are only two treatment status:
   - $G_i = 1: (0, 1)$
   - $G_i = 0: (0, 0)$.
-- Moreover, the potential outcomes are assumed to depend only on this period's treatment:
+- Or, the potential outcomes are assumed to depend only on this period's treatment:
   - $Y_i = Y_i^\ast(0)$ for $T_i = 0$ regardless of whether $G_i = 0$ or $1$.
 - The latter restriction is referred to as _no anticipation assumption_.
 
@@ -107,10 +107,18 @@ $$
 &- [\mathbb{E}(Y_i| G_i = 0, T_i = 1) - \mathbb{E}(Y_i| G_i = 0, T_i = 0)].
 \end{split}
 $$
-
 - We can estimate this parameter as an OLS estimator $\hat{\tau}_{DID}$ of:
 $$
 Y_i = \alpha + \beta G_i + \gamma T_i + \tau \cdot G_i \cdot T_i + \epsilon_i.
+$$
+$$
+\begin{split}
+\Leftarrow \mathbb{E}(Y_i|G_i, T_i ) &= \mathbb{E}(Y_i|G_i = 0, T_i = 0) +\\
+&+ G_i [\mathbb{E}(Y_i|G_i = 1, T_i = 0) - \mathbb{E}(Y_i|G_i = 0, T_i = 0)]\\
+&+ T_i [\mathbb{E}(Y_i|G_i = 0, T_i = 1) - \mathbb{E}(Y_i|G_i = 0, T_i = 0)]\\
+&+ G_i T_i [\mathbb{E}(Y_i|G_i = 1, T_i = 1) - \mathbb{E}(Y_i|G_i = 0, T_i = 1)\\
+& - \mathbb{E}(Y_i|G_i = 1, T_i = 0) + \mathbb{E}(Y_i|G_i = 0, T_i = 0)]
+\end{split}
 $$
 
 ## In terms of potential outcomes:
@@ -161,11 +169,11 @@ $$
   - $(1, 0)$
   - $(0, 1)$
   - $(0, 0)$.
-- The previous setting assumes that there are only
+- There are only two treatment status:
   - $G_i = 1: (0, 1)$
   - $G_i = 0: (0, 0)$.
-- Moreover, the potential outcomes are assumed to depend only on this period's treatment:
-  - $Y_{i0} = Y_i^\ast(0)$ regardless of whether $G_i = 0$ or $1$.
+- Or, the potential outcomes are assumed to depend only on this period's treatment:
+  - $Y_i = Y_i^\ast(0)$ for $T_i = 0$ regardless of whether $G_i = 0$ or $1$.
 - The latter restriction is referred to as _no anticipation assumption_.
 
 ## Average Treatment Effect on Treated
@@ -189,6 +197,15 @@ $$
 - We can estimate this parameter as a two-way fixed-effect estimator $\hat{\tau}_{DID}$ of:
 $$
 Y_{it} = \mu_i + \lambda_t + \tau \cdot G_i \cdot t + \epsilon_{it}.
+$$
+$$
+\begin{split}
+\Leftarrow \mathbb{E}(Y_{it}|G_i) &= \mathbb{E}(Y_{i0}|G_i = 0) +\\
+&+ G_i [\mathbb{E}(Y_{i0}|G_i = 1) - \mathbb{E}(Y_{i0}|G_i = 0)]\\
+&+ t [\mathbb{E}(Y_{i1}|G_i = 0) - \mathbb{E}(Y_{i0}|G_i = 0)]\\
+&+ G_i t [\mathbb{E}(Y_{i1}|G_i = 1) - \mathbb{E}(Y_{i1}|G_i = 0)\\
+& - \mathbb{E}(Y_{i0}|G_i = 1) + \mathbb{E}(Y_{i0}|G_i = 0)]
+\end{split}
 $$
 
 ## In terms of potential outcomes:
