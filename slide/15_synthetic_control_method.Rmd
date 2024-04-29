@@ -1,0 +1,506 @@
+---
+title: "Synthetic Control Method"
+author: "Kohei Kawaguchi, Hong Kong University of Science and Technology"
+output: 
+  ioslides_presentation:
+    widescreen: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
+library(magrittr)
+library(foreach)
+library(ggplot2)
+library(kableExtra)
+```
+
+
+
+<style type="text/css">
+div.footnotes {
+  position: absolute;
+  bottom: 0;
+  margin-bottom: 10px;
+  width: 80%;
+  font-size: 10px;
+}
+body, td {
+   font-size: 14px;
+}
+code.r{
+  font-size: 11px;
+}
+pre {
+  font-size: 11px
+}
+blockquote {
+  background: #f9f9f9;
+  border-left: 5px solid #ccc;
+  margin: 1.5em 10px;
+  padding: 0.5em 1.5em;
+}
+</style>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<script>
+$(document).ready(function() {
+  $('slide:not(.backdrop):not(.title-slide)').append('<div class=\"footnotes\">');
+
+  $('footnote').each(function(index) {
+    var text  = $(this).html();
+    var fnNum = (index+1).toString();
+    $(this).html(fnNum.sup());
+
+    var footnote   = fnNum + '. ' + text + '<br/>';
+    var oldContent = $(this).parents('slide').children('div.footnotes').html();
+    var newContent = oldContent + footnote;
+    $(this).parents('slide').children('div.footnotes').html(newContent);
+  });
+});
+</script>
+
+# Synthetic Control Method
+
+## Single Treated Unit
+
+- DID requires to estimate:
+$$
+\begin{split}
+\tau_{DID} 
+&= [\mathbb{E}(Y_i| G_i = 1, T_i = 1) - \mathbb{E}(Y_i| G_i = 1, T_i = 0)] \\
+&- [\mathbb{E}(Y_i| G_i = 0, T_i = 1) - \mathbb{E}(Y_i| G_i = 0, T_i = 0)].
+\end{split}
+$$
+- This requires multiple treated units and multiple control units.
+- Even if there is only one treated unit, if there are long enough multiple periods before the treatment, one may be able to use __synthetic control method__.
+
+## Setting
+
+- Imagine $2 \times T$ design of DID.
+- There are $i = 1, \cdots, N + 1$ units.
+- _Only the first unit $i = 1$ is treated_ since period $T_0 + 1$: 
+  - $G_i = 1\{i = 1\}$.
+  - $D_{it} = G_i \cdot 1\{t > T_0\}$.
+- Units of $i = 2, \cdots, N + 1$ are a set of potential comparisons. 
+- For each $i$, we observe the outcome of interest for $t = 1, \cdots T$:
+  - $Y_{it} = D_{it}Y^\ast_{it}(1)+(1 - D_{it})Y^\ast_{it}(0)$.
+- For each $i$, we also observe a set of $K$ predictors of the outcomes:
+  - $X_{1i}, \cdots , X_{Ki}$.
+  - This may include the pre-intervention values of $Y_{it}$ for $t \le T_0$.
+  
+## Estimand
+
+- The effect of intervention of interest for the affected unit in period $t > T_0$:
+$$
+\tau_{1t} = Y^\ast_{1t}(1) - Y^\ast_{1t}(0).
+$$
+- Not average.
+- How do we estimate $Y^\ast_{1t}(0)$?
+- This is by nature a _case study_.
+
+## Card (1990)'s case study
+
+- Intervention: The massive arrival of Cuban expatriates to Miam during the 1980 Mariel boatlift.
+- $i = 1$: Miami.
+- $i = 2, \cdots, N + 1$: Atlanta, Los Angeles, Houston, and Tampa-St. Petersburg.
+- $Y_{it}$: Native unemployment.
+
+<blockquote>
+These four cities were selected both because they had relatively large populations of blacks and Hispanics and because they exhibited a pattern of economic growth similar to that in Miami over the late 1970s and early 1980s. (p.249)
+</blockquote>
+
+- How to formalize this selection?
+
+## Constructing a synthetic control
+
+- Find a weight $w_i, i = 2, \cdots, N + 1$.
+- Construct a __synthetic control estimator__ of $Y^\ast_{1t}(0)$ for $t > T_0$ by:
+$$
+\hat{Y}_{1t}(0) = \sum_{i = 2}^{N + 1} w_i Y_{it}.
+$$
+- Construct a __synthetic control estimator__ of $\tau_{1t}$ for $t > T_0$ by:
+$$
+\hat{\tau}_{1t} = Y_{1t} - \hat{Y}_{1t}(0).
+$$
+
+
+## Restricting the weights
+
+- The weights are restricted to be __non-negative and sum up to 1__.
+- This ensures that $\hat{Y}_{1t}(0)$ is an interpolation of $Y_{it}$ for $i = 2, \cdots, N + 1$.
+- A negative value or a value greater than 1 means an extrapolation of the observation. 
+- We will need to rescale the data to correct the differences in the size between units (e.g., per capita income).
+
+## Manual weighting
+
+
+- Simple average with $w_i = 1/N$:
+$$
+\hat{Y}_{1t}(0) = \frac{1}{N} \sum_{i = 2}^{N + 1}Y_{it}.
+$$
+
+- Population-weighted average with $w_i = w_i^{pop}$:
+$$
+\hat{Y}_{1t}(0) = \sum_{i = 2}^{N + 1} w_i^{pop} Y_{it}.
+$$
+
+
+## Abadie, Diamond, and Hainmuller (2010)'s proposal
+
+- Choose the weight by minimizing a distance between predictors:
+$$
+\min_{w} \sum_{k = 1}^K v_k\Big(X_{k1} - \sum_{i = 2}^{N + 1} w_i X_{ik} \Big)^2 
+$$
+subject to:
+$$
+w_i \ge 0, \sum_{i = 2}^{N + 1} w_i = 1,
+$$
+with positive constants $v_k$ for $k = 1, \cdots, K$ as hyper parameters.
+
+
+## Training, validation, and test samples
+
+1. Divide the pre-intervention periods into:
+    - Initial _training_ period ($t = 1, \cdots, t_0$);
+    - Subsequent _validation_ periods ($t = t_0 + 1, \cdots, T_0$).
+    - For each $v$, define $w_i(v)$ as the minimizer given $v$.
+    - Compute:
+    $$
+    \sum_{t = t_0 + 1}^{T_0} \Big(Y_{1t} - \sum_{i = 2}^{N + 1} w_i(v) Y_{it} \Big)^2.
+    $$
+    - Pick $v$ that minimize this and denote by $v^*$.
+2. Use $w^* = w(v^*)$ as the weight.
+
+
+## Justification in Abadie et al. (2010)
+
+- Need a _functional-form assumption_ on the potential outcome model.
+- Suppose that the control outcome follows a _linear factor model_:
+$$
+Y^\ast_{it}(0) = \delta_t + \theta_t Z_i + \lambda_t \mu_i + \epsilon_{it},
+$$
+where:
+- $\delta_t$: time trend.
+- $Z_i$ and $\mu_i$: observed and unobserved factor loading.
+- $\theta_t$ and $\lambda_t$: unobserved common factors. 
+- $\epsilon_{it}$: mean 0 i.i.d. shocks (can be generalized).
+- Intuitively, SCM tries to replicate $\lambda_t \mu_i$ by weighting.
+
+## Justification in Abadie et al. (2010)
+
+- Suppose that there exist a weight $w^\ast$ such that:
+$$
+\sum_{i = 2}^{N + 1} w_i^\ast Y_i^\ast(0) = Y_{1t}^\ast, t = 1, \cdots, T_0,
+$$
+and
+$$
+\sum_{i = 2}^{N + 1} w_i^\ast Z_i = Z_1.
+$$
+
+## Justification in Abadie et al. (2010)
+
+- Then, the prediction error at $t < T_0$ is:
+$$
+\begin{split}
+&Y_{1t}^\ast(0) - \sum_{i = 2}^{N + 1} w_i^\ast Y_i\\
+&=\theta_t\left(Z_1 - \sum_{i = 2}^{N + 1} w_i^\ast Z_i\right)\\
+&+\lambda_t \left(\mu_1 - \sum_{i = 2}^{N + 1} \mu_i \right)\\
+&+\sum_{i = 2}^{N + 1} w_i^\ast (\epsilon_{1t} - \epsilon_{it}).
+\end{split}
+$$
+
+## Justification in Abadie et al. (2010)
+
+- For the control period $t = 1, \cdots, T_0$:
+$$
+\begin{split}
+&\mathbf{Y}_1 - \sum_{i = 2}^{N + 1} w_i^\ast \mathbf{Y}_i\\
+&= \boldsymbol{\theta}\left(Z_1 - \sum_{i = 2}^{N + 1} w_i^\ast Z_i\right)\\
+&+ \boldsymbol{\lambda} \left(\mu_1 - \sum_{i = 2}^{N + 1} \mu_i \right)\\
+&+\sum_{i = 2}^{N + 1} w_i^\ast (\boldsymbol{\epsilon}_1 - \boldsymbol{\epsilon}_i).
+\end{split}
+$$
+
+## Justification in Abadie et al. (2010)
+
+- Solving the previous equation for the unobserved term gives:
+$$
+\begin{split}
+\left(\mu_1 - \sum_{i = 2}^{N + 1} \mu_i \right) & = (\boldsymbol{\lambda}' \boldsymbol{\lambda})^{-1} \boldsymbol{\lambda}' \left(\mathbf{Y}_1 - \sum_{i = 2}^{N + 1} w_i^\ast \mathbf{Y}_i\right)\\
+&- (\boldsymbol{\lambda}' \boldsymbol{\lambda})^{-1} \boldsymbol{\lambda}' \boldsymbol{\theta}\left(Z_1 - \sum_{i = 2}^{N + 1} w_i^\ast Z_i\right) \\
+&- (\boldsymbol{\lambda}' \boldsymbol{\lambda})^{-1} \sum_{i = 2}^{N + 1} w_i^\ast (\boldsymbol{\epsilon}_1 - \boldsymbol{\epsilon}_i).
+\end{split}
+$$
+
+## Justification in Abadie et al. (2010)
+
+- Inserting this into the prediction error gives:
+$$
+\begin{split}
+&Y_{1t}^\ast(0) - \sum_{i = 2}^{N + 1} w_i^\ast Y_i\\
+&= \lambda_t (\boldsymbol{\lambda}' \boldsymbol{\lambda})^{-1} \boldsymbol{\lambda}' \left(\mathbf{Y}_1 - \sum_{i = 2}^{N + 1} w_i^\ast \mathbf{Y}_i\right)\\
+&+ (\theta_t - \lambda_t (\boldsymbol{\lambda}' \boldsymbol{\lambda})^{-1} \boldsymbol{\lambda}')\left(Z_1 - \sum_{i = 2}^{N + 1} w_i^\ast Z_i\right)\\
+&- \lambda_t (\boldsymbol{\lambda}' \boldsymbol{\lambda})^{-1} \boldsymbol{\lambda}' \sum_{i = 2}^{N + 1} w_i^\ast (\boldsymbol{\epsilon}_1 - \boldsymbol{\epsilon}_i) +\sum_{i = 2}^{N + 1} w_i^\ast (\epsilon_{1t} - \epsilon_{it}).
+\end{split}
+$$
+
+## Justification in Abadie et al. (2010)
+
+$$
+\begin{split}
+&= - \lambda_t (\boldsymbol{\lambda}' \boldsymbol{\lambda})^{-1} \boldsymbol{\lambda}' \sum_{i = 2}^{N + 1} w_i^\ast (\boldsymbol{\epsilon}_1 - \boldsymbol{\epsilon}_i) +\sum_{i = 2}^{N + 1} w_i^\ast (\epsilon_{1t} - \epsilon_{it})\\
+&= - \lambda_t (\boldsymbol{\lambda}' \boldsymbol{\lambda})^{-1} \boldsymbol{\lambda}' \boldsymbol{\epsilon}_1\\
+&+ \lambda_t (\boldsymbol{\lambda}' \boldsymbol{\lambda})^{-1} \boldsymbol{\lambda}' \sum_{i = 2}^{N + 1} w_i^\ast \boldsymbol{\epsilon}_i \\
+& +\sum_{i = 2}^{N + 1} w_i^\ast (\epsilon_{1t} - \epsilon_{it})
+\end{split}
+$$
+
+- The first term is mean zero.
+- The third term is mean zero because $w_i^\ast$ contains information on $t \le T_0$ and independent of errors at $t > T_0$.
+- The second term may not be mean zero: bias term.
+
+## Justification in Abadie et al. (2010)
+
+- Suppose that the $p$-th moment of $|\epsilon_{it}|$ exists.
+- Let $m_{p,it} = \mathbb{E}|\epsilon_{it}|^p$, $m_{p,i} = 1/T_0 \sum_{t = 1}^{T_0} m_{p, it}$, $\overline{m}_p = \max_{i = 2, \cdots, N + 1} m_{p, i}$.
+- Then, we can bound the bias by:
+$$
+\mathbb{E}|bias_t| \lesssim \max\{\frac{\overline{m}_p^{1/p}}{T_0^{1 - 1/p}},  \frac{\overline{m}_2^{1/2}}{T_0^{1/2}}\}.
+$$
+- The bias is smaller if:
+    - Pre-treatment period $T_0$ is longer.
+    - The standard deviations of the idiosyncratic shocks are smaller.
+    
+## Justification in Abadie et al. (2010)
+
+- Then, should we just take a long enough pre-treatment period?
+    - Not necessarily true, because the model is more likely to be misspecified if the data goes back to the past.
+    - Then, the assumption of the presence of perfect-match $w_i^*$ will be violated.
+- Limitations:
+    - It relies on the functional-form assumption on the potential outcome model.
+    - It relies on the assumption that $w_i^\ast$ exists, which may not be true.
+    - It does not allow an inference based on the sampling-based uncertainty.
+
+## Calculate p-value
+
+- Use a randomization test.
+- Abadie et al. (2010) suggest a test statistics measuring the ratio of post-treatment fit relative to the pre-intervention fit.
+- Consider a placebo treatment to unit $i$ and $\hat{Y}_{it}(0)$ is the SC estimator of $Y^\ast_{it}(0)$ for $t > T_0$.
+- Consider:
+$$
+R_i(t_1, t_2) = \Bigg(\frac{1}{t_2 - t_1 + 1} \sum_{t = t_1}^{t_2} [Y_{it} - \hat{Y}_{it}(0)]^2 \Bigg)^{1/2},
+$$
+$$
+r_i = \frac{R_i(T_0 + 1, T)}{R_i(1, T_0)}.
+$$
+
+## Calculate p-value
+
+- Then, calculate the p-value of the sharp null hypothesis $\tau_{it} = 0$ for $i = 1, \cdots, N + 1$ and $t = 1, \cdots, T$ is:
+$$
+p = \frac{1}{N + 1} \sum_{i = 1}^{N + 1}1\{r_i \ge r_1\}.
+$$
+
+- Remember that SCM was a formalization of a case study. 
+- Without the formalization, we could not apply the "same procedure" to estimate the placebo statistics.
+- In this sense, this inference became possible only by the formalization of SCM.
+
+## Visualize placebo effects<footnote> Figure 4 of Abadie et al. (2010) </footnote>
+
+```{r, echo = FALSE, out.width = "50%"}
+knitr::include_graphics("../figuretable/13_fig_1.png")
+```
+
+## Visualize placebo effects
+
+- Exclude states that had a pre-treatment mean-squared prediction error (MSPE) is more than 20 times the treated state's MSPE.Figure 5 of Abadie et al. (2010) </footnote>
+
+```{r, echo = FALSE, out.width = "50%"}
+knitr::include_graphics("../figuretable/13_fig_2.png")
+```
+
+## Advantages of SCM
+
+- No extrapolation.
+- Transparency of fit.
+  - If comparison group are not appropriate, the pre-treatment fit shows this.
+- Safeguard against specification searches.
+  - It does not use the post-treatment data for constructing weights.
+- Transparency of the counterfactual.
+  - Weights can be interpreted by domain knowledge.
+
+## Checklist
+
+- The treatment effect should be large enough.
+- Similar enough comparison group should exist.
+- No anticipation should hold.
+- No spillover effects.
+
+## Validation tests
+
+- Backdating: Set placebo $T_0$ and repeat the same analysis.<footnote>Figure 3 of Abadie (2021) </footnote>
+
+```{r, echo = FALSE, out.width = "60%"}
+knitr::include_graphics("../figuretable/13_fig_3.png")
+```
+
+## Robustness checks
+
+- Change donor pool.
+- Change predictors.
+
+## Regularization
+
+- The minimization problem for finding weights often has multiple solutions.
+- This is especially true when we extend the analysis to multiple treated units.
+- Abadie and L'Hour (2021) proposes the following penalized estimator:
+$$
+\min_{w} \sum_{k = 1}^K v_k\Big(X_{k1} - \sum_{i = 2}^{N + 1} w_i X_{ik} \Big)^2  + \lambda \sum_{i = 2}^{N + 1} w_i \sum_{k = 1}^K v_k (X_{1k} - X_{ik})^2
+$$
+subject to:
+$$
+w_i \ge 0, \sum_{i = 2}^{N + 1} w_i = 1,
+$$
+- The penalty $\lambda$ can be chosen by validation data as well as $v$.
+
+
+# Synthetic Difference-in-Differences
+
+## Weighted double-differencing estimators
+
+- Consider $2 \times T$ DID design.
+- For simplicity, consider no covariate.
+- There are $N$ units and $T$ periods.
+- There can be multiple treated units.
+- $i = 1, \cdots, N_0$ are control and $i = N_0 + 1, \cdots N$ is treated, with $N_1 = N - N_0$.
+- Treatment is assigned on $T_0 + 1$ with $T_1 = T - T_0$.
+- We estimate the average treatment effect on treated by a class of __weighted double-differencing estimators__:
+$$
+\hat{\tau} = \frac{1}{N_1} \sum_{i = N_0 + 1}^N \hat{\delta}_i - \sum_{i = 1}^{N_0} \hat{w}_i \hat{\delta}_i.
+$$
+
+## SC estimator of the average treatment effect on treated
+
+- $\hat{\delta}_i$ is calculated as:
+$$
+\hat{\delta}_i^{sc} = \frac{1}{T_1} \sum_{t = T_0 + 1} Y_{it}.
+$$
+- $\hat{w}_i$ is constructed according to the SCM as $\hat{w}^{sc}$.
+
+
+## DID estimator of the average treatment effect on treated
+
+- $\hat{\delta}_i$ is calculated as:
+$$
+\hat{\delta}_i^{did} = \frac{1}{T_1} \sum_{t = T_0 + 1} Y_{it} - \frac{1}{T_0} \sum_{t = 1}^{T_0} Y_{it}.
+$$
+- $\hat{w}_i$ is constructed as $\hat{w}^{did} = 1/N_0$.
+
+
+## Synthetic DID estimator
+ 
+ - Arkhangelsky et al. (2021) propose a __synthetic DID estimator__ that combines the features of SCM and DID and adding extra features as follows.
+- $\hat{\delta}_i$ is calculated as:
+$$
+\hat{\delta}_i^{sdid} = \frac{1}{T_1} \sum_{t = T_0 + 1} Y_{it} - \sum_{t = 1}^{T_0} \hat{\lambda}_t^{sdid} Y_{it},
+$$
+which borrows the first-differencing from DID and augments by allowing for a flexible time weight $\hat{\lambda}_t^{sdid}$ instead of $1/T_0$.
+- $\hat{w}_i$ is constructed according to a procedure similar to the SCM as $\hat{w}^{sdid}$.
+
+## Synthetic DID: algorithm
+
+- Obtain unit weight $\hat{w}_i^{sdid}$ and level adjustment $\hat{w}_0$ by solving the constrained minimization problem:
+$$
+\min_{w_0, w} \sum_{t = 1}^{T_0}(w_0 + \sum_{i = 1}^{N_0} w_i Y_{it} - \frac{1}{N_1} \sum_{i = N_0 + 1}^N Y_{it})^2 + \zeta^2 T_0 \sum_{i = 1}^N w_i^2,
+$$
+subject to:
+$$
+w_i \ge 0, \sum_{i = 1}^{N_0} w_i = 1.
+$$
+- Allowing for a level difference $w_0$ is different from SCM.
+- Ridge penalty instead of lasso penalty (minor).
+
+## Synthetic DID: algorithm
+
+- Obtain time weight $\hat{\lambda}_t^{sdid}$ and level adjustment $\hat{\lambda}_0$ by solving the constrained minimization problem:
+$$
+\min_{\lambda_0, \lambda} \sum_{i = 1}^{N_0} (\lambda_0 + \sum_{t = 1}^{T_0} \lambda_t Y_{it} - \frac{1}{T_1} \sum_{t = T_0 + 1}^T Y_{it})^2,
+$$
+subject to:
+$$
+\lambda_t \ge 0, \sum_{t = 1}^{T_0} \lambda_t = 1.
+$$
+
+
+## Synthetic DID: algorithm
+
+- They suggest to set the ridge penalty $\zeta$ at:
+$$
+\zeta = (N_1 T_1)^{1/4} \hat{\sigma},
+$$
+$$
+\hat{\sigma}^2 = \frac{1}{N_0(T_0 - 1)} \sum_{i = 1}^{N_0} \sum_{t = 1}^{T_0 - 1} (\Delta_{it} - \overline{\Delta})^2,
+$$
+$$
+\Delta_{it} = Y_{i, t + 1} - Y_{it},
+$$
+$$
+\overline{\Delta} = \frac{1}{N_0(T_0 - 1)} \sum_{i = 1}^{N_0} \sum_{t = 1}^{T_0 - 1} \Delta_{it}.
+$$
+
+## DID in California smoking cessation program<footnote>Figure 1 of Arkhangelsky et al. (2021) </footnote>
+
+```{r, echo = FALSE, out.width = "40%"}
+knitr::include_graphics("../figuretable/13_fig_4.png")
+```
+
+- DID puts an equal weight across units and time.
+- Because the pre-trend is different, DID is dubious.
+
+## SCM in California smoking cessation program<footnote>Figure 1 of Arkhangelsky et al. (2021) </footnote>
+
+```{r, echo = FALSE, out.width = "40%"}
+knitr::include_graphics("../figuretable/13_fig_5.png")
+```
+
+- SCM puts weights on a few states.
+- Synthetic control targets both level and trend.
+
+## SDID in California smoking cessation program<footnote>Figure 1 of Arkhangelsky et al. (2021) </footnote>
+
+```{r, echo = FALSE, out.width = "40%"}
+knitr::include_graphics("../figuretable/13_fig_6.png")
+```
+
+- Re-weight units and time.
+- Then, apply DID to the re-weighted unit.
+- Synthetic control only targets the trend.
+
+
+## Justification
+
+- Suppose that the control outcome follows a linear factor model:
+$$
+Y^\ast_{it}(0) = \delta_t + \theta_t Z_i + \lambda_t \mu_i + \epsilon_{it}.
+$$
+- Synthetic DID works if the combination of i) double differencing, ii) the unit re-weighting, and iii) the time re-weighting enables us to trace out $\lambda_t \mu_i$.
+- Formal asymptotic result is found in Arkhangelsky et al. (2021).
+
+## Inference
+
+- If multiple units are treated, we can use a block bootstrap for inference.
+- If only one unit is treated, we can use a randomization test.
+
+## Reference
+
+- Abadie, Alberto. 2021. “Using Synthetic Controls: Feasibility, Data Requirements, and Methodological Aspects.” Journal of Economic Literature 59 (2): 391–425.
+- Abadie, Alberto, Alexis Diamond, and Jens Hainmueller. 2010. “Synthetic Control Methods for Comparative Case Studies: Estimating the Effect of California’s Tobacco Control Program.” Journal of the American Statistical Association. https://doi.org/10.1198/jasa.2009.ap08746.
+- Abadie, Alberto, Alexis Diamond, and Jens Hainmueller. 2011. “Synth: An R Package for Synthetic Control Methods in Comparative Case Studies,” June. https://dspace.mit.edu/handle/1721.1/71234?show=full.
+- Abadie, Alberto, and Javier Gardeazabal. 2003. “The Economic Costs of Conflict: A Case Study of the Basque Country.” The American Economic Review 93 (1): 113–32.
+
+## Reference
+
+- Abadie, Alberto, and Jérémy L’Hour. 2021. “A Penalized Synthetic Control Estimator for Disaggregated Data.” Journal of the American Statistical Association, August, 1–18.
+- Arkhangelsky, Dmitry, Susan Athey, David A. Hirshberg, Guido W. Imbens, and Stefan Wager. n.d. “Synthetic Difference in Differences.” The American Economic Review. Accessed September 2, 2021. https://doi.org/10.1257/aer.20190159.
+- “Synthdid Introduction.” n.d. Accessed November 13, 2021. https://synth-inference.github.io/synthdid/articles/synthdid.html.

@@ -1,0 +1,309 @@
+---
+title: "Synthetic Control"
+output: 
+  html_document:
+    css: style_do.css
+    number_sections: yes
+    toc: yes
+    toc_depth: '3'
+    toc_float: yes
+    theme: spacelab #"default", "bootstrap", "cerulean", "cosmo", "darkly", "flatly",
+                 # "journal", "lumen", "paper", "readable", "sandstone", "simplex",
+                 # "spacelab", "united", "yeti"
+    df_print: paged
+    code_folding: show
+#date: '2022-03-30'
+date: 'Last Update: `r Sys.Date()`'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(cache = FALSE, echo = TRUE, fig.align = "center")
+library(foreach)
+library(magrittr)
+library(ggplot2)
+library(kableExtra)
+library(modelsummary)
+color_main <- scales::viridis_pal(option = "C")(1)
+```
+
+# Load data
+
+## For synthetic control
+
+```{r}
+data(
+  "basque", 
+  package = "Synth"
+)
+basque %>% 
+  head() %>% 
+  kbl() %>% 
+  kable_styling()
+```
+
+## For synthetic DID
+
+```{r}
+data(
+  "california_prop99", 
+  package = "synthdid"
+)
+california_prop99 %>% 
+  head() %>% 
+  kbl() %>% 
+  kable_styling()
+```
+
+# Synthetic Control
+
+## Transform data
+
+```{r}
+period <- 
+    seq(
+      1961, 
+      1969, 
+      2
+    )
+df <-
+  Synth::dataprep(
+    foo = basque,
+    predictors = 
+      c(
+        "school.illit", 
+        "school.prim", 
+        "school.med", 
+        "school.high", 
+        "school.post.high", 
+        "invest"
+      ),
+    predictors.op = "mean",
+    time.predictors.prior = 1964:1969,
+    special.predictors = 
+      list(
+        list(
+          "gdpcap", 
+          1960:1969, 
+          "mean"
+        ), 
+        list(
+          "sec.agriculture", 
+          period, 
+          "mean"
+        ), 
+        list(
+          "sec.energy", 
+          period, 
+          "mean"
+        ),
+      list(
+        "sec.industry", 
+        period, 
+        "mean"
+      ), 
+      list(
+        "sec.construction", 
+        period, 
+        "mean"
+      ), 
+      list(
+        "sec.services.venta", 
+        period, 
+        "mean"
+      ),
+      list(
+        "sec.services.nonventa", 
+        period, 
+        "mean"
+      ), 
+      list(
+        "popdens", 
+        1969, 
+        "mean"
+      )
+    ),
+    dependent = "gdpcap", 
+    unit.variable = "regionno", 
+    unit.names.variable = "regionname", 
+    time.variable = "year",
+    treatment.identifier = 17, 
+    controls.identifier = c(2:16, 18), 
+    time.optimize.ssr = 1960:1969, 
+    time.plot = 1955:1997
+  )
+```
+
+```{r}
+names(df)
+df$X1 %>% 
+  kbl() %>% 
+  kable_styling()
+```
+
+## Compute the weights
+
+```{r}
+result <- 
+  Synth::synth(
+    data.prep.obj = df,
+    method = "BFGS"
+  )
+```
+
+## Compare predictors between treated and synthetic control
+
+```{r}
+table <- 
+  Synth::synth.tab(
+    dataprep.res = df, 
+    synth.res = result
+  )
+table$tab.pred %>% 
+  kbl() %>% 
+  kable_styling()
+```
+
+## Plot the outcomes of treated and synthetic control
+
+```{r, out.width = "60%"}
+Synth::path.plot(
+  synth.res = result, 
+  dataprep.res = df, 
+  Ylab = "real per-capita GDP (1986 USD, thousand",
+  Xlab = "year", 
+  Ylim = 
+    c(
+      0, 
+      12
+    ), 
+  Legend = 
+    c(
+      "Basque country", 
+      "Synthetic Basque country"
+    ),
+  Legend.position = "bottomright"
+)
+```
+
+## Plot the gaps
+
+```{r, out.width = "60%"}
+Synth::gaps.plot(
+  synth.res = result, 
+  dataprep.res = df, 
+  Ylab = "real per-capita GDP (1986 USD, thousand)",
+  Xlab = "year", 
+  Ylim = 
+    c(
+      -1.5, 
+      1.5
+    ), 
+  Main = NA
+)
+```
+
+# Synthetic DID
+
+## Transform data
+
+```{r}
+df <-
+  california_prop99 %>%
+  synthdid::panel.matrices(
+    unit = "State", 
+    time = "Year", 
+    outcome = "PacksPerCapita", 
+    treatment = "treated"
+  )
+```
+
+```{r}
+names(df)
+```
+
+## DID: estimate
+
+```{r, out.width = "60%"}
+result_did <- 
+  synthdid::did_estimate(
+    Y = df$Y, 
+    N0 = df$N0, 
+    T0 = df$T0
+  )
+plot(result_did)
+```
+
+```{r}
+result_did
+vcov(
+  result_did,
+  method = "placebo"
+) %>%
+sqrt()
+```
+
+## DID: weight
+
+```{r}
+synthdid::synthdid_units_plot(
+  result_did
+)
+```
+
+## SCM: estimate
+
+```{r, out.width = "60%"}
+result_sc <- 
+  synthdid::sc_estimate(
+    Y = df$Y, 
+    N0 = df$N0, 
+    T0 = df$T0
+  )
+plot(result_sc)
+```
+
+```{r}
+result_sc
+vcov(
+  result_sc,
+  method = "placebo"
+) %>%
+sqrt()
+```
+
+## SCM: weight
+
+```{r}
+synthdid::synthdid_units_plot(
+  result_sc
+)
+```
+
+## Synthetic DID: estimate
+
+```{r, out.width = "60%"}
+result_synthdid <- 
+  synthdid::synthdid_estimate(
+    Y = df$Y, 
+    N0 = df$N0, 
+    T0 = df$T0
+  )
+plot(result_synthdid)
+```
+
+```{r}
+vcov(
+  result_synthdid,
+  method = "placebo"
+) %>%
+sqrt()
+```
+
+## Synthetic DID: weight
+
+```{r}
+synthdid::synthdid_units_plot(
+  result_synthdid
+)
+```
+
