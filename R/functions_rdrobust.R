@@ -65,7 +65,7 @@ generate_dgp_lee <-
           ) - 
           1,
         y =
-          AppliedEconometricsCode::specify_mu_lee(
+          AppliedEconometrics::specify_mu_lee(
             s = s
           )
           + rnorm(
@@ -89,7 +89,7 @@ generate_dgp_lee_fuzzy <-
         z = (s >= 0),
         d = (stats::qnorm(0.3*(0.5+0.5*s) + 0.6*z) >= stats::rnorm(n=N)),
         y =
-          AppliedEconometricsCode::specify_mu_lee_fuzzy(
+          AppliedEconometrics::specify_mu_lee_fuzzy(
             s = s,
             d = d)
           + rnorm(
@@ -164,3 +164,13 @@ specify_mu_ludwig_miller_modified <-
     return(vec_mu)
 }
 
+compute_y <-
+  function(b, v, u) {
+    y <- 2 * b + 1 * v + u
+    return(y)
+  }
+compute_b <-
+  function(v) {
+    b <- 2 * v - 1 * v * (v > 0)
+    return(b)
+  }
