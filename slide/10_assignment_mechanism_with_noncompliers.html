@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Multiple Testing</title>
+  <title>Assignment mechanism with Noncompliers</title>
 
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="chrome=1">
@@ -19,7 +19,7 @@
     var SLIDE_CONFIG = {
       // Slide settings
       settings: {
-                title: 'Multiple Testing',
+                title: 'Assignment mechanism with Noncompliers',
                         useBuilds: true,
         usePrettify: true,
         enableSlideAreas: true,
@@ -3068,21 +3068,18 @@ var loadDeck = function(event) {
   });
 };
 
-if (!window.Shiny) {
-  // If Shiny is loaded, the slide deck is initialized in ioslides template
-
-  if (document.readyState !== "loading" &&
-      document.querySelector('slides') === null) {
-    // if the document is done loading but our element hasn't yet appeared, defer
-    // loading of the deck
-    window.setTimeout(function() {
-      loadDeck(null);
-    }, 0);
-  } else {
-    // still loading the DOM, so wait until it's finished
-    document.addEventListener("DOMContentLoaded", loadDeck);
-  }
+if (document.readyState !== "loading" &&
+    document.querySelector('slides') === null) { 
+  // if the document is done loading but our element hasn't yet appeared, defer
+  // loading of the deck
+  window.setTimeout(function() {
+    loadDeck(null);
+  }, 0);
+} else {
+  // still loading the DOM, so wait until it's finished
+  document.addEventListener("DOMContentLoaded", loadDeck);
 }
+
 
 
 </script>
@@ -3142,170 +3139,759 @@ ul.task-list{list-style: none;}
           </hgroup>
   </slide>
 
-<slide class=""><hgroup><h2>Multiple Hypotheses</h2></hgroup><article  id="multiple-hypotheses">
+<style type="text/css">
+div.footnotes {
+  position: absolute;
+  bottom: 0;
+  margin-bottom: 10px;
+  width: 80%;
+  font-size: 10px;
+}
+body, td {
+   font-size: 14px;
+}
+code.r{
+  font-size: 11px;
+}
+pre {
+  font-size: 11px
+}
+blockquote {
+  background: #f9f9f9;
+  border-left: 5px solid #ccc;
+  margin: 1.5em 10px;
+  padding: 0.5em 1.5em;
+}
+</style>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+
+<script>
+$(document).ready(function() {
+  $('slide:not(.backdrop):not(.title-slide)').append('<div class=\"footnotes\">');
+
+  $('footnote').each(function(index) {
+    var text  = $(this).html();
+    var fnNum = (index+1).toString();
+    $(this).html(fnNum.sup());
+
+    var footnote   = fnNum + '. ' + text + '<br/>';
+    var oldContent = $(this).parents('slide').children('div.footnotes').html();
+    var newContent = oldContent + footnote;
+    $(this).parents('slide').children('div.footnotes').html(newContent);
+  });
+});
+</script>
+
+<slide class="segue dark nobackground level1"><hgroup class = 'auto-fadein'><h2>Assignment mechanism with Noncompliers</h2></hgroup><article  id="assignment-mechanism-with-noncompliers">
+
+</article></slide><slide class=""><hgroup><h2>Noncompliers</h2></hgroup><article  id="noncompliers">
 
 <ul>
-<li>There are \(M\) null hypotheses: \(H_0^m\), \(m = 1, \cdots, M\).</li>
-<li>Suppose that \(H_0^m\), \(m = 1, \cdots, M\) are all true.</li>
-<li>The piece-wise type-I error of a test: \(\mathbb{P}\{\text{Reject   }H_0^m|H_0^m\}\), \(m = 1, \cdots, M\).</li>
-<li>Even if the piece-wise type-I error is \(\alpha\), the probability that at least one of the null hypotheses is rejected is greater than \(\alpha\): \[
-\begin{split}
-&amp;\mathbb{P}\{\exists m = 1, \cdots, M, H_0^m \text{ is rejected}|\forall m = 1, \cdots, M, H_0^m\} \\
-&amp;= 1 - (1 - \alpha)^M.
-\end{split}
-\]</li>
-<li>For example, if \(\alpha = 0.05\) and \(M = 100\), then the probability that at least one of the null hypotheses is rejected is \(1 - (1 - 0.05)^{100} \approx\) 0.9940795.</li>
+<li>So far, we have assumed that the <em>assignment</em> of treatment implied the <em>receipt</em> of treatment.
+
+<ul>
+<li>Prescribing drug means that the subject takes the drug.</li>
+</ul></li>
+<li>However, there are many cases in which a subject assigned to treatment does not receive the treatment.
+
+<ul>
+<li>Supplied supplements on infant mortality to a village but some of the villagers could not receive the supplements.</li>
+</ul></li>
+<li>Moreover, there may be cases where subjects not assigned to treatment may receive the treatment.
+
+<ul>
+<li>Men who were not drafted to the Vietnam War volunteered.</li>
+</ul></li>
+<li>Subjects whose treatment <em>receipt</em> status differs from treatment <em>assignment</em> status are called <em>noncompliers</em>.</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Family-Wise Error Rate (FWER)</h2></hgroup><article  id="family-wise-error-rate-fwer">
+</article></slide><slide class=""><hgroup><h2>Intention-to-treat (ITT) and treatment effect</h2></hgroup><article  id="intention-to-treat-itt-and-treatment-effect">
 
 <ul>
-<li><p>Suppose that \(H^m, m = 1, \cdots, M_0\) are true null hypotheses and \(H^m, m = M_0 + 1, \cdots, M\) are false null hypotheses.</p></li>
-<li><p><strong>Definition</strong>: <em>Family-wise error rate</em>: The probability of rejecting at least one null hypotheses when all null hypotheses are true: \[
-\text{FWER} = \mathbb{P}\{\exists m = 1, \cdots, M_0, H_0^m \text{ is rejected}|\forall m = 1, \cdots, M_0, H_0^m\}.
+<li>This problem arises regardless of whether experimental or observational.</li>
+<li>If the treatment was randomly assigned, the average effect of <em>assignment</em> treatment can be estimated.</li>
+<li>However, if there are noncompliers, this can differ from the average effect of <em>receiving</em> treatment.</li>
+<li>The former is called <em>intention-to-treat (ITT)</em> effect and is distinguished from the latter.</li>
+<li>ITT effects are informative, but may not be robust to the changes in the compliance behaviors.</li>
+<li>In other situations, people’s compliance behavior can be different and hence the ITT may change even if the treatment effect is invariant.</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Potential treatment receipt status</h2></hgroup><article  id="potential-treatment-receipt-status">
+
+<ul>
+<li>To describe this situation, we introduce variables representing treatment assignment and treatment receipt status.</li>
+<li>Treatment assignment status: \(Z_i\) takes value \(1\) if assigned and \(0\) otherwise.</li>
+<li>Treatment receipt status: \(D_i\) takes value \(1\) if received and \(0\) otherwise.</li>
+<li>The key is that individual treatment receipt status is a function of the individual’s treatment assignment status.
+
+<ul>
+<li>A subject may never take the treatment, or always take.</li>
+<li>A subject may take the treatment only when assigned treatment, or only when not assigned.</li>
+</ul></li>
+<li>This relation is described by the following potential outcome model: \[
+D_i = D_i^\ast(Z_i) =
+\begin{cases}
+D_i^\ast(0) &amp; \text{   if   } Z_i = 0\\
+D_i^\ast(1) &amp; \text{   if   } Z_i = 1.
+\end{cases} 
+\]</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Observed and missing treatment status</h2></hgroup><article  id="observed-and-missing-treatment-status">
+
+<ul>
+<li>We can observe \(D_i^\ast(Z_i)\), the treatment receipt status under the observed treatment assignment status.</li>
+<li>However, we never observe \(D_i^\ast(1 - Z_i)\), the treatment receipt status under the missing treatment assignment status.</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Extension of the potential outcome model</h2></hgroup><article  id="extension-of-the-potential-outcome-model">
+
+<ul>
+<li>The potential outcome is now a function of both treatment assignment and receipt status. \[
+Y_i = Y_i^\ast(Z_i, D_i).
+\]</li>
+<li>We observe: \[
+Y_i^\ast[Z_i, D_i^\ast(Z_i)] = Y_i^\ast[1, D_i^\ast(1)], Y_i^\ast[0, D_i^\ast(0)].
+\]</li>
+<li>However, we never observe: \[
+Y_i^\ast[Z_i, D_i^\ast(1 - Z_i)] = Y_i^\ast[1, D_i^\ast(0)], Y_i^\ast[0, D_i^\ast(1)].
+\]</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Random assignment of \(Z_i\)</h2></hgroup><article  id="random-assignment-of-z_i">
+
+<ul>
+<li>We still assume that the treatment assignment is random.</li>
+<li>This is true in randomized experiments.</li>
+<li>We have to justify this in observational studies.</li>
+<li><strong>Assumption: Random assignment of \(Z_i\)</strong> \[
+\begin{split}
+&amp;\mathbb{P}[Z_i = 1 | D_i^\ast(0), D_i^\ast(1), Y_i^\ast(0, 0), Y_i^\ast(0, 1), Y_i^\ast(1, 0), Y_i^\ast(1, 1)]\\
+&amp;= \mathbb{P}(Z_i = 1).
+\end{split}
+\]</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Notations</h2></hgroup><article  id="notations">
+
+<ul>
+<li>The subsample sizes by treatment assignment status: \[
+N_0 \equiv \sum_{i = 1}^N (1 - Z_i), N_1 \equiv \sum_{i = 1}^N Z_i.
+\]</li>
+<li>The subsample sizes by treatment receipt status: \[
+N_c \equiv \sum_{i = 1}^N (1 - D_i), N_t \equiv \sum_{i = 1}^N D_i.
+\]</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Notations</h2></hgroup><article  id="notations-1">
+
+<ul>
+<li>The subsample sizes by both treatment assignment and receipt status: \[
+N_{0c} \equiv \sum_{i = 1}^N (1 - Z_i) \cdot (1 - D_i), N_{0t} \equiv \sum_{i = 1}^N (1 - Z_i) \cdot D_i.
+\] \[
+N_{1c} \equiv \sum_{i = 1}^N Z_i \cdot (1 - D_i), N_{1t} \equiv \sum_{i = 1}^N Z_i \cdot D_i.
+\]</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Notations</h2></hgroup><article  id="notations-2">
+
+<ul>
+<li><p>The average outcomes by treatment assignment status: \[
+\overline{Y}_0 \equiv \frac{1}{N_0} \sum_{i = 1}^N (1 - Z_i) \cdot Y_i, \overline{Y}_1 \equiv \frac{1}{N_1} \sum_{i = 1}^N Z_i \cdot Y_i.
+\]</p></li>
+<li><p>The average treatment receipt by treatment assignment status: \[
+\overline{D}_0 \equiv \frac{1}{N_0} \sum_{i = 1}^N (1 - Z_i) \cdot D_i, \overline{D}_1 \equiv \frac{1}{N_1} \sum_{i = 1}^N Z_i \cdot D_i.
 \]</p></li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Bonferroni Correction</h2></hgroup><article  id="bonferroni-correction">
+</article></slide><slide class=""><hgroup><h2>Notations</h2></hgroup><article  id="notations-3">
 
 <ul>
-<li><strong>Bonferroni correction</strong>: The most conservative method to control FWER.</li>
-<li>Depends on the followig inequality: \[
+<li>The average outcomes by treatment receipt status: \[
+\overline{Y}_c \equiv \frac{1}{N_c} \sum_{i = 1}^N (1 - D_i) \cdot Y_i, \overline{Y}_t \equiv \frac{1}{N_t} \sum_{i = 1}^N D_i \cdot Y_i.
+\]</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Notations</h2></hgroup><article  id="notations-4">
+
+<ul>
+<li>The average outcomes by both treatment assignment and receipt status: \[
+\overline{Y}_{0c} \equiv \frac{1}{N_{0c}} \sum_{i = 1}^N (1 - Z_i) \cdot (1 - D_i) \cdot Y_i.
+\] \[
+\overline{Y}_{0t} \equiv \frac{1}{N_{0t}} \sum_{i = 1}^N (1 - Z_i) \cdot D_i \cdot Y_i.
+\] \[
+\overline{Y}_{1c} \equiv \frac{1}{N_{1c}} \sum_{i = 1}^N Z_i \cdot (1 - D_i) \cdot Y_i.
+\] \[
+\overline{Y}_{1t} \equiv \frac{1}{N_{1t}} \sum_{i = 1}^N Z_i \cdot D_i \cdot Y_i.
+\]</li>
+</ul>
+
+</article></slide><slide class="segue dark nobackground level1"><hgroup class = 'auto-fadein'><h2>One-sided noncompliers</h2></hgroup><article  id="one-sided-noncompliers">
+
+</article></slide><slide class=""><hgroup><h2>One-sided noncompliers</h2></hgroup><article  id="one-sided-noncompliers-1">
+
+<ul>
+<li>Assume that subject never receives treatment unless assigned treatment: \[
+D_i^\ast(0) = 0, \forall i.
+\]</li>
+<li>This holds in most of experiment: subjects will not take new supplements if not supplied.</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Compliance status</h2></hgroup><article  id="compliance-status">
+
+<ul>
+<li><p>Subjects are divided into latent compliance status according to their value of \(D_i^\ast(z)\). \[
+G_i \equiv 
+\begin{cases}
+\text{co if   } D_i^\ast(1) = 1 \\
+\text{nc if   } D_i^\ast(1) = 0.
+\end{cases}
+\]</p></li>
+<li><p>Underlying compliance status:<footnote> Table 23.2 of Imbens and Rubin (2015) </footnote></p></li>
+</ul>
+
+<table class = 'rmdtable'>
+<tr class="header">
+<th align="left"></th>
+<th align="left">\(Z_i = 0\)</th>
+<th align="left">\(Z_i = 1\)</th>
+</tr>
+<tr class="odd">
+<td align="left">\(D_i = 0\)</td>
+<td align="left">nc or co</td>
+<td align="left">nc</td>
+</tr>
+<tr class="even">
+<td align="left">\(D_i = 1\)</td>
+<td align="left">-</td>
+<td align="left">co</td>
+</tr>
+</table>
+
+</article></slide><slide class=""><hgroup><h2>Compliance status share</h2></hgroup><article  id="compliance-status-share">
+
+<ul>
+<li>The subsample sizes of compliers and noncompliers \[
+N_{co} \equiv \sum_{i = 1}^N 1_{G_i = co}, N_{nc} \equiv \sum_{i = 1}^N 1_{G_i = nc}.
+\]</li>
+<li>The sample fractions of compliers and noncompliers \[
+\pi_{co} \equiv \frac{N_{co}}{N}, \pi_{nt} \equiv \frac{N_{nc}}{N} = 1 - \pi_{co}.
+\]</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Estimate ITT effect for the receipt of treatment</h2></hgroup><article  id="estimate-itt-effect-for-the-receipt-of-treatment">
+
+<ul>
+<li>The ITT for the receipt of treatment: \[
+ITT_D \equiv \frac{1}{N}\sum_{i = 1}^N[D_i^\ast(1) - D_i^\ast(0)],
+\] can be estimated unbiasedly by the average difference in treatment status: \[
+\widehat{ITT}_D \equiv \overline{D}_1 - \overline{D}_0 = \overline{D}_1.
+\]</li>
+<li>The standard error is also estimated by: \[
+\widehat{\mathbb{V}}(\widehat{ITT}_D) \equiv \frac{s_{W, 0}^2}{N_0} + \frac{s_{W, 1}^2}{N_1}.
+\]</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Estimate ITT effect for the outcome</h2></hgroup><article  id="estimate-itt-effect-for-the-outcome">
+
+<ul>
+<li>The ITT for the outcome: \[
+ITT_Y \equiv \frac{1}{N}\sum_{i = 1}^N\{Y_i^\ast[1, D_i^\ast(1)] - Y_i^\ast[0, D_i^\ast(0)]\},
+\] can be estimated unbiasedly by the average difference in treatment status: \[
+\widehat{ITT}_Y \equiv \overline{Y}_1 - \overline{Y}_0.
+\]</li>
+<li>The standard error is also estimated by: \[
+\widehat{\mathbb{V}}(\widehat{ITT}_Y) \equiv \frac{s_{Y, 0}^2}{N_0} + \frac{s_{Y, 1}^2}{N_1}.
+\]</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Decomposing \(ITT_Y\)</h2></hgroup><article  id="decomposing-itt_y">
+
+<ul>
+<li>Using the ITT effect for the outcome by compliance status: \[
+ITT_{Y, co} \equiv \frac{1}{N_{co}} \sum_{i = 1: G_i = co}\{Y_i^\ast[1, D_i^\ast(1)] - Y_i^\ast[0, D_i^\ast(0)]\}, 
+\] and: \[
+ITT_{Y, nc} \equiv \frac{1}{N_{nc}} \sum_{i = 1: G_i = nc}\{Y_i^\ast[1, D_i^\ast(1)] - Y_i^\ast[0, D_i^\ast(0)]\},
+\] we can decompose \(ITT_Y\) as: \[
+ITT_Y = ITT_{Y, co} \cdot ITT_D + ITT_{Y, nc} \cdot (1 - ITT_D).
+\]</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Unidentification of \(ITT_{Y, co}\) and \(ITT_{Y, nc}\)</h2></hgroup><article  id="unidentification-of-itt_y-co-and-itt_y-nc">
+
+<ul>
+<li>We cannot identify \(ITT_{Y, co}\) and \(ITT_{Y, nc}\) because we do not know the compliance status of each subject and hence we cannot condition the data on the compliance data.</li>
+<li>\(ITT_{Y, no}\) is not informative, because they never receive the treatment, irrespective of the assignment.</li>
+<li>\(ITT_{Y, co}\) is informative, because this compares the outcome when the treatment is received and not.</li>
+<li>Then, under what kind of additional assumptions, can we identify \(ITT_{Y, co}\)?</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Latent unconfoundedness</h2></hgroup><article  id="latent-unconfoundedness">
+
+<ul>
+<li>Randomized experiment ensures that the unconfoundedness of \(Z_i\), but not \(D_i\)</li>
+<li>However, randomized experiment at least ensures the <em>latent</em> unconfoundedness of \(D_i\).</li>
+<li><strong>Lemma: Latent unconfoundedness of \(D_i\)</strong>
+
+<ul>
+<li>The random assignment of \(Z_i\) implies for \(g \in G\): \[
 \begin{split}
-&amp;\mathbb{P}\{\exists m = 1, \cdots, M_0, H_0^m \text{ is rejected}|\forall m = 1, \cdots, M_0, H_0^m\}\\
-&amp;\leq \sum_{m=1}^{M_0} \mathbb{P}\{H_0^m \text{ is rejected}|H_0^m\} = M_0 \alpha.
+&amp;\mathbb{P}[D_i = 1 | Y_i^\ast(0, 0), Y_i^\ast(0, 1), Y_i^\ast(1, 0), Y_i^\ast(1, 1), G_i = g]\\
+&amp;= \mathbb{P}(D_i = 1 | G_i = g).
 \end{split}
 \]</li>
-<li>Therefore, for each hypothesis, if you consider a test with a significance level \(\alpha/M\), then the FWER is no greater than \(\alpha\).</li>
-<li>The above inequality holds regardless of the dependence structure among the tests.</li>
-<li>The Bonferrorni correction: Reject \(H_0^m\) if the piece-wise p-value for \(H_0^m\) is \(p^m \le \alpha/M\). Then, \(FEWR \le \alpha M_0/M \le \alpha\).</li>
+</ul></li>
+<li>For \(g = nc\), \(D_i\) is always \(0\). Therefore, the equation trivially holds</li>
+<li>For \(g = co\), \(D_i = Z_i\). Therefore, the random assignment of \(Z_i\) implies the unconfoundedness of \(D_i\) for compliers.</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Why Bonferroni Correction is Conservative?</h2></hgroup><article  id="why-bonferroni-correction-is-conservative">
+</article></slide><slide class=""><hgroup><h2>Exclusion restriction for noncompliers</h2></hgroup><article  id="exclusion-restriction-for-noncompliers">
 
 <ul>
-<li>Bonferrorni correction controls for the false rejection when all null hypotheses are true.</li>
-<li>However, in reality, only \(m \le M\) null hypotheses may be true.</li>
-<li>Indeed, some p-values may be smaller than others.</li>
-<li>How about rejecting the null hypothesis with the smallest p-value first?</li>
-<li>Then, considering a multiple testing of smaller number of hypotheses?</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Bonferroni-Holm Correction</h2></hgroup><article  id="bonferroni-holm-correction">
-
-<ol>
-<li>Order the p-values: \(p^{(1)} \le p^{(2)} \le \cdots \le p^{(M)}\).</li>
-<li>For \(l = 1, \cdots, M\) (starting with the smallest p-value):
-
-<ol>
-<li>If \(p^{(l)} \le \alpha/(M - l + 1)\), reject \(H_0^{(l)}\) and move to \(l + 1\).</li>
-<li>If \(p^{(l)} &gt; \alpha/(M - l + 1)\) accept \(H_0^{(l)}\) and accept the remaining null hypotheses.</li>
-</ol></li>
-</ol>
+<li><strong>Assumption : Exclusion restriction for noncompliers</strong>
 
 <ul>
-<li>If none of the null hypotheses is rejected by the Bonferroni correction, then none of the null hypotheses is rejected by the Bonferroni-Holm correction, either.</li>
-<li>If a null hypothesis is rejected by the Bonferroni correction, then it is also rejected by the Bonferroni-Holm correction because \(p^m \le \alpha/M \le \alpha/(M - m + 1)\).</li>
+<li>For all noncompliers: \[
+Y_i^\ast(0, 0) = Y_i^\ast(1, 0).
+\]</li>
+</ul></li>
+<li>This rules out that an effect of the assignment on the outcome for noncompliers.</li>
+<li>The random assignment of \(Z_i\) <em>does not</em> justify this assumption.</li>
+<li>This is a <em>substantive</em> assumption to be justified by the contextual knowledge.</li>
+<li>For example, the double blinding makes subjects unaware of the treatment assignment, and hence <em>may</em> justify this assumption if nicely implemented.</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Bonferroni-Holm Correction</h2></hgroup><article  id="bonferroni-holm-correction-1">
+</article></slide><slide class=""><hgroup><h2>Identifying \(ITT_{Y, co}\)</h2></hgroup><article  id="identifying-itt_y-co">
 
 <ul>
-<li>The Bonferroni-Holm correction controls for the FWER.</li>
-<li>Suppose that there are \(1 \le M_0\le M\) null hypotheses that are true.</li>
-<li>Let \(l\) be the first rejected true null hypothesis in the Bonferroni-Holm correction.</li>
-<li>By definition, \(H_0^{(1)}, \cdots, H_0^{(l-1)}\) were correctly rejected hypotheses that are false.</li>
-<li>Therefore, \(l - 1 \le M - M_0 \Leftrightarrow 1/(M - l + 1) \le 1 / M_0\).</li>
-<li>Because \(l\) is rejected, \(p^{(l)} \le \alpha/(M - l + 1) \le \alpha/M_0\).</li>
-<li>Therefore, if there is at least one true hypothesis that is rejected, then its p-value is no greater than \(\alpha/M_0\).</li>
+<li>The exclusion restriction for noncompliers implies: \[
+ITT_{Y, nc} \equiv \frac{1}{N_{nc}} \sum_{i = 1: G_i = nc}\{Y_i^\ast[1, D_i^\ast(1)] - Y_i^\ast[0, D_i^\ast(0)]\} = 0.
+\]</li>
+<li>Therefore: \[
+ITT_Y = ITT_{Y, co} \cdot ITT_D + ITT_{Y, nc} \cdot (1 - ITT_D) = ITT_{Y, co} \cdot ITT_D,
+\] and so: \[
+ITT_{Y, co} = \frac{ITT_Y}{ITT_D}.
+\]</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Bonferroni-Holm Correction</h2></hgroup><article  id="bonferroni-holm-correction-2">
+</article></slide><slide class=""><hgroup><h2>Exclusion restriction for compliers</h2></hgroup><article  id="exclusion-restriction-for-compliers">
+
+<ul>
+<li>The exclusion restriction for noncompliers is necessary for identifying \(ITT_{Y, co}\).</li>
+<li>The following assumption of exclusion restriction for compliers is not necessary, but only changes the interpretation of \(ITT_{Y, co}\):</li>
+<li><strong>Assumption: Exclusion restriction for compliers</strong>:
+
+<ul>
+<li>For all compliers: \[
+Y_i^\ast(0, 0) = Y_i^\ast(1, 0), Y_i^\ast(0, 1) = Y_i^\ast(1, 1).
+\]</li>
+</ul></li>
+<li>If this assumption holds: \[
+ITT_{Y, co} = \frac{1}{N_{co}} \sum_{i = 1: G_i = co}\{Y_i^*(1) - Y_i^*(0)\},
+\] which we call the <strong>local average treatment effect (LATE)</strong> \(\tau_{late}\).</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Moment-based estimator for \(\tau_{late}\)</h2></hgroup><article  id="moment-based-estimator-for-tau_late">
+
+<ul>
+<li>Because we have \(\widehat{ITT}_Y\) and \(\widehat{ITT}_D\), we can estiamte \(\tau_{late}\) by: \[
+\widehat{ITT}_{late} \equiv \frac{\widehat{ITT}_Y}{\widehat{ITT}_D}.
+\]</li>
+<li>The sampling variance is: \[
+\begin{split}
+\mathbb{V}(\widehat{ITT}_{late}) &amp;= \frac{1}{ITT_D^2} \cdot \mathbb{V}(\widehat{ITT}_Y) + \frac{ITT_Y^2}{ITT_D^4} \cdot \mathbb{V}(\widehat{ITT}_D) \\
+&amp;- 2 \cdot \frac{ITT_Y}{ITT_D^3} \cdot \mathbb{C}(\widehat{ITT}_Y, \widehat{ITT}_D).
+\end{split}
+\]</li>
+<li>We can replace with the sample analogues. However, it can by a poor approximation when \(ITT_D\) is close to 0.</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Connection to the instrumental variable (IV) estimator</h2></hgroup><article  id="connection-to-the-instrumental-variable-iv-estimator">
+
+<ul>
+<li>Take the infinite super-population perspective.</li>
+<li>Define: \[
+\tau_{late} = \mathbb{E}[Y_i^\ast(1) - Y_i^\ast(0)| G_i = co],
+\] \[
+\alpha \equiv \mathbb{E}[Y_i^\ast(0)], 
+\] \[
+\nu_i \equiv Y_i^\ast(1) - Y_i^\ast(0) - \tau_{late}, 
+\] \[
+\epsilon_i \equiv Y_i^\ast(0) - \alpha.
+\]</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Structural equation</h2></hgroup><article  id="structural-equation">
+
+<ul>
+<li>Then, we have a structural equation: \[
+Y_i^\ast(w) = \alpha + \tau_{late} \cdot w + \epsilon_i + w \cdot \nu_i.
+\]</li>
+<li>Then, for observations, we have: \[
+Y_i = Y_i^\ast(D_i) = \alpha + \tau_{late} \cdot D_i + \epsilon_i + D_i \cdot \nu_i.
+\]</li>
+<li>The OLS estimator does not consistently estimate \(\tau_{late}\), because \(\epsilon_i + D_i \cdot \nu_i\) is potentially correlated with \(D_i\).</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Conditionam mean zero</h2></hgroup><article  id="conditionam-mean-zero">
+
+<ul>
+<li>Because of the random assignment of \(Z_i\), we have: \[
+\mathbb{E}[\epsilon_i|Z_i] = \mathbb{E}[Y_i^\ast(0)|Z_i] - \mathbb{E}[Y_i^\ast(0)] = \mathbb{E}[Y_i^\ast(0)] - \mathbb{E}[Y_i^\ast(0)] = 0.
+\]</li>
+<li>The one-sided compliance implies: \[
+\mathbb{E}[D_i \cdot \nu_i| Z_i = 0] = \mathbb{E}[0 \cdot \nu_i| Z_i = 0] = 0.
+\]</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Conditional mean zero</h2></hgroup><article  id="conditional-mean-zero">
+
+<ul>
+<li>Moreover, the one-sided noncompliers and the random assignment of \(Z_i\) implies: \[
+\begin{split}
+&amp;\mathbb{E}[D_i \cdot \nu_i| Z_i = 1]\\
+&amp;= \mathbb{E}[0 \cdot \nu_i | Z_i = 1, D_i = 0] \mathbb{P}(D_i = 0| Z_i = 1)\\
+&amp;+ \mathbb{E}[1 \cdot \nu_i | Z_i = 1, D_i = 1] \mathbb{P}(D_i = 1 | Z_i = 1)\\
+&amp;= \mathbb{E}[\nu_i | Z_i = 1, D_i = 1, G_i = co] \pi_{co}\\
+&amp;= \mathbb{E}[Y_i^\ast(1) - Y_i^\ast(0) - \tau_{late} | Z_i = 1, G_i = co] \pi_{co}\\
+&amp;= \mathbb{E}[Y_i^\ast(1) - Y_i^\ast(0) - \tau_{late} | G_i = co] \pi_{co}\\
+&amp;= 0.
+\end{split}
+\]</li>
+<li>Therefore, we have the conditional mean zero property: \[
+\mathbb{E}[\epsilon_i + D_i \cdot \nu_i| Z_i] = 0.
+\]</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Reduced-form equation</h2></hgroup><article  id="reduced-form-equation">
+
+<ul>
+<li>We can rewrite the structural equation as: \[
+\begin{split}
+Y_i 
+&amp;= \alpha + \tau_{late} \cdot \mathbb{E}[D_i|Z_i] - \tau_{late} \cdot \mathbb{E}[D_i|Z_i] + \tau_{late} \cdot D_i\\
+&amp;+ \epsilon_i +  D_i \cdot \nu_i\\
+&amp;= \alpha + \tau_{late} \cdot \mathbb{E}[D_i|Z_i] + \eta_i \\
+&amp;= \alpha + \tau_{late} \cdot \{\pi_0 + \pi_1 \cdot Z_i \} + \eta_i,\\
+&amp;= \alpha + \tau_{late} \cdot \{\pi_0 + \pi_1 \cdot Z_i \} + \eta_i,
+\end{split}
+\] where: \[
+\pi_0 \equiv \mathbb{E}[D_i|Z_i = 0] = 0,
+\] \[
+\pi_1 \equiv \mathbb{E}[D_i|Z_i = 1] - \mathbb{E}[D_i|Z_i = 0] = \mathbb{E}[D_i|Z_i = 1] = \pi_{co}.
+\] under the one-sided noncompliers.</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Reduced-form equation</h2></hgroup><article  id="reduced-form-equation-1">
+
+<ul>
+<li>Therefore, we have the reduced-form equation: \[
+Y_i = \alpha + \gamma \cdot Z_i + \eta_i, \gamma \equiv \pi_{co} \cdot \tau_{late}.
+\]</li>
+<li>We know: \[
+\hat{\gamma}_{ols} = \overline{Y}_1 - \overline{Y}_0 = \widehat{ITT}_Y.
+\]</li>
+<li>Therefore, the instrumental variable estimator for \(\tau_{late}\), which is \(\hat{\gamma}_{ols}/\hat{\pi}_{co}\), is numerically the same with \(\widehat{ITT}_{Y, co}\).</li>
+</ul>
+
+</article></slide><slide class="segue dark nobackground level1"><hgroup class = 'auto-fadein'><h2>Two-sided noncompliers</h2></hgroup><article  id="two-sided-noncompliers">
+
+</article></slide><slide class=""><hgroup><h2>Generalize compliance behaviors</h2></hgroup><article  id="generalize-compliance-behaviors">
+
+<ul>
+<li>In experiments, we may be able to ensure that subjects who are not assigned treatmet do not receives treatment.</li>
+<li>However, especially in observational studies, subjects may voluntarily take treatment, even if assigned treatment.</li>
+<li>In such a situation, we need to generalize the compliance status.</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Compliance status</h2></hgroup><article  id="compliance-status-1">
+
+<ul>
+<li>We consider 4 compliance status: Allways takers, never takers, compliers, and defiers. \[
+G_i =
+\begin{cases}
+nt &amp;\text{   if   } D_i^\ast(0) = 0, D_i^\ast(1) = 0,\\
+co &amp;\text{   if   } D_i^\ast(0) = 0, D_i^\ast(1) = 1,\\
+df &amp;\text{   if   } D_i^\ast(0) = 1, D_i^\ast(1) = 0,\\
+at &amp;\text{   if   } D_i^\ast(0) = 1, D_i^\ast(1) = 1.
+\end{cases}
+\]</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Underlying compliance status</h2></hgroup><article  id="underlying-compliance-status">
+
+<ul>
+<li>The are two underlying compliance status for each pair of \(Z_i\) and \(D_i\):<footnote> Table 24.3 of Imbens and Rubin (2015) </footnote></li>
+</ul>
+
+<table class = 'rmdtable'>
+<tr class="header">
+<th align="left"></th>
+<th align="left">\(Z_i = 0\)</th>
+<th align="left">\(Z_i = 1\)</th>
+</tr>
+<tr class="odd">
+<td align="left">\(D_i = 0\)</td>
+<td align="left">nt/co</td>
+<td align="left">nt/df</td>
+</tr>
+<tr class="even">
+<td align="left">\(D_i = 1\)</td>
+<td align="left">at/df</td>
+<td align="left">at/co</td>
+</tr>
+</table>
+
+</article></slide><slide class=""><hgroup><h2>ITT effects</h2></hgroup><article  id="itt-effects">
+
+<ul>
+<li>The ITT analysis is unchanged with the two-sided compliers</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Decomposing \(ITT_Y\)</h2></hgroup><article  id="decomposing-itt_y-1">
+
+<ul>
+<li>With the two-sided noncompliers, \(ITT_Y\) is a mixture of ITT effects of 4 compliance status. \[
+\begin{split}
+ITT_Y 
+&amp;= ITT_{Y, nt} \cdot \pi_{nt} + ITT_{Y, co} \cdot \pi_{co} \\
+&amp;+ ITT_{Y, df} \cdot \pi_{df} + ITT_{Y, at} \cdot \pi_{at}.
+\end{split}
+\]</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Exclusion restrictions for nevertakers and alwaystakers</h2></hgroup><article  id="exclusion-restrictions-for-nevertakers-and-alwaystakers">
+
+<ul>
+<li><strong>Assumption: Exclusion restriction for nevertakers</strong>
+
+<ul>
+<li>For all nevertakers: \[
+Y_i^\ast(0, 0) = Y_i^\ast(1, 0).
+\]</li>
+</ul></li>
+<li><strong>Assumption: Exclusion restriction for alwaystakers</strong>
+
+<ul>
+<li>For all alwaystakers: \[
+Y_i^\ast(0, 1) = Y_i^\ast(1, 1).
+\]</li>
+</ul></li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Implications for \(ITT_{Y, nt}\) and \(ITT_{Y, at}\)</h2></hgroup><article  id="implications-for-itt_y-nt-and-itt_y-at">
 
 <p>\[
-\begin{split}   
-\text{FWER} &amp;= \mathbb{P}\{\exists m = 1, \cdots, M_0, H_0^m \text{ is rejected}|\forall m = 1, \cdots, M_0, H_0^m\} \\
-&amp;= \mathbb{P}\left\{\bigcup_{l = 1}^{M_0} \{l \text{   is first rejected}\}||\forall m = 1, \cdots, M_0, H_0^m \right\}\\
-&amp;\le \sum_{l = 1}^{M_0} \mathbb{P}\{l \text{   is first rejected}|\forall m = 1, \cdots, M_0, H_0^m\}\\
-&amp;\le \sum_{l = 1}^{M_0} \mathbb{P}\left\{p^l \le \frac{\alpha}{M_0}|\forall m = 1, \cdots, M_0, H_0^m\right\}\\
-&amp;= \sum_{l = 1}^{M_0} \frac{\alpha}{M_0}\\
-&amp;= \alpha.
+\begin{split}
+ITT_{Y, nt} &amp; = \frac{1}{N_{nt}} \sum_{i: G_i = nt}\{Y_i^\ast[1, D_i^\ast(1)] - Y_i^\ast[0, D_i^\ast(0)] \}\\
+&amp;=\frac{1}{N_{nt}} \sum_{i: G_i = 
+nt}\{Y_i^\ast(1, 0) - Y_i^\ast(0, 0) \}\\
+&amp;=0.
 \end{split}
 \]</p>
 
-</article></slide><slide class=""><hgroup><h2>Remarks</h2></hgroup><article  id="remarks">
+<p>\[
+\begin{split}
+ITT_{Y, at} &amp; = \frac{1}{N_{at}} \sum_{i: G_i = at}\{Y_i^\ast[1, D_i^\ast(1)] - Y_i^\ast[0, D_i^\ast(0)] \}\\
+&amp;=\frac{1}{N_{at}} \sum_{i: G_i = at}\{Y_i^\ast(1, 1) - Y_i^\ast(0, 1) \}\\
+&amp;=0.
+\end{split}
+\] - Therefore, \(ITT_Y\) is a mixture of compliers and defiers.</p>
+
+</article></slide><slide class=""><hgroup><h2>Monotonicity</h2></hgroup><article  id="monotonicity">
 
 <ul>
-<li>Neither Bonferroni correction or Bonferroni-Holm correction exploit the correlation among test statistics.</li>
-<li>We can improve the power by exploiting the correlation using a bootstrap method (Romano and Wolf, 2010).</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>False Discovery Rate (FDR)</h2></hgroup><article  id="false-discovery-rate-fdr">
+<li>Moreover, we assume there are no defiers.</li>
+<li>This is a substantive assumption that needs to be justified from the contextual knowledge.</li>
+<li>For example, suppose that:
 
 <ul>
-<li>FWER is required when making a single type-I error can cause a problem.
-
-<ul>
-<li>e.g. The inspection of parts of a car</li>
-<li>e.g. Validation checks for identification assumptions</li>
+<li>\(Z_i\): draft to the Vietnam war.</li>
+<li>\(D_i\): go to the Vietnam war.</li>
+<li>Compliers: goes to the Vietnam war if drafted, while does not if not drafted.</li>
+<li>Defiers: volunteers to the Vietnam war if not drafted, while does not go if drafted.</li>
 </ul></li>
-<li>In some situations, as long as there are some true rejections, it is not a problem of having a few false rejections.
+<li>Formally:</li>
+<li><strong>Asumption: Monotonicity</strong>
 
 <ul>
-<li>e.g. The inspection of a car assembly line</li>
-<li>e.g. Multiple conditional average treatment effects</li>
+<li>For all subjects \(D_i^\ast(1) \ge D_i^\ast(0)\).</li>
 </ul></li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>False Discovery Rate (FDR)</h2></hgroup><article  id="false-discovery-rate-fdr-1">
+</article></slide><slide class=""><hgroup><h2>Identification of \(ITT_{Y, co}\)</h2></hgroup><article  id="identification-of-itt_y-co">
 
 <ul>
-<li><strong>Definition</strong>: <em>False Discovery Rate</em>: The proportion of null hypotheses that are mistakenly rejected among rejected null hypotheses: \[
-FDR = \frac{\sum_{m = 1}^{M_0} 1\{H_0^m \text{   is rejected}\}}{\sum_{m = 1}^M 1\{H_0^m \text{   is rejected}\}},
-\] where \(m = 1, \cdots, M_0\) are true null hypotheses and \(M_0\) is the number of true null hypotheses.</li>
-<li>We consider a procedure that controls for the expected FDR: \(\mathbb{E}[FDR]\).</li>
+<li>Under the exclusion restriction for nevertakes, alwaystakers, and the monotonicity, we have: \[
+ITT_Y = ITT_{Y, co} \cdot \pi_{co}.
+\]</li>
+<li>Moreover: \[
+\begin{split}
+ITT_D 
+&amp;= \mathbb{E}[D_i^\ast(1) - D_i^\ast(0)| G_i = nt] \cdot \pi_{nt}\\
+&amp;+ \mathbb{E}[D_i^\ast(1) - D_i^\ast(0)| G_i = at] \cdot \pi_{at}\\
+&amp;+ \mathbb{E}[D_i^\ast(1) - D_i^\ast(0)| G_i = co] \cdot \pi_{co}\\
+&amp;+ \mathbb{E}[D_i^\ast(1) - D_i^\ast(0)| G_i = df] \cdot \pi_{df}\\
+&amp;=\pi_{co}.
+\end{split}
+\]</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Benjamin-Hotchberg Correction</h2></hgroup><article  id="benjamin-hotchberg-correction">
+</article></slide><slide class=""><hgroup><h2>Identification of \(ITT_{Y, co}\)</h2></hgroup><article  id="identification-of-itt_y-co-1">
+
+<ul>
+<li>Therefore, \(ITT_{Y, co}\) is identified as: \[
+ITT_{Y, co} = \frac{ITT_Y}{ITT_D}.
+\]</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Estimation and inference</h2></hgroup><article  id="estimation-and-inference">
+
+<ul>
+<li>The estimation and inference is, therefore, the same as the one-sided noncompliers.</li>
+<li>The connection to the instrumental variable estimation is the same as well.</li>
+</ul>
+
+</article></slide><slide class="segue dark nobackground level1"><hgroup class = 'auto-fadein'><h2>Multi-value instrumental variables</h2></hgroup><article  id="multi-value-instrumental-variables">
+
+</article></slide><slide class=""><hgroup><h2>Generalizing the instrumental variable</h2></hgroup><article  id="generalizing-the-instrumental-variable">
+
+<ul>
+<li>The treatment assignment \(Z\) is often interpreted as the instrumental variable in econometrics.</li>
+<li>In econometrics, we often use multi-valued or even continuous variable instead of a binary variable as \(Z\).</li>
+<li>How do we generalize the LATE to the multi-valued instrumental variables?</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Potential outcome and structural selection model</h2></hgroup><article  id="potential-outcome-and-structural-selection-model">
+
+<ul>
+<li>Consider the following framework: \[
+Y^\ast(1) = \mu_1(X) + U_1,
+\] \[
+Y^\ast(0) = \mu_0(X) + U_0,
+\] \[
+D = 1\{\mu_D(Z, X) \ge V\}.
+\]</li>
+<li>We observe \(Y = Y^\ast(1) \cdot D + Y^\ast(0) \cdot (1 - D)\).</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>About the additive separability</h2></hgroup><article  id="about-the-additive-separability">
+
+<ul>
+<li>Note that the additive separability of the potential outcome is without loss of generality, because if: \[
+Y^\ast(1) = \tilde{\mu}_1(X, \tilde{U}_1),
+\] we can redefine: \[
+\mu_1(X) \equiv \mathbb{E}[\tilde{\mu}_1(X, \tilde{U}_1)|X],
+\] and: \[
+U_1 \equiv Y^\ast(1) - \mathbb{E}[\tilde{\mu}_1(X, \tilde{U}_1)|X].
+\]</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Assumptions</h2></hgroup><article  id="assumptions">
 
 <ol>
-<li>Order the p-values: \(p^{(1)} \le p^{(2)} \le \cdots \le p^{(M)}\).</li>
-<li>For \(l = M, \cdots, 1\) (starting with the highest p-value):
-
-<ol>
-<li>If \(p^{(l)} \le \alpha l/M\), reject \(H_0^{(l)}, l, \cdots, 1\).</li>
-<li>If \(p^{(l)} &gt; \alpha l/M\), accept \(H_0^{(l)}\) and move to \(l - 1\).</li>
-</ol></li>
+<li>Instrument independence: \((U_1, U_0, V) \perp \!\!\! \perp Z | X\).</li>
+<li>Exclusion restriction: \(\mu_D(Z, X)\) has a non-degenerate distribution given \(X\).</li>
+<li>Scalar \(V\) is continuously distributed.</li>
+<li>\(\mathbb{E}[|Y^\ast(1)|]\) and \(\mathbb{E}[|Y^\ast(0)|]\) are finite.</li>
+<li>\(0 &lt; \mathbb{P}[D = 1| X] &lt; 1\).</li>
 </ol>
 
-</article></slide><slide class=""><hgroup><h2>Positive regression dependence</h2></hgroup><article  id="positive-regression-dependence">
-
 <ul>
-<li>If the test statistics are <em>independent</em>, then the Benjamin-Hotchberg correction controls for the FDR.</li>
-<li>If the test statistics are <em>dependent</em>, then the Benjamin-Hotchberg correction controls for the FDR under the <em>positive regression dependence</em> assumption.</li>
-<li><strong>Definition</strong>: _Increasing set__: A set \(D\) is said to be increasing if \(x \in D\) and \(y \ge x\) implies \(y \in D\).</li>
-<li><strong>Definition</strong>: <em>Positive regression dependence</em>: For test statistics \(X^m\), \(m = 1, \cdots, M\), for any increasing set \(D\), and for any \(\mathcal{M}_0 \subset \mathcal{M}\), \(\mathbb{p}\{\{X^m\} \in D| X^m = x\}\) is non-decreasing in \(x\).</li>
-<li>If the joint distribution of the test statistics satisfies positive regression dependence for the set of true null hypothesis \(\mathcal{M}_0 \subset \mathcal{M}\), then the Benjamin-Hotchberg correction controls for the FDR no greater than \(\alpha M_0/M\).</li>
+<li>Vytlacil (2002) showed that these assumptions are equivalent to the identifying assumptions for LATE.</li>
+<li>In particular, the threshold crossing selection equation with scalar \(V\) can be interpreted as the monotonicity assumption.</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>General case</h2></hgroup><article  id="general-case">
+</article></slide><slide class=""><hgroup><h2>Propensity score</h2></hgroup><article  id="propensity-score">
 
 <ul>
-<li>In general, the Benjamin-Hotchberg correction may not control for the FDR.</li>
-<li>In this case, we can use either:
-
-<ul>
-<li>Use \(\alpha l/ (M \sum_{s=1}^M 1/ s)\) instead of \(\alpha l/M\) (Benjamini-Yekutieli, 2001).</li>
-<li>The bootstrap method to control for the FDR (Romano et al., 2008).</li>
-</ul></li>
+<li>Under the first assumption, the propensity score can be written as: \[
+\begin{split}
+e(z, x) 
+&amp;\equiv \mathbb{P}(D = 1 | z, x) \\
+&amp;= \mathbb{P}[V \le \mu_D(z, x) | z, x]\\
+&amp;= \mathbb{P}\{F_{V|X}(V|x) \le F_{V|X}[\mu_D(z, x)|x]|z, x\}\\
+&amp;= \mathbb{P}\{U_D \le F_{V|X}[\mu_D(z, x)|x]|z, x\}, U_D|X \sim U[0, 1]\\
+&amp;= F_{V|X}[\mu_D(z, x)|x].
+\end{split}
+\]</li>
+<li>Then, under the third assumption, we have: \[
+D =1\{e(Z, X) \ge U_D\}, U_D|X \sim U[0, 1].
+\]</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>References</h2></hgroup><article  id="references">
+</article></slide><slide class=""><hgroup><h2>Marginal treatment effect</h2></hgroup><article  id="marginal-treatment-effect">
 
 <ul>
-<li>Benjamini, Yoav, and Yosef Hochberg (1995). &ldquo;Controlling the false discovery rate: a practical and powerful approach to multiple testing.&rdquo; <em>Journal of the Royal Statistical Society. Series B (Methodological)</em>, 57(1), 289-300.</li>
-<li>Romano, J. P., and Wolf, M. (2010). &ldquo;Efficient computation of adjusted p-values for resampling-based stepdown multiple testing.&rdquo; <em>Statistics and Probability Letters</em>, 80(9-10), 915-920.</li>
-<li>Romano, J. P., Shaikh, A. M., and Wolf, M. (2008). &ldquo;Control of the false discovery rate under dependence using the bootstrap and subsampling.&rdquo; <em>Test</em>, 17(3), 417-442.</li>
+<li>In this framework, define the <strong>marginal treatment effect (MTE)</strong> as follows: \[
+\tau_{mte}(x, u_D) \equiv \mathbb{E}[Y^\ast(1) - Y^\ast(0)| X = x, U_D = u_D],
+\] as a function of \((x, u_D)\).</li>
+<li>We can define the other estimands such as the average treatment effect and local average treatment effect as a function of the marginal treatment effects.</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>LATE as a function of MTEs</h2></hgroup><article  id="late-as-a-function-of-mtes">
+
+<ul>
+<li>For example, we can write LATE as: \[
+\begin{split}
+\tau_{late}(x) 
+&amp;= \mathbb{E}[Y^\ast(1) - Y^\ast(0)| X = x, G = co]\\
+&amp;= \mathbb{E}[Y^\ast(1) - Y^\ast(0)| X = x, D(z) = 1, D(z&#39;) = 0]\\
+&amp;= \mathbb{E}[Y^\ast(1) - Y^\ast(0)| X = x, U_D \le e(z, x), U_D \ge e(z&#39;, x)]\\
+&amp;=\frac{1}{e(z, x) - e(z&#39;, x)} \int_{e(z&#39;, x)}^{e(z, x)} \tau_{mte}(x, u_D) du_D.
+\end{split}
+\]</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Local IV estimand</h2></hgroup><article  id="local-iv-estimand">
+
+<ul>
+<li>We define the <strong>local IV (LIV) estimand</strong> as: \[
+\tau_{liv}(x, e) \equiv \frac{\partial}{\partial e}\mathbb{E}[Y|X = x, e(Z, x) = e].
+\]</li>
+<li>We can nonparametrically estimate LIV \(\tau_{liv}(x, e)\) at every \(e\) in the support of the conditional distribution of \(e(Z, X)\) given \(X = x\).</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>LIV identifies MTE</h2></hgroup><article  id="liv-identifies-mte">
+
+<p>\[
+\begin{split}
+\mathbb{E}[Y|e(Z) = e] 
+&amp;= \mathbb{E}[Y^\ast(0)| e(z) = e]\\
+&amp;+ \mathbb{E}\{D\cdot[Y^\ast(1) - Y^\ast(0)]| e(z) = e\} \\
+&amp;= \mathbb{E}[Y^\ast(0)| e(z) = e]\\
+&amp;+ \mathbb{E}[Y^\ast(1) - Y^\ast(0)| D = 1, e(z) = e] \cdot \mathbb{P}[D = 1|e(z) = e]\\
+&amp;= \mathbb{E}[Y^\ast(0)| e(z) = e] + \mathbb{E}[Y^\ast(1) - Y^\ast(0)| D = 1, e(z) = e] \cdot e\\
+&amp;= \mathbb{E}[Y^\ast(0)] + \mathbb{E}[Y^\ast(1) - Y^\ast(0)| D = 1, e(z) = e] \cdot e\\
+&amp;= \mathbb{E}[Y^\ast(0)] + (\mu_1 - \mu_0) \cdot e\\
+&amp;+ \mathbb{E}[U_1 - U_0| D = 1, e(z) = e] \cdot e\\
+&amp;= \mathbb{E}[Y^\ast(0)] + (\mu_1 - \mu_0) \cdot e + \mathbb{E}[U_1 - U_0| U_D \le e] \cdot e\\
+&amp;= \mathbb{E}[Y^\ast(0)] + (\mu_1 - \mu_0) \cdot e\\
+&amp;+ \int_0^e \mathbb{E}[U_1 - U_0| U_d = u_D] d u_D.
+\end{split}
+\]</p>
+
+</article></slide><slide class=""><hgroup><h2>LIV identifies MTE</h2></hgroup><article  id="liv-identifies-mte-1">
+
+<ul>
+<li>By taking the derivatives with respect to \(e\), we have: \[
+\begin{split}
+\tau_{liv}(e) 
+&amp;= \frac{\partial}{\partial e} \mathbb{E}[Y|e(Z) = e]  \\
+&amp;= \mu_1 - \mu_0 + \mathbb{E}[U_1 - U_0| U_d = e] \\
+&amp;= \tau_{mte}(e).
+\end{split}
+\]</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Reference</h2></hgroup><article  id="reference">
+
+<ul>
+<li>Chapter 23-24, Guido W. Imbens and Donald B. Rubin, 2015, Causal Inference for Statistics, Social, and Biomedical Sciences, Cambridge University Press.</li>
+<li>Section 9, Athey, Susan, and Guido Imbens. 2016. &ldquo;The Econometrics of Randomized Experiments.&rdquo; arXiv [stat.ME]. arXiv. <a href='http://arxiv.org/abs/1607.00698' title=''>http://arxiv.org/abs/1607.00698</a>.</li>
+<li>Vytlacil, Edward J. 2002. &ldquo;Independence, Monotonicity, and Latent Index Models: An Equivalence Result&rdquo;, Econometrica 70 (1): 331–41.</li>
+<li>Heckman and Vytlacil (2005) &ldquo;Structural Equations, Treatment Effects, and Econometric Policy Evaluation&rdquo;, Econometrica 73 (3): 669-738.</li>
 </ul></article></slide>
 
 
@@ -3333,11 +3919,6 @@ FDR = \frac{\sum_{m = 1}^{M_0} 1\{H_0^m \text{   is rejected}\}}{\sum_{m = 1}^M 
        window.jQuery(document).on('slideenter', function(e) {
          window.jQuery(e.target).trigger('shown');
       });
-    }
-    if (window.Shiny) {
-      // Initialize slides when this script appears on the page, since it
-      // indicates that the <slides> markup has been fully loaded.
-      window.loadDeck();
     }
   })();
 </script>

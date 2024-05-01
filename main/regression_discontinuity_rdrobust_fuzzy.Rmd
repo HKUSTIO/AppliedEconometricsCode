@@ -1,0 +1,116 @@
+---
+title: "Regression Discontinuity"
+subtitle: "Fuzzy RD Design"
+output: 
+  html_document:
+    css: style_do.css
+    number_sections: yes
+    toc: yes
+    toc_depth: '3'
+    toc_float: yes
+    theme: "spacelab" #"default", "bootstrap", "cerulean", "cosmo", "darkly", "flatly",
+                 # "journal", "lumen", "paper", "readable", "sandstone", "simplex",
+                 # "spacelab", "united", "yeti"
+    highlight: "pygments" #"default", "tango", "pygments", "kate", "monochrome",
+                 # "espresso", "zenburn", "haddock", "textmate"
+    df_print: paged
+    code_folding: show
+date: 'Last update: `r Sys.Date()`'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(cache = FALSE, echo = TRUE, fig.align = "center")
+library(AppliedEconometricsCode)
+library(foreach)
+library(magrittr)
+library(ggplot2)
+library(kableExtra)
+library(modelsummary)
+library(rdrobust)
+color_main <- scales::viridis_pal(option = "C")(1)
+```
+
+Here, we implement the estimation method for fuzzy regression discontinuity design using the `rdrobust` package. The functions called from `AppliedEconometricsCode` are defined in `R/functions_rdrobust.R`. Below, we generate samples based on Lee (2008), set options for the `rdrobust` package, and explain the interpretation of the results.
+
+# Generating Simulation Data
+
+## Setting Constants and Parameters
+
+First, fix the seed and set the number of individuals `N`.
+
+```{r}
+set.seed(1)
+N <- 1000
+```
+
+## Generating Data
+
+Next, we generate samples for the fuzzy RD design. The conditional expectation function used for data generation is the same as the one used in the `rdrobust` simulations, similar to Lee (2008). There are two differences from the sharp design:
+
+- The potential outcome function is defined based on the treatment variable `d` with noncompliance, not the instrumental variable `z`.
+- The effect size is increased to detect effects even with noncompliance.
+
+The increased effect size of the induced model, i.e., ITT, is `0.24`, and since the compliance rate is `0.6`, the LATE is `0.4`. Here, the treatment variable is assumed to follow a probit model.
+
+```{=latex}
+\begin{align*}
+ d =& 1\{\Psi^{-1}(0.3(1 + 0.5 s) + 0.4z) \leq \epsilon_i\}, \epsilon_i \sim N(0,1)\\
+ z =& 1\{s \geq 0\}, \Psi(x) = P(\epsilon_i \leq x),\\
+ y =& y^*(1)d + y^*(0)(1 - d)
+\end{align*}
+```
+
+Generate Lee data and name it `dgp_lee`.
+
+```{r}
+dgp_lee <- 
+  generate_dgp_lee_fuzzy(
+    N = N
+  )
+```
+
+# Analysis
+
+## Estimation with the `rdrobust` package
+
+Similar to the sharp design, by specifying the outcome variable `y` and the score variable `x` to the `rdrobust` function, a list of results for the ITT effect can be obtained.
+
+```{r}
+result <- 
+  rdrobust::rdrobust(
+    y = dgp_lee$y,
+    x = dgp_lee$s,
+    all = TRUE
+  )
+summary(result)
+```
+
+Similarly, by using the treatment variable `d` with noncompliance instead of the outcome variable, the effect of the instrumental variable on the treatment can be obtained.
+
+```{r}
+result <- 
+  rdrobust::rdrobust(
+    y = dgp_lee$d,
+    x = dgp_lee$s,
+    all = TRUE
+  )
+summary(result)
+
+```
+
+When specifying the treatment variable `d` with noncompliance in the `fuzzy` option, the output for the fuzzy RD design can be obtained.
+
+```{r}
+result <- 
+  rdrobust::rdrobust(
+    y = dgp_lee$y,
+    x = dgp_lee$s, 
+    fuzzy = dgp_lee$d,
+    all = TRUE
+  )
+summary(result)
+```
+
+The ITT was `0.24`, and the compliance rate was `0.6`, resulting in a LATE of `0.4`. Consequently, the results obtained were consistent with the data generation process.
+
+

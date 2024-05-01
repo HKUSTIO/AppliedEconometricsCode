@@ -160,6 +160,7 @@ compute_p_value_mixed_effect <-
     N,
     M,
     M_0,
+    tau_population,
     seed
   ) {
     z <-
@@ -172,7 +173,7 @@ compute_p_value_mixed_effect <-
       purrr::map(
         ~ tibble::tibble(
             z = z,
-            y = rnorm(N) + 0.2 * z
+            y = rnorm(N) + tau_population * z
           )
       )
 

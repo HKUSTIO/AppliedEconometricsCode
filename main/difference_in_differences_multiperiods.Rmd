@@ -1,0 +1,496 @@
+---
+title: "Difference-in-Differences"
+subtitle: "Multi-periods"
+output: 
+  html_document:
+    css: style_do.css
+    #以下設定追加
+    number_sections: yes
+    toc: yes
+    toc_depth: '3'
+    toc_float: yes
+    theme: "spacelab" #"default", "bootstrap", "cerulean", "cosmo", "darkly", "flatly",
+                 # "journal", "lumen", "paper", "readable", "sandstone", "simplex",
+                 # "spacelab", "united", "yeti"
+    highlight: "pygments" #"default", "tango", "pygments", "kate", "monochrome",
+                 # "espresso", "zenburn", "haddock", "textmate"
+    df_print: paged
+    code_folding: show
+date: 'Last update: `r Sys.Date()`'
+---
+
+Here, we implement difference-in-differences estimation using the `did` package. The functions called from `AppliedEconometrics` are defined in `R/functions_did.R`.
+
+```{r setup, include=FALSE}
+rm(list = ls())
+knitr::opts_chunk$set(cache = FALSE, echo = TRUE, fig.align = "center")
+library(AppliedEconometrics)
+library(foreach)
+library(magrittr)
+library(ggplot2)
+library(kableExtra)
+library(modelsummary)
+color_main <- scales::viridis_pal(option = "C")(1)
+```
+
+First, we set the number of individuals `N` and the number of periods `T`.
+
+```{r}
+N <- 500
+T0 <- 4
+T1 <- 6
+T <- T0 + T1
+```
+
+## Generating data
+
+The potential outcomes function under control is generated as follows:
+
+```{=latex}
+\begin{align*}
+ y^*_{t}(0) =& a_i + b_t + e_{it}
+\end{align*}
+```
+
+ただし、
+- Fixed effect `a_i`: Logarithm of the average salary of 2020 graduates of women.
+- Time effect `b_t`: Linear trend.
+- Error term `e_it`: IID normal distribution error.
+
+
+On the other hand, the treatment group dummy `g_i` is given by a linear logistic function of the fixed effect `a_i`.
+
+```{=latex}
+\begin{align*}
+ P(g_i|a_i) =& \frac{\exp(\alpha_0 + \alpha_1 a_i)}{1 + \exp(\alpha_0 + \alpha_1 a_i)}
+\end{align*}
+```
+
+The treatment `d_it` is uniformly administered during the treatment period `t \geq T0 + 1`, and the potential outcome function under treatment is given as follows, with `\tau_i \sim N(0.05,0.2)` and `\tau_t ~ U[0.9,1.1]`.
+
+```{=latex}
+\begin{align*}
+ y^*_{t}(1) =& y^*_t(0) + d_{it} \tau_i \tau_t
+\end{align*}
+```
+
+```{r}
+set.seed(1)
+df_base <- 
+  generate_df_no_covariates(
+    N = N, 
+    T = T,
+    T0 = T0
+  )
+```
+
+# Treatment occurrence at multiple time points
+
+Consider cases where assignments occur over multiple periods. Here, let the covariates `x1_i`, `x2_i` be pairs of binary variables taking values `(0,0), (1,0), (1,1)`, and assume that the assignment to the treatment group is done using an ordered logistic model.
+
+```{=latex}
+\begin{align*}
+ P(g1_i) =& \frac{\exp(\alpha_0 + \alpha^{11} x_{1i} + \alpha^{12}x_{2i})}{1 + \exp(\alpha_0 + \alpha^{11}x_{1i} + \alpha^{12}x_{2i})}\\
+ P(g2_i|x1_i,x2_i) =& \frac{\exp(\alpha_0 + \alpha^{21} x_{1i} + \alpha^{22}x_{2i})}{1 + \exp(\alpha_0 + \alpha^{21} x_{1i} + \alpha^{22}x_{2i}))} - 
+ \frac{\exp(\alpha_0 + \alpha^{11} x_{1i} + \alpha^{12}x_{2i}))}{1 + \exp(\alpha_0 + \alpha^{11} x_{1i} + \alpha^{12}x_{2i})}\\
+ \ldots & \\
+P(g4_i|x1_i,x2_i) =& \frac{\exp(\alpha_0 + \alpha^{41} x_{1i} + \alpha^{42}x_{2i})}{1 + \exp(\alpha_0 + \alpha^{41} x_{1i} + \alpha^{42}x_{2i}))} - 
+ \frac{\exp(\alpha_0 + \alpha^{31} x_{1i} + \alpha^{32}x_{2i}))}{1 + \exp(\alpha_0 + \alpha^{31} x_{1i} + \alpha^{32}x_{2i})}
+ \end{align*}
+```
+
+In this case, the group receiving treatment in period 5 has a large proportion and a positive effect, while the groups receiving treatment in periods 6, 7, and 8 each have a smaller proportion and a negative effect, resulting in an overall small positive average treatment effect on the treated.
+
+```{r}
+set.seed(1)
+df_nocov <- 
+  generate_df_multiperiod(
+    N = N,
+    T = T,
+    T1 = T1,
+    T0 = T0,
+    diff_trend = FALSE
+  )
+
+table_by_group <- 
+  data.frame(
+    group = 
+      c(
+        "Group 1",
+        "Group 2",
+        "Group 3",
+        "Group 4",
+        "All Treatment Groups"
+      ),
+  fraction = 
+    c(
+      mean(df_nocov$g1_i[1:N]),
+      mean(df_nocov$g2_i[1:N]),
+      mean(df_nocov$g3_i[1:N]),
+      mean(df_nocov$g4_i[1:N]),
+      mean(df_nocov$d_it)
+    ),
+  att = 
+    c(
+      mean(df_nocov$tau_it[(df_nocov$time >= T0+1)&(df_nocov$g1_i == 1)]),
+      mean(df_nocov$tau_it[(df_nocov$time >= T0+2)&(df_nocov$g2_i == 1)]),
+      mean(df_nocov$tau_it[(df_nocov$time >= T0+3)&(df_nocov$g3_i == 1)]),
+      mean(df_nocov$tau_it[(df_nocov$time >= T0+4)&(df_nocov$g4_i == 1)]),
+      mean(df_nocov$tau_it[df_nocov$d_it == 1])
+    )
+)
+table_by_group %>%
+  kbl() %>%
+  kable_styling()
+```
+
+
+
+## Corrected TWFE
+
+If regression is properly stratified by treatment time, heterogeneous ATTs can be estimated.
+
+```{r}
+lsdv <- 
+  plm::plm(
+    formula = y_it ~ d1_it + d2_it + d3_it + d4_it,
+    data = df_nocov, 
+    index = c("id","time"),
+    effect = "twoways"
+  )
+summary(lsdv)
+```
+
+## Callaway-Sant'Anna estimation
+
+Using the Callaway-Sant'Anna estimator allows for the estimation of more detailed dynamic effects and yields uniformly robust confidence intervals, as well as the aggregated values that were the original targets of estimation.
+
+```{r}
+result_did <- 
+  did::att_gt(
+    yname = "y_it",
+    tname = "time",
+    idname = "id",
+    gname = "group_i",
+    data = df_nocov
+  )
+summary(result_did)
+did::ggdid(result_did)
+print(
+  did::aggte(
+    MP = result_did, 
+    type = "group"
+  )
+)
+```
+
+```{r}
+print(did::aggte(MP = result_did, type = "simple"))
+```
+
+## Estimation Based on Inappropriate Confidence Intervals
+
+The following estimation, with `cband = FALSE`, does not compute uniformconfidence intervals and is therefore inappropriate (note that this is the default in the Stata version).
+
+```{r}
+result_did_invalid <- 
+  did::att_gt(
+    yname = "y_it",
+    tname = "time",
+    idname = "id",
+    gname = "group_i",
+    data = df_nocov,
+    bstrap = FALSE,
+    cband = FALSE
+  )
+summary(result_did_invalid)
+```
+
+
+# Covariate and pretrend
+
+## Covariate-dependent trend
+
+Furthermore, generate a linear trend that varies by covariate.
+
+```{r}
+set.seed(1)
+df_cov <- 
+  generate_df_multiperiod(
+    N = N,
+    T = T,
+    T1 = T1,
+    T0 = T0,
+    diff_trend = TRUE
+  )
+```
+
+## Comparison of Observations in the 3rd and 4th Periods (Control Periods) by Group
+
+Overall, a trend of increase over time is set, but a decreasing trend is set when covariates take large values.
+
+At the same time, when covariates take large values, the proportion of the treatment group receiving treatment later is set to be higher, resulting in lower observations for the treatment group compared to the control group. This failure of parallel trends is resolved by stratifying by covariate.
+
+```{r}
+df_cov$group_str_i <- "control"
+df_cov$group_str_i[
+  df_cov$group_i>=5
+] <- "treat"
+
+df_cov$x_str_i <- "00"
+df_cov$x_str_i[
+  df_cov$x1_i==1 & df_cov$x2_i == 0
+] <- "10"
+df_cov$x_str_i[
+  df_cov$x1_i==1 & df_cov$x2_i == 1
+] <- "11"
+
+df_compare <- 
+  data.frame(
+    y3 = df_cov$y_it[df_cov$time == 3],
+    y4 = df_cov$y_it[df_cov$time == 4],
+    group = df_cov$group_str_i,
+    groupx = df_cov$x_str_i
+  )
+
+g <- 
+  df_compare %>%
+  ggplot(
+    aes(
+      x = y3,
+      y = y4,
+      color = group
+    )
+  ) +
+  geom_point() +
+  ylim(
+    c(
+      4.2,
+      6.4
+    )
+  ) +
+  xlim(
+    c(
+      4.2,
+      6.4
+    )
+  ) +
+  theme_classic()
+g
+
+g <- 
+  df_compare %>%
+  dplyr::filter(
+    groupx == "00"
+  ) %>%  
+  ggplot(
+    aes(
+      x = y3,
+      y = y4,
+      color = group
+    )
+  ) +
+  geom_point() +
+  ylim(
+    c(
+      4.2,
+      6.4
+    )
+  ) +
+  xlim(
+    c(
+      4.2,
+      6.4
+    )
+  ) +
+  theme_classic()
+g
+
+g <- 
+  df_compare %>%
+  dplyr::filter(
+    groupx == "10"
+  ) %>%
+  ggplot(
+    aes(
+      x = y3,
+      y = y4,
+      color = group
+    )
+  ) +
+  geom_point() +
+  ylim(
+    c(
+      4.2,
+      6.4
+    )
+  ) +
+  xlim(
+    c(
+      4.2,
+      6.4
+    )
+  ) +
+  theme_classic()
+g
+
+g <- 
+  df_compare %>%
+  dplyr::filter(
+    groupx == "11"
+  ) %>%
+  ggplot(
+    aes(
+      x = y3,
+      y = y4,
+      color = group
+    )
+  ) +
+  geom_point() +
+  ylim(
+    c(
+      4.2,
+      6.4
+    )
+  ) +
+  xlim(
+    c(
+      4.2,
+      6.4
+    )
+  ) +
+  theme_classic()
+g
+```
+
+## Estimation without covariates
+
+No unconditional parallel trends assumption holds, so the results are significantly different. The pretrend test is also rejected.
+
+```{r}
+result_did_cov <- 
+  did::att_gt(
+  yname = "y_it",
+  tname = "time",
+  idname = "id",
+  gname = "group_i",
+  data = df_cov
+)
+summary(result_did_cov)
+did::ggdid(result_did_cov)
+print(
+  did::aggte(
+    MP = result_did_cov, 
+    type = "group"
+  )
+)
+print(
+  did::aggte(
+    MP = result_did_cov, 
+    type = "simple"
+  )
+)
+```
+
+## Estimation with covariates
+
+The linear trend is not changed, so the estimated values are the same as those without covariates.
+
+```{r}
+result_did_cov <- did::att_gt(
+  yname = "y_it",
+  tname = "time",
+  idname = "id",
+  gname = "group_i",
+  data = df_cov,
+  xformla = ~ 1 + x1_i + x2_i
+)
+summary(result_did_cov)
+did::ggdid(result_did_cov)
+print(
+  did::aggte(
+    MP = result_did_cov, 
+    type = "group"
+  )
+)
+print(
+  did::aggte(
+    MP = result_did_cov, 
+    type = "simple"
+  )
+)
+```
+
+# All individuals are eventually treated
+```{r}
+set.seed(1)
+df_nyt <- 
+  generate_df_multiperiod_nyt(
+    N = N,
+    T = T,
+    T1 = T1,
+    T0 = T0,
+    diff_trend = FALSE
+  )
+```
+
+## Implementation with the did package
+
+If options are not specified as follows, an error occurs due to the absence of a control group that has not received treatment.
+
+```{r}
+try(
+  result_did_nyt <- 
+    did::att_gt(
+      yname = "y_it",
+      tname = "time",
+      idname = "id",
+      gname = "group_i",
+      data = df_nyt
+    )
+)
+```
+
+When `control_group` is set to "notyettreated", it treats all control periods of the treatment groups as the control group. This option can also be used when there is a control group that never receives treatment, in which case both the "never treated control group" and the "not yet treated treatment group" are treated as control groups.
+
+```{r}
+result_did_nyt <- 
+  did::att_gt(
+    yname = "y_it",
+    tname = "time",
+    idname = "id",
+    gname = "group_i",
+    data = df_nyt,
+    control_group = "notyettreated"
+  )
+
+summary(result_did_nyt)
+did::ggdid(result_did_nyt)
+print(
+  did::aggte(
+    MP = result_did_nyt, 
+    type = "group"
+  )
+)
+print(
+  did::aggte(
+    MP = result_did_nyt, 
+    type = "simple"
+  )
+)
+```
+
+## Handling by Truncating the Period
+
+In this case, observations can be truncated at `T = 9`, and the group that receives treatment last at `T=10` can be treated as the control group. In this example, since the treatment effect does not have time-series heterogeneity, the results do not change significantly.
+
+```{r}
+lsdv <- 
+  plm::plm(
+    formula = y_it ~ d1_it + d2_it + d3_it + d4_it,
+    data = df_nyt[df_nyt$time < 10,], 
+    index = c("id","time"),
+    effect = "twoways"
+  )
+summary(lsdv)
+```

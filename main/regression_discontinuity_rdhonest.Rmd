@@ -1,0 +1,504 @@
+---
+title: "Regression Discontinuity"
+subtitle: "Discrete Score"
+output: 
+  html_document:
+    css: style_do.css
+    number_sections: yes
+    toc: yes
+    toc_depth: '3'
+    toc_float: yes
+    theme: "spacelab" #"default", "bootstrap", "cerulean", "cosmo", "darkly", "flatly",
+                 # "journal", "lumen", "paper", "readable", "sandstone", "simplex",
+                 # "spacelab", "united", "yeti"
+    highlight: "pygments" #"default", "tango", "pygments", "kate", "monochrome",
+                 # "espresso", "zenburn", "haddock", "textmate"
+    df_print: paged
+    code_folding: show
+#date: '2022-04-19'
+date: 'Last Update: `r Sys.Date()`'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(cache = FALSE, echo = TRUE, fig.align = "center")
+library(AppliedEconometricsCode)
+library(foreach)
+library(magrittr)
+library(ggplot2)
+library(kableExtra)
+library(modelsummary)
+color_main <- scales::viridis_pal(option = "C")(1)
+```
+
+Here, we implement the estimation method for sharp regression discontinuity design using a discrete score with the `RDHonest` package. The functions called from `AppliedEconometricsCode` are defined in `R/functions_rdrobust.R` and `R/functions_rdhonest.R`.
+
+The `RDHonest` package needs to be installed from GitHub. To do this, run the following code.
+
+```{r}
+if (
+  !"remotes" %in% installed.packages()[, "Package"]
+) {
+  install.packages("remotes")
+}
+if (
+  !"RDHonest" %in% installed.packages()[, "Package"]
+  ) {
+  remotes::install_github(
+    "kolesarm/RDHonest",
+    force = TRUE
+  )
+}
+```
+
+# Generating Three Data
+
+Generate simulation data from an approximation of the functional form commonly used in empirical studies that evaluate RD numerically, similar to `rdrobust`. Here, we use a version where the functional form from Ludwig and Miller (2006) is reversed between the treatment and control sides.
+
+## Generating Continuous Score Data
+
+```{r}
+set.seed(1)
+N <- 1000
+dgp_cont <- 
+  generate_dgp_LM_discrete(
+    N = N,
+    rounding = function(s) {s}
+  )
+dgp_all <- 
+  list(
+    dgp_cont = dgp_cont
+  )
+```
+
+Next, consider the case where scores are realized at discrete points with a 0.01 increment. In other words, scores are only realized at discrete points, and the dependent variable observed is the conditional expectation at these discrete points with added normal distribution noise. Similarly, generate data with increments of 0.05, 0.1, and 0.02.
+
+## Generating Discrete Data
+
+### Preparing Settings
+
+```{r}
+list_specitications <- 
+  list(
+    "Continuous score variable",
+    "Discrete score variable at 0.01 grids",
+    "Discrete score variable at 0.02 grids",
+    "Discrete score variable at 0.05 grids",
+    "Discrete score variable at 0.1 grids"
+  )
+
+list_rounding_fine <- 
+  list(
+    dgp_001 = function(s) {
+          round(
+            s,
+            2
+          )
+        },
+    dgp_002 = function(s) {
+          round(
+            s / 2,
+            2
+          ) * 2
+    }
+  )
+list_rounding_rough <- 
+  list(
+    dgp_005 = function(s) {
+          round(
+            s * 2,
+            1
+          ) / 2
+        },
+    dgp_01 = function(s) {
+          round(
+            s,
+            1
+          )
+        }
+  )
+```
+
+### Generating Data
+
+```{r}
+dgp_discrete_fine <- 
+  purrr::map(
+    .x = list_rounding_fine,
+    .f = function (rounding) {
+      call_generate_dgp_LM_discrete(rounding)
+    }
+  )
+
+dgp_discrete_rough <- 
+  purrr::map(
+    .x = list_rounding_rough,
+    .f = function (rounding) {
+      call_generate_dgp_LM_discrete(rounding)
+    }
+  )
+dgp_fine <- 
+  append(
+    dgp_all,
+    dgp_discrete_fine
+  )
+dgp_all <- 
+  append(
+    dgp_fine,
+    dgp_discrete_rough
+  )
+```
+
+## Plotting Data
+
+Plot each generated dataset. By looking at the plots, it becomes clear that the slope is steep on the control side. It is worth noting that in the original function shape, the steep slope belongs to the treatment side. However, in discrete RD, estimating the control side poses a bigger challenge, hence the function shape is reversed in this case.
+
+```{r}
+list_plots <- 
+  purrr::map(
+    .x = dgp_all,
+    .f = call_plot_data
+  )
+
+counter <- 0
+for (
+  plot in list_plots
+) {
+  counter <- counter + 1
+  plot_to_display <- 
+    plot + 
+    ggtitle(
+      list_specitications[counter]
+    )
+  print(plot_to_display)
+}
+```
+
+As we approach situations where observations are clearly discrete, it becomes evident that estimating the endpoint on the control side becomes challenging.
+
+## Comparison of OLS, `rdrobust`, and `RDHonest`
+
+In the following section, we perform:
+- Traditional OLS with global higher-order terms
+- `rdrobust` estimation
+- `RDHonest` estimation
+sequentially and compare their results.
+
+### Global OLS Estimation
+
+```{r}
+table <- data.frame()
+
+# Error occurs when calling lm.cluster within a function (bug)
+# https://github.com/alexanderrobitzsch/miceadds/issues/18
+
+wgt__ <- NULL
+```
+
+```{r}
+list_results_OLS <- 
+  purrr::map(
+    .x = dgp_all,
+    .f = return_OLS
+  )
+
+list_specitications <- 
+  list(
+    "Continuous Score",
+    "Discrete (0.01 increments)",
+    "Discrete (0.1 increments)",
+    "Discrete (0.02 increments)",
+    "Discrete (0.05 increments)"
+  )
+
+counter <- 0
+
+for (
+  result in list_results_OLS
+) {
+  counter <- counter + 1
+  table <- 
+    append_OLS_table(
+      table = table,
+      case = paste0(
+              "Fourth-order OLS: Heteroskedasticity-robust Standard Error: ",
+              list_specitications[counter]
+            ),
+      result = result
+    )
+}
+```
+
+```{r}
+list_results_OLS_cluster <- 
+  purrr::map(
+    .x = dgp_all,
+    .f = return_OLS_cluster
+  )
+
+counter <- 0
+for (
+  result_cluster in list_results_OLS_cluster
+) {
+  counter <- counter + 1
+  table <- 
+    append_OLS_cluster_table(
+      table = table,
+      case = paste0(
+              "Fourth-order OLS: Cluster-robust Standard Error: ",
+              list_specitications[counter]
+            ),
+      result = result_cluster
+    )
+}
+```
+
+```{r}
+table %>%
+  kbl() %>%
+  kable_styling()
+```
+
+The true effect size is `3.44`. Therefore, even if continuous score values are observed, it can be seen that confidence intervals deviate significantly from the true value. Furthermore, as score discretization progresses, the point estimate further deviates. Looking at the cluster-robust variance estimation, it may seem to function appropriately at first glance, but this is not guaranteed at all times, and the variance can be either large or small. In any case, confidence intervals consistently deviate significantly from the true value.
+
+### Cluster-robust Variance Estimation is Smaller Example
+
+In actual practice, we can create a situation where the cluster-robust variance estimation is smaller by arbitrarily selecting a variance structure. Therefore, the guarantee that cluster-robust variance estimation will yield a more "robust" estimate than the ordinary least squares (OLS) estimation is not available.
+
+```{r}
+set.seed(1)
+dgp_01_alt <- 
+  generate_dgp_LM_discrete_alternate(
+    N = N,
+    rounding = function(s) {round(s,1)}
+  )
+
+table_alt <- data.frame()
+result <- 
+  return_OLS(
+    data = dgp_01_alt
+  )
+
+table_alt <-
+  append_OLS_table(
+    table = table_alt,
+    case = "Fourth-order OLS: Heteroskedasticity-robust Standard Error: Discrete (0.1 increments)",
+    result = result
+  )
+
+result_cluster <- return_OLS_cluster(data = dgp_01_alt)
+table_alt <- 
+  append_OLS_cluster_table(
+    table = table_alt,
+    case = "Fourth-order OLS: Cluster-robust Standard Error: Discrete (0.1 increments)",
+    result = result_cluster
+  )
+
+table_alt
+```
+
+### `rdrobust` Estimation
+
+What happens if we estimate using the `rdrobust` package while ignoring the discreteness of the score?
+
+```{r}
+table <- data.frame()
+table_compare <- data.frame()
+
+list_results_rdrobust <- 
+  purrr::map(
+    .x = dgp_fine,
+    .f = call_rdrobust
+  )
+
+counter <- 0
+for (
+  result in list_results_rdrobust
+) {
+  counter <- counter + 1
+
+  table <- 
+    append_rdrobust_table(
+      table = table,
+      case = paste0(
+            "rdrobust: ",
+            list_specitications[counter]
+          ),
+      result = result
+    )
+  
+  table_compare <- 
+    append_rdrobust_table(
+      table = table_compare,
+      case = paste0(
+            "rdrobust: ",
+            list_specitications[counter]
+          ),
+      result = result
+    )
+}
+
+list_results_rdrobust_masspoints_off <- 
+  purrr::map(
+    .x = dgp_discrete_fine,
+    .f = call_rdrobust_mass_off
+  )
+
+counter <- 0
+for (
+  result in list_results_rdrobust_masspoints_off
+  ) {
+  counter <- counter + 1
+
+  table <- 
+    append_rdrobust_table(
+      table = table,
+      case = paste0(
+            "rdrobust: ",
+            list_specitications[counter+1],
+            " (No discrete points correction)"
+          ),
+      result = result
+    )
+}
+
+table
+```
+
+It is evident that surprisingly accurate estimation results have been obtained. When plotting, it seems possible to take control group observations that are sufficiently close to the threshold with an increment of about 0.02. However, with a coarseness of 0.05 or more, it is confirmed that they are quite far apart.
+
+Here, please note the warning "Mass points detected in the running variable." In the `rdrobust` package, the `masspoints` option is specified as `adjust` by default. When this option is set, it automatically detects duplicate observations at the same point, performs variance estimation (selecting three points near the threshold for bias correction in variance estimation), and corrects band selection.
+
+In some cases, this correction may enable estimations that were otherwise impossible. However, even with this correction, if discretization progresses beyond a certain point, the estimation matrix becomes singular, making estimation impossible from the outset.
+
+```{r}
+try(
+  result <- 
+    rdrobust::rdrobust(
+      y = dgp_all$dgp_005$y,
+      x = dgp_all$dgp_005$s
+    ), 
+  silent = FALSE
+)
+```
+
+### Estimation based on `RDHonest`
+
+While the correction by the `masspoint` option in `rdrobust` is effective, it is advisable to consider this correction as applicable only to cases where random duplicate observations occur in continuous scores.
+
+In `RDHonest` estimation, it is necessary to specify the worst value of the second derivative function, while also being able to obtain confidence intervals taking into account that the score variable is essentially discretely observed.
+
+For example, the following is an example of estimation. Here, `kern = "uniform"` indicates the kernel being a uniform kernel, `opt.criterion = "FLCI"` specifies that the optimal criterion for estimation is the minimization of the confidence interval width, `sclass = "H"` denotes the class of functions that can be taken as Holder continuous functions, and `M = 100` represents the worst value that the second derivative function of the conditional expectation function can take. It should be noted that the true value of the second derivative function is `-54.8`, and the value `100` is sufficiently large as the worst value.
+
+Furthermore, as M decreases, the shape of the function that can be taken becomes more moderate, resulting in smaller confidence intervals. However, it is important to note that results with `M < 60` contradict the true shape of the function.
+
+```{r}
+list_M_value <- 
+  c(
+    100, 
+    60, 
+    30, 
+    15, 
+    5
+)
+
+list_results_rdhonest <- 
+  purrr::map(
+    .x = list_M_value,
+    .f = call_rdhonest
+  )
+
+table <- data.frame()
+counter <- 0
+for (
+  result in list_results_rdhonest
+) {
+  counter <- counter + 1
+
+  table <- 
+    append_rdhonest_table(
+      table = table,
+      case = paste0(
+            "RDHonest: (0.05 increments) Uniform Kernel CI Minimization M=",
+            list_M_value[counter]
+          ),
+      result = result
+    )
+}
+table
+```
+
+In fact, if the value of `M` is made too small, the confidence interval becomes too small and it will be understood that the true value of `3.44` is not included.
+
+However, it is usually difficult to choose `M`. In the package, a method based on global polynomial regression to select `M` is implemented by Armstrong and Koles\'ar (2020), and this is the output when `M` is not specified.
+
+```{r}
+result <- 
+  RDHonest::RDHonest(
+    y ~ s,
+    data = dgp_all$dgp_005,
+    kern = "uniform",
+    opt.criterion = "FLCI",
+    sclass = "H"
+  )
+table <- 
+  append_rdhonest_table(
+    table = table,
+    case = "RDHonest: (0.05 increments) Uniform Kernel CI Minimization M=rule-of-thumb",
+    result = result
+  )
+
+table
+```
+
+Note that it is also possible to specify a triangular kernel instead of a uniform kernel. The results will not change.
+
+```{r}
+result <- 
+  RDHonest::RDHonest(
+    y ~ s,
+    data = dgp_all$dgp_005,
+    kern = "triangular",
+    opt.criterion = "FLCI",
+    sclass = "H"
+  )
+
+table <- 
+  append_rdhonest_table(
+    table = table,
+    case = "RDHonest: (0.05 increments) Triangular Kernel CI Minimization M=rule-of-thumb",
+    result = result
+  )
+
+table
+```
+
+Here, we compared the estimates obtained so far with those obtained by `rdrobust` and `RDHonest`. In this simulation, it is generally the same, but when the discretization becomes coarse, `rdrobust` is not able to obtain an estimate, but `RDHonest` is able to return a reasonable estimate.
+
+```{r}
+list_results_rdhonest_data <- 
+  purrr::map(
+    .x = dgp_all,
+    .f = call_rdhonest_data
+  )
+
+counter <- 0
+for (
+  result in list_results_rdhonest_data
+) {
+  counter <- counter + 1
+
+  table_compare <- 
+    append_rdhonest_table(
+      table = table_compare,
+      case = paste0(
+            "RDHonest: ",
+            list_specitications[counter],
+            " (Uniform Kernel CI Minimization M=rule-of-thumb)"
+          ),
+      result = result
+    )
+}
+
+table_compare
+```
+

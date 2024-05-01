@@ -1,0 +1,363 @@
+---
+title: "Shift-Share Design"
+author: "Kohei Kawaguchi, Hong Kong University of Science and Technology"
+output: 
+  ioslides_presentation:
+    widescreen: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
+library(magrittr)
+library(foreach)
+library(ggplot2)
+library(kableExtra)
+```
+
+<style type="text/css">
+div.footnotes {
+  position: absolute;
+  bottom: 0;
+  margin-bottom: 10px;
+  width: 80%;
+  font-size: 10px;
+}
+body, td {
+   font-size: 14px;
+}
+code.r{
+  font-size: 11px;
+}
+pre {
+  font-size: 11px
+}
+blockquote {
+  background: #f9f9f9;
+  border-left: 5px solid #ccc;
+  margin: 1.5em 10px;
+  padding: 0.5em 1.5em;
+}
+</style>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<script>
+$(document).ready(function() {
+  $('slide:not(.backdrop):not(.title-slide)').append('<div class=\"footnotes\">');
+
+  $('footnote').each(function(index) {
+    var text  = $(this).html();
+    var fnNum = (index+1).toString();
+    $(this).html(fnNum.sup());
+
+    var footnote   = fnNum + '. ' + text + '<br/>';
+    var oldContent = $(this).parents('slide').children('div.footnotes').html();
+    var newContent = oldContent + footnote;
+    $(this).parents('slide').children('div.footnotes').html(newContent);
+  });
+});
+</script>
+# Share-view of Shift-Share Design
+
+## A canonical example
+
+- Use a different cross-sectional exposure to the aggregate shock.
+- Card (2009).
+- Use 1980, 1990, and 2000 US Census data.
+- $y_{lj}$: the residual log wage gap between immigrant and native men in skill group $j$ in city $l$.
+- $x_{lj}$: the ratio of immigrant to native hours in skill group $j$ in city $l$.
+- $X_l$: a vector of city-level controls.
+- Estimate $\beta$ in:
+$$
+y_{lj} = \beta_0 + \beta \ln x_{lj} + \beta_2 X_l + \epsilon_{lj}.
+$$
+- However, $x_{lj}$ and $\epsilon_{lj}$ can be correlated due to a labor demand shock specitic to the skill group and the city.
+
+## A cannonical example
+
+- Consider aggregate shocks,  $g_{kj}$, the number of people arriving in the United States from 1990 to 2000 from country group $k$ and skill group $j$.
+- Consider immigrant shares:
+$$
+z_{lk, 1980} = \frac{N_{lk, 1980}}{N_{k, 1980}} \cdot \frac{1}{P_{l, 2000}},
+$$
+where:
+- $N_{lk, 1980}$: the number of immigrants from country $k$ in the United States in 1980 in city $l$.
+- $N_{k, 1980}$: the number of immigrants from country $k$ in the United States in 1980.
+- $P_{l, 2000}$: population of city $l$ in 2000.
+
+## A canonical example
+
+- Construct a _Bartik instrument_ (Bartik 1991):
+$$
+B_{lj} = \sum_{k = 1}^K z_{lk, 1980} \cdot g_{kj}.
+$$
+- Consider a first stage of:
+$$
+\ln x_{lj} = \gamma_0 + \gamma_1 B_{lj} + \gamma_2 X_l + \eta_{lj}.
+$$
+- Then, consider a two-stage least-squares (TSLS) estimator of $\beta$.
+
+## Share-shift design
+
+- What are identifying assumptions for this estimator? 
+- _Share-view_: assume the shares $z_{kl}$ are exogenous (Goldsmith-Pinkham et al. 2020).
+- _Shock-view_: assume the shocks $g_{kj}$ are exogenous (Borusyak et al 2021).
+- They differ in the assumptions and valid inference.
+
+## Setting
+
+- There are $K$ industries and $T$ times.
+- Consider a structural model:
+$$
+y_{lt} = x_{lt}\beta_0 + W_{lt}\rho + \epsilon_{lt},
+$$
+where:
+- $y_{lt}$: the outcome in location $l$ in time $t$.
+- $x_{lt}$: the treatment in location $l$ in time $t$.
+- $W_{lt}$: a vector of observed controls in location $l$ in tine $t$.
+- $\epsilon_{lt}$: an error potentially correlated wit $x_{lt}$.
+- $\beta_0$: parameter of interest.
+
+
+## Setting
+
+- Suppose that $x_{lt}$ is decomposed as:
+$$
+x_{lt} = Z_{lt} \cdot G_{lt} = \sum_{k = 1}^K z_{lkt} g_{lkt}.
+$$
+- For example, $x_{lt}$ is the employment growth in location $l$ in time $t$, $z_{lkt}$ is the employment share of industry $k$ in location $k$ at the beginning of time $t$, and $g_{lkt}$ is the employment growth of industry $k$ in location $l$ in time $t$.
+
+
+## Setting
+
+- The industry-location-time-specific shock $g_{lkt}$ is further decomposed into:
+$$
+g_{lkt} = g_{kt} + \tilde{g}_{lkt},
+$$
+where $g_{kt}$ is the average shock of industry $k$ in time $t$ and $\tilde{g}_{lkt}$ is an idiosyncratic shock. 
+- We want to address the correlation between $\epsilon_{lt}$ and $\tilde{g}_{lkt}$.
+
+## Bartik instrument and the first-stage regression
+
+- Define _Bartik_ instrument as:
+$$
+B_{lt} = Z_{l0} \cdot G_t = \sum_{k = 1}^K z_{lk0} g_{kt},
+$$
+where $G_t = (G_{1t}, \cdots, G_{Kt})$.
+- Consider a linear regression of $x_{lt}$ on $B_{lt}$ and $W_{lt}$ as:
+$$
+x_{lt} \equiv B_{lt} \gamma + W_{lt} \tau + \eta_{lt}.
+$$
+
+## Data-generating process
+
+- We have data:
+$$
+\{y_l, W_l, \widetilde{G}_l, Z_l, Z_{l0}\}_{l = 1}^L,
+$$
+that are i.i.d. across $l$ where:
+- $y_l = (y_{l1}, \cdots, y_{lt})$;
+- $W_l = (W_{l1}, \cdots, W_{lT})$;
+- $\widetilde{G}_l = (\widetilde{G}_{l1}, \cdots, \widetilde{G}_{lT})$;
+- $Z_l = (Z_{l1}, \cdots, Z_{lT})$.
+- We view $G = (G_{1}, \cdots, G_T)$ as fixed.
+- We arrow for non-i.i.d. data within $l$.
+
+## Bartik estimator
+
+- The Bartik estimator of $\beta$:
+$$
+\hat{\beta}_{bartik} = (B'M_WX)^{-1} B'M_WY
+$$
+- If there is no control:
+$$
+\begin{split}
+\hat{\beta}_{bartik} &= (B'X)^{-1} B'Y\\ 
+&= \frac{\sum_{l = 1}^L \sum_{t = 1}^T \sum_{k = 1}^K z_{lk0} g_{kt} y_{lt}}{\sum_{l = 1}^L \sum_{t = 1}^T \sum_{k = 1}^K z_{lk0} g_{kt} x_{lt}}.
+\end{split}
+$$
+
+## Two industries and one time example
+
+- Bartik instrument:
+$$
+B_l = z_{l1} g_1 + (1 - z_{l1}) g_2 = g_2 + (g_1 - g_2) z_{l1}.
+$$
+- The first-stage regression:
+$$
+\begin{split}
+x_l & = \gamma_0 + \gamma_1 B_t + \eta_{lt}\\
+&= \gamma_0 + \gamma_1 g_2 + \gamma (g_1 - g_2) z_{l1} + \eta_l\\
+&= \tilde{\gamma}_0 + \tilde{\gamma}_1 z_{l1} + \eta_l
+\end{split}
+$$
+- Thus, this is a TSLS where $z_{l1}$ is used as an instrument for $x_l$.
+- $g_1 - g_2$ is the policy size.
+- $z_{l1}$ measures the exposure to the policy that affect industry 1.
+
+## Two industires and two time example
+
+- Bartik instrument:
+$$
+B_{lt} = z_{l10} g_{1t} + z_{l20} g_{2t} = g_{2t} + (g_{1t} - g_{2t}) z_{l10}.
+$$
+- The first-stage regression:
+$$
+\begin{split}
+x_{lt} &= \tau_t + B_{lt} \gamma + \eta_{lt}\\
+&= (\tau_t + g_{2t} \gamma) + z_{l10} (g_{1t} - g_{2t})\gamma + \eta_{lt}\\
+&=(\tau_t + g_{2t} \gamma) + z_{l10}1\{t = 1\}(g_{11} - g_{21}) \gamma\\
+&+ z_{l10} 1\{t = 2\}(g_{12} - g_{22}) \gamma + \eta_{lt}\\
+&=\tilde{\tau}_t + z_{l10} 1\{t = 1\} \tilde{\gamma}_1 + z_{l10} 1\{t = 2\} \tilde{\gamma}_2 + \eta_{lt}.
+\end{split}
+$$
+- $z_{l10}$ measures the exposure to the policy that affect industry 1.
+- There are two policy size $g_{1t} - g_{2t}$ for $t = 1, 2$.
+
+## Connection to 2 x 2 DID
+
+- Policy size: $g_{1t} - g_{2t}$ for $t = 1, 2$.
+- If we know that the policy is introduced at the end of period 1, we expect that the pre-trend is common: $g_{11} - g_{11} = 0$.
+- Then, we should test $\tilde{\gamma}_1 = 0$.
+
+## K industries and T times 
+
+- The Bartik estimator of $\beta$:
+$$
+\hat{\beta}_{bartik} = (B'M_WX)^{-1} B'M_WY
+$$
+is equivalent to a GMM estimator of $\beta$:
+$$
+\hat{\beta}_{GMM} = (X'M_W \tilde{Z} \Omega \tilde{Z}' M_W X)^{-1} X'M_W \tilde{Z} \Omega \tilde{Z}' M_W Y,
+$$
+where the instrument is:
+$$
+\tilde{Z} = \text{diag}(Z, \cdots, Z)
+$$
+and the weight is:
+$$
+\Omega = G'G
+$$
+where $M_W = I - W(W'W)^{-1}W'$.
+
+## Consistency
+
+- __Assumption: Relevance__
+  - For all $k = 1, \cdots, K$ and $s = 1, \cdots, T$:
+  $$
+  x_{lt} = W_{lt} \tau + z_{lk0} 1\{t = s\} C_{k, s} + \eta_{lt},
+  $$
+  where $\mathbb{E}[\eta_{lt}|z_{lk0}, W_{lt}] = 0$, $C_{ks}$ is finite for all $k$ and $s$, and $\sum_s \sum_k g_{ks} C_{ks} \neq 0$.
+- There must be an industry and time period when the indsustry share has predictive power for $x_{lt}$ conditional on the controls.
+- The growth rate $g_{kt}$ cannot weight the covariances in such a way that they exactly cancel out.
+
+## Consistency
+
+- __Assumption: Strict exogeneity__
+  - For all $k$ where $g_k \neq 0$:
+  $$
+  \mathbb{E}[\epsilon_{lt} z_{lk0}| W_{lt}] = 0.
+  $$
+- Then, the Bartik estimator is consistent with $L \to \infty$.
+- Usually, we take changes in $y_{lt}$ and $x_{lt}$.
+- Then, the exogeneity means that the initial industry share is exogenous to the changes in the error term conditional on controls.
+
+
+## Validation tests
+
+- Check the correlation between $Z_l$ and the other initial characteristics $W_{l0}$.
+  - If correlated, consider whether it poses any doubt on the exogeneity assumption.
+- Check the correlation between $Z_l$ and placebo outcomes, that is likely to be correlated with the error in the main outcome, but should be unrelated to $Z_l$.
+- If there is a pre-treatment period, test the pre-trend.
+- Check the robustness by using each $z_{k0}$ as $K$ instruments, rather than summarizing to $B_{lt}$.
+
+
+# Shock-view of Shift-Share Design
+
+## What is different?
+
+- In the share-view, the exogeneity condition was for all $k$ where $g_k \neq 0$:
+$$
+\mathbb{E}[\epsilon_{lt} z_{lk0}| W_{lt}] = 0.
+$$
+- This is sufficient but not necessary.
+- We just need for all $t$:
+$$
+\mathbb{E}[\sum_{l = 1}^L \epsilon_{lt} B_{lt}| W_{lt}] = 0.
+$$
+
+## What is different?
+
+- This can be written as:
+$$
+\begin{split}
+0 &= \mathbb{E}[\sum_{l = 1}^L \epsilon_{lt} \sum_{k = 1}^K z_{kl0} g_{kt}]\\
+&= \mathbb{E}[\sum_{k = 1}^K g_{kt} \sum_{l = 1}^L z_{kl0} \epsilon_{lt}]\\
+&= \mathbb{E}[\sum_{k = 1}^K g_{kt} \overline{\epsilon}_{kt}].
+\end{split}
+$$
+- It is satisfied as long as $g_{kt}$ is uncorrelated with $\overline{\epsilon}_{kt}$ even if $z_{kl0}$ is correlated with $\epsilon_{lt}$.
+
+## Consistency
+
+- __Assumption: Quasi-random shock assignment__
+  - For all $k$ and $t$: 
+  $$
+  \mathbb{E}[g_{kt}| \overline{\epsilon}, z] = \mu.
+  $$
+- If this is the case:
+$$
+\begin{split}
+\mathbb{E}[\sum_{k = 1}^K g_{kt} \overline{\epsilon}_{kt}] 
+&= \mu \mathbb{E}[\sum_{k = 1}^K \overline{\epsilon}_{kt}] = \mu \mathbb{E}[\sum_{l = 1}^L \epsilon_{lt} \sum_{k = 1}^K z_{kl0}]\\
+&= \mu \mathbb{E}[\sum_{l = 1}^L \epsilon_{lt}] = 0.
+\end{split}
+$$
+  
+## Consistency
+
+- In the shock-view, we use asymptotics of $K \to \infty$.
+- __Assumption: Many uncorrelated shocks__
+  - For all $k \neq k'$ and $t$:
+  $$
+  \mathbb{E}[\sum_{k = 1}^K z_{kl0}^2] \to \infty.
+  $$
+  $$
+  Cov[g_{kt}, g_{k't}| \overline{\epsilon}, z] = 0.
+  $$
+- The expected shock exposure is asymptotically completely disperesed.
+- The shocks are mutually uncorrelated.
+
+## Estimation and inference
+
+- The estimator is the same with the share-view of shift-share design.
+- However, the inference is involved, because:
+  - $g_{kt}$ is regarded as random variable.
+  - This creates correlation across locations.
+- Adao et al. (2019) propose a exposure-based clustering.
+- Simpler way is to construct a shock-level main equation:
+$$
+\overline{y}_{kt} = \overline{x}_{kt}\beta_0 + \overline{W}_{kt}\rho + \overline{\epsilon}_{kt},
+$$
+where $\overline{y}_{kt} = \sum_{l = 1}^L z_{kl0} y_{lt}$ and others are the same.
+- Then, its heteroskedasticity-robust standard error yields asymptotically valid confidence interval.
+
+## Example
+
+- Hummels et al. (2014):
+  - Estimate the wage effects of offshoring across Danish importin firm $l$.
+  - The shock index $n$ refers to a type of intermediate inputs and an origin country; titanium hinges from Japan.
+- Peri et al. (2016):
+  - Estimate the effecet of immigrant STEM workers on the labour market outcomes of natives across U.S. cities $l$.
+  - The shock index $n$ refers to a migration origin country. 
+
+
+
+
+## Reference
+
+- Adao, Rodrigo, Michal Kolesár, and Eduardo Morales. 2019. “Shift-Share Designs: Theory and Inference.” The Quarterly Journal of Economics 134 (4): 1949–2010.
+- Borusyak, Kirill, Peter Hull, and Xavier Jaravel. 2021. “Quasi-Experimental Shift-Share Research Designs.” The Review of Economic Studies, June. https://doi.org/10.1093/restud/rdab030.
+- Goldsmith-Pinkham, Paul, Isaac Sorkin, and Henry Swift. 2020. “Bartik Instruments: What, When, Why, and How.” The American Economic Review 110 (8): 2586–2624.
+- Hummels, David, Rasmus Jørgensen, Jakob Munch, and Chong Xiang. 2014. “The Wage Effects of Offshoring: Evidence from Danish Matched Worker-Firm Data.” The American Economic Review 104 (6): 1597–1629.
+- Peri, Giovanni, Kevin Shih, and Chad Sparber. 2015. “STEM Workers, H-1B Visas, and Productivity in US Cities.” Journal of Labor Economics 33 (S1): S225–55.

@@ -27,7 +27,7 @@ library(kableExtra)
 color_main <- scales::viridis_pal(option = "C")(1)
 ```
 
-Here, we implement the stratified randomized experiment. The functions called from `AppliedEconometrics` are defined in `R/functions_randomized.R`. First, we generate the potential outcomes of the sample, and then we generate the treatment vector and the realized outcomes. Based on the realized treatment vector and outcomes, we calculate the test statistic based on the difference in means for each stratum, and finally, we numerically calculate Fisher's p-value using the bootstrap method.
+Here, we implement the stratified randomized experiment. The functions called from `AppliedEconometricsCode` are defined in `R/functions_randomized.R`. First, we generate the potential outcomes of the sample, and then we generate the treatment vector and the realized outcomes. Based on the realized treatment vector and outcomes, we calculate the test statistic based on the difference in means for each stratum, and finally, we numerically calculate Fisher's p-value using the bootstrap method.
 
 # Generating simulated data
 
@@ -106,7 +106,7 @@ Next, we generate the observed data. First, we generate the treatment vector `z`
 
 ```{r}
 data_realized <-
-  AppliedEconometrics::generate_data_stratified(
+  AppliedEconometricsCode::generate_data_stratified(
     outcome_potential = outcome_potential,
     N_1 = N_1,
     seed = 1
@@ -140,7 +140,7 @@ lambda <-
   e * 
   (1 - e)
 t <- 
-  AppliedEconometrics::calculate_difference_in_means_stratified(
+  AppliedEconometricsCode::calculate_difference_in_means_stratified(
     data_realized = data_realized, 
     lambda = lambda
   )
@@ -164,12 +164,12 @@ t_distribution <-
   1:R %>%
   purrr::map(
     .,
-    ~ AppliedEconometrics::generate_data_stratified(
+    ~ AppliedEconometricsCode::generate_data_stratified(
         outcome_potential = outcome_potential_null,
         N_1 = N_1,
         seed = .
       ) %>%
-      AppliedEconometrics::calculate_difference_in_means_stratified(
+      AppliedEconometricsCode::calculate_difference_in_means_stratified(
         data_realized = .,
         lambda = lambda
       )

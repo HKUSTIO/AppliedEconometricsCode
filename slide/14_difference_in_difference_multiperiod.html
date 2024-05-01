@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Multiple Testing</title>
+  <title>Difference in Differences</title>
 
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="chrome=1">
@@ -19,8 +19,9 @@
     var SLIDE_CONFIG = {
       // Slide settings
       settings: {
-                title: 'Multiple Testing',
-                        useBuilds: true,
+                title: 'Difference in Differences',
+                        subtitle: 'Multi-period Design',
+                useBuilds: true,
         usePrettify: true,
         enableSlideAreas: true,
         enableTouch: true,
@@ -3137,175 +3138,477 @@ ul.task-list{list-style: none;}
         <!-- The content of this hgroup is replaced programmatically through the slide_config.json. -->
     <hgroup class="auto-fadein">
       <h1 data-config-title><!-- populated from slide_config.json --></h1>
-      
+      <h2 data-config-subtitle><!-- populated from slide_config.json --></h2>
       <p data-config-presenter><!-- populated from slide_config.json --></p>
           </hgroup>
   </slide>
 
-<slide class=""><hgroup><h2>Multiple Hypotheses</h2></hgroup><article  id="multiple-hypotheses">
+<style type="text/css">
+div.footnotes {
+  position: absolute;
+  bottom: 0;
+  margin-bottom: 10px;
+  width: 80%;
+  font-size: 10px;
+}
+body, td {
+   font-size: 14px;
+}
+code.r{
+  font-size: 11px;
+}
+pre {
+  font-size: 11px
+}
+blockquote {
+  background: #f9f9f9;
+  border-left: 5px solid #ccc;
+  margin: 1.5em 10px;
+  padding: 0.5em 1.5em;
+}
+</style>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+
+<script>
+$(document).ready(function() {
+  $('slide:not(.backdrop):not(.title-slide)').append('<div class=\"footnotes\">');
+
+  $('footnote').each(function(index) {
+    var text  = $(this).html();
+    var fnNum = (index+1).toString();
+    $(this).html(fnNum.sup());
+
+    var footnote   = fnNum + '. ' + text + '<br/>';
+    var oldContent = $(this).parents('slide').children('div.footnotes').html();
+    var newContent = oldContent + footnote;
+    $(this).parents('slide').children('div.footnotes').html(newContent);
+  });
+});
+</script>
+
+<slide class="segue dark nobackground level1"><hgroup class = 'auto-fadein'><h2>Multi-period Difference in Difference</h2></hgroup><article  id="multi-period-difference-in-difference">
+
+</article></slide><slide class=""><hgroup><h2>Taxonomy</h2></hgroup><article  id="taxonomy">
 
 <ul>
-<li>There are \(M\) null hypotheses: \(H_0^m\), \(m = 1, \cdots, M\).</li>
-<li>Suppose that \(H_0^m\), \(m = 1, \cdots, M\) are all true.</li>
-<li>The piece-wise type-I error of a test: \(\mathbb{P}\{\text{Reject   }H_0^m|H_0^m\}\), \(m = 1, \cdots, M\).</li>
-<li>Even if the piece-wise type-I error is \(\alpha\), the probability that at least one of the null hypotheses is rejected is greater than \(\alpha\): \[
+<li>Data is observed for \(T\) periods.</li>
+<li>Throughout, treatment is assumed to be irreversible.
+
+<ul>
+<li>If not? Consider the intention-to-treat effect of assigning a treatment.</li>
+</ul></li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Taxonomy: \(2 \times T\)</h2></hgroup><article  id="taxonomy-2-times-t">
+
+<ul>
+<li>\((Y_{it}, G_{it})\), \(i = 1, \cdots, N\).</li>
+<li>Period: \(t \in \{1, \cdots, T\}\).</li>
+<li>Group: \(G_i \in \{0, 1\}\).</li>
+<li>Treatment: \(D_{it} = G_i \cdot 1\{t \ge q\}\), that is, teated in period \(q\).</li>
+<li>Potential outcomes: \(Y_{it}^\ast(0), Y_{it}^\ast(1)\).</li>
+<li>Observed outcome: \(Y_{it} = D_{it} \cdot Y_{it}^\ast(1) + (1 - D_{it}) \cdot Y_{it}^\ast(0)\).</li>
+<li>There are one control (never-treated) and one treatment timing (eventually treated) groups.</li>
+<li>Treatment is assigned at the same timing within the treatment timing group.</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Taxonomy: \(2 \times T\)</h2></hgroup><article  id="taxonomy-2-times-t-1">
+
+<ul>
+<li>Treatment effect is homogeneous across calendar and elapsed time from treatment: This reduces to \(2 \times 2\) design.</li>
+<li>Treatment effect is heterogeneous across calendar or elapsed time from treatment: This reduces to \(2 \times 2\) design if we focus on each post-treatment period.</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Taxonomy: \(G \times T\) design</h2></hgroup><article  id="taxonomy-g-times-t-design">
+
+<ul>
+<li>\((Y_{it}, G_{it})\), \(i = 1, \cdots, N\).</li>
+<li>Period: \(t \in \{1, T\}\).</li>
+<li>Group: \(G_i \in \{q, \cdots, T, \infty\}\).</li>
+<li>Treatment: \(D_{it} = 1\{t \ge G_i\}\), that is, units in group \(G_i\) is treated in period \(G_i\).</li>
+<li>Potential outcomes: \(Y_{it}^\ast(r)\) the potential outcome in period \(t\) if it received treatment in period \(r\).</li>
+<li>Observed outcome: \(Y_{it} = D_{it} \cdot Y_{it}^\ast(G_i) + (1 - D_{it}) \cdot Y_{it}^\ast(\infty)\).</li>
+<li>There are one control (never-treated) and \(G - 1\) treatment timing (eventually treated) groups.</li>
+<li>Treatment is assigned at the same timing within the treatment timing group.</li>
+<li>Treatment is assigned at different timings across treatment timing groups.</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Taxonomy: \(G \times T\) design</h2></hgroup><article  id="taxonomy-g-times-t-design-1">
+
+<ul>
+<li>Treatment effect is in general heterogeneous across timing of treatment, calender and elasped time.</li>
+<li>Nevertheless, it reduces to \(2 \times 2\) design if we focus on each post-treatment period of each timing group.</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Multiple \(2 \times 2\) DID parameters and its aggregation</h2></hgroup><article  id="multiple-2-times-2-did-parameters-and-its-aggregation">
+
+<ul>
+<li>Regardless of setting, we can estimate the \(2 \times 2\) DID parameters by focusing on subsamples.</li>
+<li>A remaining question is how to aggregate these parameters.</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Two-way fixed effect estimator may fail</h2></hgroup><article  id="two-way-fixed-effect-estimator-may-fail">
+
+<ul>
+<li>The literature has used a two-way fixed (TWFE) estimator in the multi-period DID setting, such as: \[
+y_{it} = \mu_i + \lambda_t + D_{it} \beta + \epsilon_{it}.
+\]</li>
+<li>TWFE estimator aggregates underlying \(2 \times 2\) DID parameters with specific weights. \[
+\hat{\tau}^{TWFE} = \sum_{r = q}^T s_{r} \hat{\tau}_{r} + \sum_{r = q}^T \sum_{l &gt; r} [s_{rl} \hat{\tau}_{rl} + s_{lr} \hat{\tau}_{lr}],
+\] where \(\hat{\tau}_{r}\) is the DID estimator between cohorts \(r\) and \(l\) and \(s_{rl}\) is some weight.</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Two-way fixed effect estimator may fail</h2></hgroup><article  id="two-way-fixed-effect-estimator-may-fail-1">
+
+<ul>
+<li>Goodman-Bacon (2021) showed that some of the weights could be <em>negative</em> when there were multiple treatment timing groups and treatment effects were heterogeneous over time.</li>
+<li>TWFE includes the comparison between groups that are treated at some point.</li>
+<li>For cohorts \(r &lt; l\), TWFE includes the comparison between \(r\) and \(l\) during:
+
+<ul>
+<li>\(r \le t &lt; l\): cohort \(r\) is treated but cohort \(l\) is not treated (treatment effect is added)</li>
+<li>\(r \le l \le t\): cohort \(r\) and \(l\) are both treated (this treatment effect is subtracted)</li>
+</ul></li>
+<li>If the treatment effects are heterogenous across time, they do not cancel out.</li>
+<li>An imbalance in these two periods widens the difference.</li>
+</ul>
+
+</article></slide><slide class="segue dark nobackground level1"><hgroup class = 'auto-fadein'><h2>\(2 \times T\) DID</h2></hgroup><article  id="times-t-did">
+
+</article></slide><slide class=""><hgroup><h2>Setting</h2></hgroup><article  id="setting">
+
+<ul>
+<li>\((Y_{it}, G_{it})\), \(i = 1, \cdots, N\).</li>
+<li>Period: \(t \in \{1, \cdots, T\}\).</li>
+<li>Group: \(G_i \in \{0, 1\}\).</li>
+<li>Treatment: \(D_{it} = G_i \cdot 1\{t \ge q\}\), that is, teated in period \(q\).</li>
+<li>Potential outcomes: \(Y_{it}^\ast(0), Y_{it}^\ast(1)\).</li>
+<li>Observed outcome: \(Y_{it} = D_{it} \cdot Y_{it}^\ast(1) + (1 - D_{it}) \cdot Y_{it}^\ast(0)\).</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Estimand</h2></hgroup><article  id="estimand">
+
+<ul>
+<li>The individual treatment effect: \[
+Y_{it}^\ast(1) - Y_{it}^\ast(0).
+\]</li>
+<li>The average treatment effect on treated: \[
+\tau_t = \mathbb{E}[Y_{it}^\ast(1) - Y_{it}^\ast(0)|G_i = 1], t = q, q+ 1, \cdots, T.
+\]</li>
+<li>In general, \(\tau_t\) differs by \(t\).</li>
+<li>With randomization approach, the estimand is: \[
+\tau_t = \frac{1}{N_1} \sum_{i: G_i = 1} [Y_{it}^\ast(1) - Y_{it}^\ast(0)].
+\]</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>No anticipation assumption</h2></hgroup><article  id="no-anticipation-assumption">
+
+<ul>
+<li><strong>Assumption: No anticipation</strong>:
+
+<ul>
+<li>For \(t &lt; q\): \[
+Y_{it} = Y_{it}^\ast(0).
+\]</li>
+</ul></li>
+<li>There is only one version of potential outcome in periods \(t &lt; q\).</li>
+<li>This can be relaxed to \(t &lt; q - 1\).</li>
+<li>Then, the control is constructed by discarding data in \(q - 1\).</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Common trend assumption</h2></hgroup><article  id="common-trend-assumption">
+
+<ul>
+<li><strong>Assumption: Common trend</strong>:
+
+<ul>
+<li>For \(t = 1, \cdots, T\): \[
+\mathbb{E}[Y_{it}^\ast(0) - Y_{i1}^\ast(0)| G_i] = \mathbb{E}[Y_{it}^\ast(0) - Y_{i1}^\ast(0)] \equiv \theta_t.
+\]</li>
+</ul></li>
+<li>The average trend in the control state, in every period relative to the initial period, does not depend on treatment status.</li>
+<li>This is equivalent to assume for \(t = 2, \cdots, T\): \[
+\mathbb{E}[Y_{it}^\ast(0) - Y_{i, t - 1}^\ast(0)| G_i] = \mathbb{E}[Y_{it}^\ast(0) - Y_{i, t - 1}^\ast(0)].
+\]</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Observed outcome</h2></hgroup><article  id="observed-outcome">
+
+<ul>
+<li>The obsereved outcome is: \[
 \begin{split}
-&amp;\mathbb{P}\{\exists m = 1, \cdots, M, H_0^m \text{ is rejected}|\forall m = 1, \cdots, M, H_0^m\} \\
-&amp;= 1 - (1 - \alpha)^M.
+Y_{it} &amp;= D_{it} Y_{it}^\ast(1) + (1 - D_{it}) Y_{it}^\ast(0)\\
+&amp;= Y_{i1}^\ast(0) + [Y_{it}^\ast(0) - Y_{i1}^\ast(0)] + D_{it} \cdot [Y_{it}^\ast(1) - Y_{it}^\ast(0)].
 \end{split}
 \]</li>
-<li>For example, if \(\alpha = 0.05\) and \(M = 100\), then the probability that at least one of the null hypotheses is rejected is \(1 - (1 - 0.05)^{100} \approx\) 0.9940795.</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Family-Wise Error Rate (FWER)</h2></hgroup><article  id="family-wise-error-rate-fwer">
+</article></slide><slide class=""><hgroup><h2>Conditional expectation</h2></hgroup><article  id="conditional-expectation">
 
 <ul>
-<li><p>Suppose that \(H^m, m = 1, \cdots, M_0\) are true null hypotheses and \(H^m, m = M_0 + 1, \cdots, M\) are false null hypotheses.</p></li>
-<li><p><strong>Definition</strong>: <em>Family-wise error rate</em>: The probability of rejecting at least one null hypotheses when all null hypotheses are true: \[
-\text{FWER} = \mathbb{P}\{\exists m = 1, \cdots, M_0, H_0^m \text{ is rejected}|\forall m = 1, \cdots, M_0, H_0^m\}.
-\]</p></li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Bonferroni Correction</h2></hgroup><article  id="bonferroni-correction">
-
-<ul>
-<li><strong>Bonferroni correction</strong>: The most conservative method to control FWER.</li>
-<li>Depends on the followig inequality: \[
+<li>Under the aforementioned assumptions, the conditional expectation on \(G_i\) is: \[
 \begin{split}
-&amp;\mathbb{P}\{\exists m = 1, \cdots, M_0, H_0^m \text{ is rejected}|\forall m = 1, \cdots, M_0, H_0^m\}\\
-&amp;\leq \sum_{m=1}^{M_0} \mathbb{P}\{H_0^m \text{ is rejected}|H_0^m\} = M_0 \alpha.
+&amp;\mathbb{E}[Y_{it}| G_i] \\
+&amp;= \mathbb{E}[Y_{i1}^\ast(0)| G_i] + \mathbb{E}[Y_{it}^\ast(0) - Y_{i1}^\ast(0)| G_i]\\
+&amp;+ 1\{t \ge q\} \cdot G_i \cdot \mathbb{E}[Y_{it}^\ast(1) - Y_{it}^\ast(0)| G_i]\\
+&amp;= \lambda + \xi \cdot G_i + \theta_t + 1\{t \ge q\} \cdot G_i \cdot \tau_t\\
+&amp;= \lambda + \xi \cdot G_i + \sum_{s = 1}^T \theta_s f_{s, t} + \sum_{s = q}^{T} G_i \cdot f_{s, t} \cdot \tau_s,
+\end{split}
+\] where \(f_{s, t} = 1\{s = t\}\).</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Pooled OLS estimator</h2></hgroup><article  id="pooled-ols-estimator">
+
+<ul>
+<li>Therefore, the parameters can be estimated by the pooled OLS estimator of the following regression function: \[
+Y_{it} = \lambda + \xi \cdot G_i + \sum_{s = 1}^T \theta_s f_{s, t} + \sum_{s = q}^{T} G_i \cdot f_{s, t} \cdot \tau_s + \epsilon_{it}.
+\]</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Two-way fixed effect estimator</h2></hgroup><article  id="two-way-fixed-effect-estimator">
+
+<ul>
+<li>The pooled OLS estimator \(\hat{\tau}^{OLS}_t\) is equivalent to the two-way fixed effect estimator \(\hat{\tau}_t^{TWFE}\) of the following regression function: \[
+Y_{it} = \mu_i + \lambda_t + \sum_{s = q}^{T} G_i \cdot f_{s, t} \cdot \tau_s + \epsilon_{it}.
+\]</li>
+<li>This uses Theorem 3.1 of Wooldridge (2021).</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Separate DID estimator</h2></hgroup><article  id="separate-did-estimator">
+
+<ul>
+<li>We can also construct the equivalent estimator of \(\tau_t\) by separately estimating \(\tau_t\) for each post-treatment period: \[
+\Delta Y_{it} = Y_{it} - \frac{1}{q - 1} \sum_{t = 1}^{q - 1} Y_{it} = Y_{it} - \overline{Y}_{i}^{PRE},
+\] \[
+\hat{\tau}_t^{DID} = \frac{1}{N_1} \sum_{i = 1}^N G_i \cdot \Delta Y_{it} - \frac{1}{N_0} \sum_{i = 1}^N (1 - G_i) \cdot \Delta Y_{it}.
+\]</li>
+<li>\(\hat{\tau}_t^{OLS}\), \(\hat{\tau}_t^{TWFE}\), and \(\hat{\tau}_t^{DID}\) are equivalent.</li>
+<li>They just differ in the estimation procedure.</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Inference</h2></hgroup><article  id="inference">
+
+<ol>
+<li>Cluster the standard error at \(i\) when the number of clusters \(N\) is large.</li>
+<li>Use block bootstrap, in which data are resampled at the \(i\) level if the number of clusters \(n\) is not large.</li>
+<li>If testing the sharp null hypothesis of \(\tau_t = 0\), then a randomization test reassigning treatment status can be used, even if the number of treated unit is 1.</li>
+</ol>
+
+</article></slide><slide class="segue dark nobackground level1"><hgroup class = 'auto-fadein'><h2>\(G \times T\) DID</h2></hgroup><article  id="g-times-t-did">
+
+</article></slide><slide class=""><hgroup><h2>Setting</h2></hgroup><article  id="setting-1">
+
+<ul>
+<li>\((Y_{it}, G_{it})\), \(i = 1, \cdots, N\).</li>
+<li>Period: \(t \in \{1, T\}\).</li>
+<li>Group: \(G_i \in \{q, \cdots, T, \infty\}\).</li>
+<li>Treatment: \(D_{it} = 1\{t \ge G_i\}\), that is, units in group \(G_i\) is treated in period \(G_i\).</li>
+<li>Potential outcomes: \(Y_{it}^\ast(r)\) the potential outcome in period \(t\) if it received treatment in period \(r\).</li>
+<li>Observed outcome: \(Y_{it} = D_{it} \cdot Y_{it}^\ast(G_i) + (1 - D_{it}) \cdot Y_{it}^\ast(\infty)\).</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Estimand</h2></hgroup><article  id="estimand-1">
+
+<ul>
+<li>The individual treatment effect: \[
+Y_{it}^\ast(r) - Y_{it}^\ast(\infty), r = q, \cdots, T.
+\]</li>
+<li>The average treatment effect on treated in period \(r\): \[
+\tau_t(r) = \mathbb{E}[Y_{it}^\ast(r) - Y_{it}^\ast(\infty) | G_i = r].
+\]</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>No-anticipation assumption</h2></hgroup><article  id="no-anticipation-assumption-1">
+
+<ul>
+<li><strong>Assumption: No anticipation</strong>
+
+<ul>
+<li>For treatment timing groups \(r = q, q + 1, \cdots, T\): \[
+Y_{it} = Y_{it}^\ast(\infty),
+\] for \(t &lt; r\).</li>
+</ul></li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Common trend assumption</h2></hgroup><article  id="common-trend-assumption-1">
+
+<ul>
+<li><strong>Assumption: Common trend</strong>
+
+<ul>
+<li>For \(t = 2, \cdots, T\): \[
+\mathbb{E}[Y_{it}^\ast(\infty) - Y_{i1}^\ast(\infty) | G_i] = \mathbb{E}[Y_{it}^\ast(\infty) - Y_{i1}^\ast(\infty)] = \theta_t.
+\]</li>
+</ul></li>
+<li>This is equivalent to: \[
+\mathbb{E}[Y_{it}^\ast(\infty) - Y_{i, t - 1}(\infty) | G_i] = \mathbb{E}[Y_{it}^\ast(\infty) - Y_{i, t - 1}(\infty)].
+\]</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Potential outcome when untreated and never-treated</h2></hgroup><article  id="potential-outcome-when-untreated-and-never-treated">
+
+<ul>
+<li>Potential outcome when untreated and never-treated is conceptually different, but are the same under the no-anticipation assumption.</li>
+<li>To simplify the notation, we use \(Y_{it}^\ast(\infty)\) as the control.</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Observed outcome</h2></hgroup><article  id="observed-outcome-1">
+
+<ul>
+<li>Let \(g_{i, r} = 1\{G_i = r\}\).</li>
+<li>The observed outcome is: \[
+Y_{it} = Y_{i1}^\ast(\infty) + [Y_{it}^\ast(\infty) - Y_{i1}^\ast(\infty)] + \sum_{r = q}^{T} \sum_{s = r}^T g_{i, r} \cdot f_{s, t} \cdot [Y_{is}(r) - Y_{is}(\infty)].
+\]</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Conditional expectation</h2></hgroup><article  id="conditional-expectation-1">
+
+<ul>
+<li>Under the aforementioned assumptions, the conditional expectation on the treatment timing group is: \[
+\begin{split}
+&amp;\mathbb{E}[Y_{it} | G_i]\\
+&amp;= \mathbb{E}[Y_{i1}^\ast(\infty)| G_i] + \mathbb{E}[Y_{it}^\ast(\infty) - Y_{i1}^\ast(\infty)| G_i]\\
+&amp;+ \sum_{r = q}^{T} \sum_{s = r}^T g_{i, r} f_{s, t} \cdot \mathbb{E}[Y_{is}(r) - Y_{is}(\infty)| G_i]\\
+&amp;= \lambda + \sum_{r = q}^T g_{i, r} \cdot \xi_r + \sum_{s = 2}^T f_{s, t} \theta_s + \sum_{r = q}^{T} \sum_{s = r}^T g_{i, r} \cdot f_{s, t} \cdot \tau_s(r).
 \end{split}
 \]</li>
-<li>Therefore, for each hypothesis, if you consider a test with a significance level \(\alpha/M\), then the FWER is no greater than \(\alpha\).</li>
-<li>The above inequality holds regardless of the dependence structure among the tests.</li>
-<li>The Bonferrorni correction: Reject \(H_0^m\) if the piece-wise p-value for \(H_0^m\) is \(p^m \le \alpha/M\). Then, \(FEWR \le \alpha M_0/M \le \alpha\).</li>
+<li>\(\tau_t(r)\) is identified for \(t \ge r\).</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Why Bonferroni Correction is Conservative?</h2></hgroup><article  id="why-bonferroni-correction-is-conservative">
+</article></slide><slide class=""><hgroup><h2>Pooled OLS estimator</h2></hgroup><article  id="pooled-ols-estimator-1">
 
 <ul>
-<li>Bonferrorni correction controls for the false rejection when all null hypotheses are true.</li>
-<li>However, in reality, only \(m \le M\) null hypotheses may be true.</li>
-<li>Indeed, some p-values may be smaller than others.</li>
-<li>How about rejecting the null hypothesis with the smallest p-value first?</li>
-<li>Then, considering a multiple testing of smaller number of hypotheses?</li>
+<li>Therefore, the parameters can be estimated by the pooled OLS estimator of the following regression function: \[
+Y_{it} = \lambda + \sum_{r = q}^T g_{i, r} \cdot \xi_r + \sum_{s = 2}^T f_{s, t} \theta_s + \sum_{r = q}^{T} \sum_{s = r}^T g_{i, r} \cdot f_{s, t} \cdot \tau_s(r) + \epsilon_{it}.
+\]</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Bonferroni-Holm Correction</h2></hgroup><article  id="bonferroni-holm-correction">
-
-<ol>
-<li>Order the p-values: \(p^{(1)} \le p^{(2)} \le \cdots \le p^{(M)}\).</li>
-<li>For \(l = 1, \cdots, M\) (starting with the smallest p-value):
-
-<ol>
-<li>If \(p^{(l)} \le \alpha/(M - l + 1)\), reject \(H_0^{(l)}\) and move to \(l + 1\).</li>
-<li>If \(p^{(l)} &gt; \alpha/(M - l + 1)\) accept \(H_0^{(l)}\) and accept the remaining null hypotheses.</li>
-</ol></li>
-</ol>
+</article></slide><slide class=""><hgroup><h2>Two-way fixed effect estimator</h2></hgroup><article  id="two-way-fixed-effect-estimator-1">
 
 <ul>
-<li>If none of the null hypotheses is rejected by the Bonferroni correction, then none of the null hypotheses is rejected by the Bonferroni-Holm correction, either.</li>
-<li>If a null hypothesis is rejected by the Bonferroni correction, then it is also rejected by the Bonferroni-Holm correction because \(p^m \le \alpha/M \le \alpha/(M - m + 1)\).</li>
+<li>The pooled OLS estimator \(\hat{\tau}^{OLS}_t\) is equivalent to the two-way fixed effect estimator \(\hat{\tau}_t^{TWFE}\) of the following regression function: \[
+Y_{it} = \mu_i + \lambda_t + \sum_{r = q}^{T} \sum_{s = r}^T g_{i, r} \cdot f_{s, t} \cdot \tau_s(r) + \epsilon_{it}.
+\]</li>
+<li>This uses Theorem 3.1 of Wooldridge (2021).</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Bonferroni-Holm Correction</h2></hgroup><article  id="bonferroni-holm-correction-1">
+</article></slide><slide class=""><hgroup><h2>Separate DID estimator</h2></hgroup><article  id="separate-did-estimator-1">
 
 <ul>
-<li>The Bonferroni-Holm correction controls for the FWER.</li>
-<li>Suppose that there are \(1 \le M_0\le M\) null hypotheses that are true.</li>
-<li>Let \(l\) be the first rejected true null hypothesis in the Bonferroni-Holm correction.</li>
-<li>By definition, \(H_0^{(1)}, \cdots, H_0^{(l-1)}\) were correctly rejected hypotheses that are false.</li>
-<li>Therefore, \(l - 1 \le M - M_0 \Leftrightarrow 1/(M - l + 1) \le 1 / M_0\).</li>
-<li>Because \(l\) is rejected, \(p^{(l)} \le \alpha/(M - l + 1) \le \alpha/M_0\).</li>
-<li>Therefore, if there is at least one true hypothesis that is rejected, then its p-value is no greater than \(\alpha/M_0\).</li>
+<li>We can also construct the equivalent estimator of \(\tau_t(r)\) by separately estimating \(\tau_t(r)\) for each post-treatment period of each treatment timing group: \[
+\Delta Y_{it}^\ast(r) = Y_{it} - \frac{1}{r - 1} \sum_{t = 1}^{r - 1} Y_{it} = Y_{it} - \overline{Y}_{i}^{PRE},
+\] \[
+\hat{\tau}_t^{DID}(r) = \frac{1}{N_r} \sum_{i = 1}^N g_{i, r} \cdot \Delta Y_{it}^\ast(r) - \frac{1}{N_0} \sum_{i = 1}^N g_{i, \infty} \cdot \Delta Y_{it}^\ast(\infty).
+\]</li>
+<li>\(\hat{\tau}_t^{OLS}(r) = \hat{\tau}_t^{TWFE}(r)\) and \(\hat{\tau}_t^{DID}(r)\) are <em>asymptotically</em> equivalent.
+
+<ul>
+<li>They differ in whether use never-treated data in \(q \le t &lt; r\).</li>
+</ul></li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Bonferroni-Holm Correction</h2></hgroup><article  id="bonferroni-holm-correction-2">
+</article></slide><slide class="segue dark nobackground level1"><hgroup class = 'auto-fadein'><h2>Aggregation</h2></hgroup><article  id="aggregation">
 
-<p>\[
-\begin{split}   
-\text{FWER} &amp;= \mathbb{P}\{\exists m = 1, \cdots, M_0, H_0^m \text{ is rejected}|\forall m = 1, \cdots, M_0, H_0^m\} \\
-&amp;= \mathbb{P}\left\{\bigcup_{l = 1}^{M_0} \{l \text{   is first rejected}\}||\forall m = 1, \cdots, M_0, H_0^m \right\}\\
-&amp;\le \sum_{l = 1}^{M_0} \mathbb{P}\{l \text{   is first rejected}|\forall m = 1, \cdots, M_0, H_0^m\}\\
-&amp;\le \sum_{l = 1}^{M_0} \mathbb{P}\left\{p^l \le \frac{\alpha}{M_0}|\forall m = 1, \cdots, M_0, H_0^m\right\}\\
-&amp;= \sum_{l = 1}^{M_0} \frac{\alpha}{M_0}\\
-&amp;= \alpha.
+</article></slide><slide class=""><hgroup><h2>Aggregated estimand</h2></hgroup><article  id="aggregated-estimand">
+
+<ul>
+<li>The simple average treatment effect on treated: \[
+\overline{\tau} \equiv \frac{1}{(T - q + 1)(T - q + 2)/2} \sum_{r = q}^T \sum_{t = r}^T \tau_t(r).
+\]</li>
+<li>The simple average treatment effect on treatment timing group: \[
+\overline{\tau}_r \equiv \frac{1}{T - r + 1} \sum_{t = r}^T \tau_t(r).
+\]</li>
+<li>Because they are linear in \(\tau_t(r)\), constructing the estimators and their standard errors from the pooled OLS estimators \(\hat{\tau}_t(r)^{OLS}\) is straightforward.</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Aggregate estimand</h2></hgroup><article  id="aggregate-estimand">
+
+<ul>
+<li>One can also directly impose restriction on the regression function.</li>
+<li>Impose homogeneity within treatment timng group, \(\tau_t(r) = \tau(r)\): \[
+\begin{split}
+&amp;\mathbb{E}[Y_{it} | G_i]\\
+&amp;= \lambda + \sum_{r = q}^T g_{i, r} \cdot \xi_r + \sum_{s = 2}^T f_{s, t} \theta_s + \sum_{r = q}^T \sum_{s = r}^T g_{i, r} \cdot f_{s, t} \cdot \tau(r)\\
+&amp;= \lambda + \sum_{r = q}^T g_{i, r} \cdot \xi_r + \sum_{s = 2}^T f_{s, t} \theta_s + \sum_{r = q}^T g_{i, r} \cdot 1\{t \ge r\} \cdot \tau(r).
 \end{split}
-\]</p>
-
-</article></slide><slide class=""><hgroup><h2>Remarks</h2></hgroup><article  id="remarks">
-
-<ul>
-<li>Neither Bonferroni correction or Bonferroni-Holm correction exploit the correlation among test statistics.</li>
-<li>We can improve the power by exploiting the correlation using a bootstrap method (Romano and Wolf, 2010).</li>
+\]</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>False Discovery Rate (FDR)</h2></hgroup><article  id="false-discovery-rate-fdr">
+</article></slide><slide class=""><hgroup><h2>Aggregated estimand</h2></hgroup><article  id="aggregated-estimand-1">
 
 <ul>
-<li>FWER is required when making a single type-I error can cause a problem.
-
-<ul>
-<li>e.g. The inspection of parts of a car</li>
-<li>e.g. Validation checks for identification assumptions</li>
-</ul></li>
-<li>In some situations, as long as there are some true rejections, it is not a problem of having a few false rejections.
-
-<ul>
-<li>e.g. The inspection of a car assembly line</li>
-<li>e.g. Multiple conditional average treatment effects</li>
-</ul></li>
+<li>Impose homogeneity within calendar date, \(\tau_t(r) = \tau_t\): \[
+\begin{split}
+&amp;\mathbb{E}[Y_{it} | G_i]\\
+&amp;= \lambda + \sum_{r = q}^T g_{i, r} \cdot \xi_r + \sum_{s = 2}^T f_{s, t} \theta_s + \sum_{r = q}^T \sum_{s = r}^T g_{i, r} \cdot f_{s, t} \cdot \tau_s\\
+&amp;= \lambda + \sum_{r = q}^T g_{i, r} \cdot \xi_r + \sum_{s = 2}^T f_{s, t} \theta_s + \sum_{s = 2}^T 1\{t \ge G_i\} \cdot f_{s, t} \cdot \tau_s
+\end{split}
+\]</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>False Discovery Rate (FDR)</h2></hgroup><article  id="false-discovery-rate-fdr-1">
+</article></slide><slide class=""><hgroup><h2>Aggregated estimand</h2></hgroup><article  id="aggregated-estimand-2">
 
 <ul>
-<li><strong>Definition</strong>: <em>False Discovery Rate</em>: The proportion of null hypotheses that are mistakenly rejected among rejected null hypotheses: \[
-FDR = \frac{\sum_{m = 1}^{M_0} 1\{H_0^m \text{   is rejected}\}}{\sum_{m = 1}^M 1\{H_0^m \text{   is rejected}\}},
-\] where \(m = 1, \cdots, M_0\) are true null hypotheses and \(M_0\) is the number of true null hypotheses.</li>
-<li>We consider a procedure that controls for the expected FDR: \(\mathbb{E}[FDR]\).</li>
+<li>Impose homogeneity within elasped time (treatment intensity), \(\tau_t(r) = \tau(t - r + 1)\): \[
+\begin{split}
+&amp;\mathbb{E}[Y_{it} | G_i]\\
+&amp;= \lambda + \sum_{r = q}^T g_{i, r} \cdot \xi_r + \sum_{s = 2}^T f_{s, t} \theta_s + \sum_{r = q}^T \sum_{s = r}^T g_{i, r} \cdot f_{s, t} \cdot \tau(t - r + 1)\\
+&amp;= \lambda + \sum_{r = q}^T g_{i, r} \cdot \xi_r + \sum_{s = 2}^T f_{s, t} \theta_s + \sum_{s = 0}^{T - q + 1} 1\{t - G_i = s\} \cdot \tau(s).
+\end{split}
+\]</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Benjamin-Hotchberg Correction</h2></hgroup><article  id="benjamin-hotchberg-correction">
+</article></slide><slide class="segue dark nobackground level1"><hgroup class = 'auto-fadein'><h2>Testing pre-trend</h2></hgroup><article  id="testing-pre-trend">
 
-<ol>
-<li>Order the p-values: \(p^{(1)} \le p^{(2)} \le \cdots \le p^{(M)}\).</li>
-<li>For \(l = M, \cdots, 1\) (starting with the highest p-value):
-
-<ol>
-<li>If \(p^{(l)} \le \alpha l/M\), reject \(H_0^{(l)}, l, \cdots, 1\).</li>
-<li>If \(p^{(l)} &gt; \alpha l/M\), accept \(H_0^{(l)}\) and move to \(l - 1\).</li>
-</ol></li>
-</ol>
-
-</article></slide><slide class=""><hgroup><h2>Positive regression dependence</h2></hgroup><article  id="positive-regression-dependence">
+</article></slide><slide class=""><hgroup><h2>\(2 \times T\) DID</h2></hgroup><article  id="times-t-did-1">
 
 <ul>
-<li>If the test statistics are <em>independent</em>, then the Benjamin-Hotchberg correction controls for the FDR.</li>
-<li>If the test statistics are <em>dependent</em>, then the Benjamin-Hotchberg correction controls for the FDR under the <em>positive regression dependence</em> assumption.</li>
-<li><strong>Definition</strong>: _Increasing set__: A set \(D\) is said to be increasing if \(x \in D\) and \(y \ge x\) implies \(y \in D\).</li>
-<li><strong>Definition</strong>: <em>Positive regression dependence</em>: For test statistics \(X^m\), \(m = 1, \cdots, M\), for any increasing set \(D\), and for any \(\mathcal{M}_0 \subset \mathcal{M}\), \(\mathbb{p}\{\{X^m\} \in D| X^m = x\}\) is non-decreasing in \(x\).</li>
-<li>If the joint distribution of the test statistics satisfies positive regression dependence for the set of true null hypothesis \(\mathcal{M}_0 \subset \mathcal{M}\), then the Benjamin-Hotchberg correction controls for the FDR no greater than \(\alpha M_0/M\).</li>
+<li>We can estimate the following expanded regression function: \[
+Y_{it} = \lambda + \xi \cdot G_i + \sum_{s = 1}^T \theta_s f_{s, t} + \sum_{s = 2}^{q - 1} G_i \cdot f_{s, t} \cdot \tau_s + \sum_{s = q}^{T} G_i \cdot f_{s, t} \cdot \tau_s,
+\]</li>
+<li>Then, test the null hypothesis: \[
+H_0: \tau_s = 0, s = 2, \cdots, q - 1.
+\]</li>
+<li>This null hypothesis can be violated either because No anticipation or Common trend assumption is violated.</li>
+<li>Note that the estimates of \(\delta_s\) are NOT interpreted as the average treatment effect on treated, because this equation does not impose No anticipation and Common trend assumption.</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>General case</h2></hgroup><article  id="general-case">
+</article></slide><slide class=""><hgroup><h2>\(G \times T\) DID</h2></hgroup><article  id="g-times-t-did-1">
 
 <ul>
-<li>In general, the Benjamin-Hotchberg correction may not control for the FDR.</li>
-<li>In this case, we can use either:
-
-<ul>
-<li>Use \(\alpha l/ (M \sum_{s=1}^M 1/ s)\) instead of \(\alpha l/M\) (Benjamini-Yekutieli, 2001).</li>
-<li>The bootstrap method to control for the FDR (Romano et al., 2008).</li>
-</ul></li>
+<li>We can estimate the following expanded regression function: \[
+\begin{split}
+Y_{it} &amp;= \lambda + \sum_{r = q}^T g_{i, r} \cdot \xi_r + \sum_{s = 2}^T f_{s, t} \theta_s\\
+&amp;+ \sum_{r = q}^{T} \sum_{s = 2}^{r - 1} g_{i, r} \cdot f_{s, t} \cdot \tau_s(r) + \sum_{r = q}^{T} \sum_{s = r}^T g_{i, r} \cdot f_{s, t} \cdot \tau_s(r) + \epsilon_{it}.
+\end{split}
+\]</li>
+<li>Then, test the null hypothesis: \[
+H_0: \tau_s(r) = 0, s = 2, \cdots, q - 1, r = q, \cdots, T.
+\]</li>
+<li>This null hypothesis can be violated either because No anticipation or Common trend assumption is violated.</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>References</h2></hgroup><article  id="references">
+</article></slide><slide class=""><hgroup><h2>Uniform confidence interval</h2></hgroup><article  id="uniform-confidence-interval">
 
 <ul>
-<li>Benjamini, Yoav, and Yosef Hochberg (1995). &ldquo;Controlling the false discovery rate: a practical and powerful approach to multiple testing.&rdquo; <em>Journal of the Royal Statistical Society. Series B (Methodological)</em>, 57(1), 289-300.</li>
-<li>Romano, J. P., and Wolf, M. (2010). &ldquo;Efficient computation of adjusted p-values for resampling-based stepdown multiple testing.&rdquo; <em>Statistics and Probability Letters</em>, 80(9-10), 915-920.</li>
-<li>Romano, J. P., Shaikh, A. M., and Wolf, M. (2008). &ldquo;Control of the false discovery rate under dependence using the bootstrap and subsampling.&rdquo; <em>Test</em>, 17(3), 417-442.</li>
+<li>Testing pre-trend and testing the treatment effects are multiple testing.</li>
+<li>Therefore, the confidence interval for each null hypothesis is not appropriate.</li>
+<li>The \((1 - \alpha)\)-uniform confidence interval \(CI_t(r)\) for \(r = q, \cdots, T, \infty\) and \(t = 1, \cdots, T\) \[
+\mathbb{P}[\tau_t(r) \in CI_t(r), r = q, \cdots, T, \infty, t = 1, \cdots, T] \le 1 - \alpha.
+\]</li>
+<li>Callaway and Sant’Anna (2021) proposed a bootstrap estimator \(\widehat{CI}_t(r)\) such that \[
+\mathbb{P}[\tau_t(r) \in \widehat{CI}_t(r), r = q, \cdots, T, \infty, t = 1, \cdots, T] \to 1 - \alpha,
+\] as \(N \to \infty\).</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Covariates</h2></hgroup><article  id="covariates">
+
+<ul>
+<li>We can use OR, IPW, or DR techinques for time-invariant covariates for each 2 by 2 comparisoin.</li>
+<li>When the covariates are time-varying, then additional assumptions are required, among others, <em>strong exeogeneity</em>, that the covariates are not affected by the treatment is required.</li>
+<li>Here, the question is whether the parallel trend assumption holds conditional on which covariates.</li>
+<li>If the identification assumption requires the conditional parallel trend on the time-varying covariates, they must be included in the estimation. Otherwise, not.</li>
 </ul></article></slide>
 
 

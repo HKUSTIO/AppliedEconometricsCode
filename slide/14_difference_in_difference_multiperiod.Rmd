@@ -1,0 +1,451 @@
+---
+title: "Difference in Differences"
+subtitle: "Multi-period Design"
+author: "Kohei Kawaguchi, Hong Kong University of Science and Technology"
+output: 
+  ioslides_presentation:
+    widescreen: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
+library(magrittr)
+library(foreach)
+library(ggplot2)
+library(kableExtra)
+```
+
+
+
+<style type="text/css">
+div.footnotes {
+  position: absolute;
+  bottom: 0;
+  margin-bottom: 10px;
+  width: 80%;
+  font-size: 10px;
+}
+body, td {
+   font-size: 14px;
+}
+code.r{
+  font-size: 11px;
+}
+pre {
+  font-size: 11px
+}
+blockquote {
+  background: #f9f9f9;
+  border-left: 5px solid #ccc;
+  margin: 1.5em 10px;
+  padding: 0.5em 1.5em;
+}
+</style>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<script>
+$(document).ready(function() {
+  $('slide:not(.backdrop):not(.title-slide)').append('<div class=\"footnotes\">');
+
+  $('footnote').each(function(index) {
+    var text  = $(this).html();
+    var fnNum = (index+1).toString();
+    $(this).html(fnNum.sup());
+
+    var footnote   = fnNum + '. ' + text + '<br/>';
+    var oldContent = $(this).parents('slide').children('div.footnotes').html();
+    var newContent = oldContent + footnote;
+    $(this).parents('slide').children('div.footnotes').html(newContent);
+  });
+});
+</script>
+
+# Multi-period Difference in Difference
+
+## Taxonomy
+
+- Data is observed for $T$ periods.
+- Throughout, treatment is assumed to be irreversible.
+  - If not? Consider the intention-to-treat effect of assigning a treatment.
+  
+  
+## Taxonomy: $2 \times T$
+
+- $(Y_{it}, G_{it})$, $i = 1, \cdots, N$.
+- Period: $t \in \{1, \cdots, T\}$.
+- Group: $G_i \in \{0, 1\}$.
+- Treatment: $D_{it} = G_i \cdot 1\{t \ge q\}$, that is, teated in period $q$.
+- Potential outcomes: $Y_{it}^\ast(0), Y_{it}^\ast(1)$.
+- Observed outcome: $Y_{it} = D_{it} \cdot Y_{it}^\ast(1) + (1 - D_{it}) \cdot Y_{it}^\ast(0)$.
+- There are one control (never-treated) and one treatment timing (eventually treated) groups.
+- Treatment is assigned at the same timing within the treatment timing group.
+
+## Taxonomy: $2 \times T$
+
+- Treatment effect is homogeneous across calendar and elapsed time from treatment: This reduces to $2 \times 2$ design.
+- Treatment effect is heterogeneous across calendar or elapsed time from treatment: This reduces to $2 \times 2$ design if we focus on each post-treatment period.
+
+## Taxonomy: $G \times T$ design
+
+- $(Y_{it}, G_{it})$, $i = 1, \cdots, N$.
+- Period: $t \in \{1, T\}$.
+- Group: $G_i \in \{q, \cdots, T, \infty\}$.
+- Treatment: $D_{it} = 1\{t \ge G_i\}$, that is, units in group $G_i$ is treated in period $G_i$.
+- Potential outcomes: $Y_{it}^\ast(r)$ the potential outcome in period $t$ if it received treatment in period $r$.
+- Observed outcome: $Y_{it} = D_{it} \cdot Y_{it}^\ast(G_i) + (1 - D_{it}) \cdot Y_{it}^\ast(\infty)$.
+- There are one control (never-treated) and $G - 1$ treatment timing (eventually treated) groups.
+- Treatment is assigned at the same timing within the treatment timing group.
+- Treatment is assigned at different timings across treatment timing groups.
+
+## Taxonomy: $G \times T$ design
+
+- Treatment effect is in general heterogeneous across timing of treatment, calender and elasped time.
+- Nevertheless, it reduces to $2 \times 2$ design if we focus on each post-treatment period of each timing group.
+  
+  
+## Multiple $2 \times 2$ DID parameters and its aggregation
+
+- Regardless of setting, we can estimate the $2 \times 2$ DID parameters by focusing on subsamples.
+- A remaining question is how to aggregate these parameters.
+
+
+## Two-way fixed effect estimator may fail
+
+- The literature has used a two-way fixed (TWFE) estimator in the multi-period DID setting, such as:
+$$
+y_{it} = \mu_i + \lambda_t + D_{it} \beta + \epsilon_{it}.
+$$
+- TWFE estimator aggregates underlying $2 \times 2$ DID parameters with specific weights.
+$$
+\hat{\tau}^{TWFE} = \sum_{r = q}^T s_{r} \hat{\tau}_{r} + \sum_{r = q}^T \sum_{l > r} [s_{rl} \hat{\tau}_{rl} + s_{lr} \hat{\tau}_{lr}],
+$$
+where $\hat{\tau}_{r}$ is the DID estimator between cohorts $r$ and $l$ and $s_{rl}$ is some weight.
+
+## Two-way fixed effect estimator may fail
+
+- Goodman-Bacon (2021) showed that some of the weights could be _negative_ when there were multiple treatment timing groups and treatment effects were heterogeneous over time.
+- TWFE includes the comparison between groups that are treated at some point.
+- For cohorts $r < l$, TWFE includes the comparison between $r$ and $l$ during:
+  - $r \le t < l$: cohort $r$ is treated but cohort $l$ is not treated (treatment effect is added)
+  - $r \le l \le t$: cohort $r$ and $l$ are both treated (this treatment effect is subtracted)
+- If the treatment effects are heterogenous across time, they do not cancel out.
+- An imbalance in these two periods widens the difference.
+
+# $2 \times T$ DID
+
+## Setting
+  
+- $(Y_{it}, G_{it})$, $i = 1, \cdots, N$.
+- Period: $t \in \{1, \cdots, T\}$.
+- Group: $G_i \in \{0, 1\}$.
+- Treatment: $D_{it} = G_i \cdot 1\{t \ge q\}$, that is, teated in period $q$.
+- Potential outcomes: $Y_{it}^\ast(0), Y_{it}^\ast(1)$.
+- Observed outcome: $Y_{it} = D_{it} \cdot Y_{it}^\ast(1) + (1 - D_{it}) \cdot Y_{it}^\ast(0)$.
+
+## Estimand
+
+- The individual treatment effect: 
+$$
+Y_{it}^\ast(1) - Y_{it}^\ast(0).
+$$
+- The average treatment effect on treated:
+$$
+\tau_t = \mathbb{E}[Y_{it}^\ast(1) - Y_{it}^\ast(0)|G_i = 1], t = q, q+ 1, \cdots, T.
+$$
+- In general, $\tau_t$ differs by $t$.
+- With randomization approach, the estimand is:
+$$
+\tau_t = \frac{1}{N_1} \sum_{i: G_i = 1} [Y_{it}^\ast(1) - Y_{it}^\ast(0)].
+$$
+
+  
+## No anticipation assumption
+
+- __Assumption: No anticipation__:
+  - For $t < q$:
+  $$
+  Y_{it} = Y_{it}^\ast(0).
+  $$
+- There is only one version of potential outcome in periods $t < q$.
+- This can be relaxed to $t < q - 1$. 
+- Then, the control is constructed by discarding data in $q - 1$.
+
+
+## Common trend assumption
+
+- __Assumption: Common trend__:
+  - For $t = 1, \cdots, T$:
+  $$
+  \mathbb{E}[Y_{it}^\ast(0) - Y_{i1}^\ast(0)| G_i] = \mathbb{E}[Y_{it}^\ast(0) - Y_{i1}^\ast(0)] \equiv \theta_t.
+  $$
+- The average trend in the control state, in every period relative to the initial period, does not depend on treatment status.
+- This is equivalent to assume for $t = 2, \cdots, T$:
+$$
+\mathbb{E}[Y_{it}^\ast(0) - Y_{i, t - 1}^\ast(0)| G_i] = \mathbb{E}[Y_{it}^\ast(0) - Y_{i, t - 1}^\ast(0)].
+$$
+
+## Observed outcome
+
+- The obsereved outcome is:
+$$
+\begin{split}
+Y_{it} &= D_{it} Y_{it}^\ast(1) + (1 - D_{it}) Y_{it}^\ast(0)\\
+&= Y_{i1}^\ast(0) + [Y_{it}^\ast(0) - Y_{i1}^\ast(0)] + D_{it} \cdot [Y_{it}^\ast(1) - Y_{it}^\ast(0)].
+\end{split}
+$$
+
+## Conditional expectation
+
+- Under the aforementioned assumptions, the conditional expectation on $G_i$ is:
+$$
+\begin{split}
+&\mathbb{E}[Y_{it}| G_i] \\
+&= \mathbb{E}[Y_{i1}^\ast(0)| G_i] + \mathbb{E}[Y_{it}^\ast(0) - Y_{i1}^\ast(0)| G_i]\\
+&+ 1\{t \ge q\} \cdot G_i \cdot \mathbb{E}[Y_{it}^\ast(1) - Y_{it}^\ast(0)| G_i]\\
+&= \lambda + \xi \cdot G_i + \theta_t + 1\{t \ge q\} \cdot G_i \cdot \tau_t\\
+&= \lambda + \xi \cdot G_i + \sum_{s = 1}^T \theta_s f_{s, t} + \sum_{s = q}^{T} G_i \cdot f_{s, t} \cdot \tau_s,
+\end{split}
+$$
+where $f_{s, t} = 1\{s = t\}$.
+
+## Pooled OLS estimator
+
+- Therefore, the parameters can be estimated by the pooled OLS estimator of the following regression function:
+$$
+Y_{it} = \lambda + \xi \cdot G_i + \sum_{s = 1}^T \theta_s f_{s, t} + \sum_{s = q}^{T} G_i \cdot f_{s, t} \cdot \tau_s + \epsilon_{it}.
+$$
+
+## Two-way fixed effect estimator
+
+- The pooled OLS estimator $\hat{\tau}^{OLS}_t$ is equivalent to the two-way fixed effect estimator $\hat{\tau}_t^{TWFE}$ of the following regression function:
+$$
+Y_{it} = \mu_i + \lambda_t + \sum_{s = q}^{T} G_i \cdot f_{s, t} \cdot \tau_s + \epsilon_{it}.
+$$
+- This uses Theorem 3.1 of Wooldridge (2021).
+
+
+## Separate DID estimator
+
+- We can also construct the equivalent estimator of $\tau_t$ by separately estimating $\tau_t$ for each post-treatment period:
+$$
+\Delta Y_{it} = Y_{it} - \frac{1}{q - 1} \sum_{t = 1}^{q - 1} Y_{it} = Y_{it} - \overline{Y}_{i}^{PRE},
+$$
+$$
+\hat{\tau}_t^{DID} = \frac{1}{N_1} \sum_{i = 1}^N G_i \cdot \Delta Y_{it} - \frac{1}{N_0} \sum_{i = 1}^N (1 - G_i) \cdot \Delta Y_{it}.
+$$
+- $\hat{\tau}_t^{OLS}$, $\hat{\tau}_t^{TWFE}$, and $\hat{\tau}_t^{DID}$ are equivalent.
+- They just differ in the estimation procedure.
+
+## Inference
+
+1. Cluster the standard error at $i$ when the number of clusters $N$ is large.
+2. Use block bootstrap, in which data are resampled at the $i$ level if the number of clusters $n$ is not large.
+3. If testing the sharp null hypothesis of $\tau_t = 0$, then a randomization test reassigning treatment status can be used, even if the number of treated unit is 1.
+
+# $G \times T$ DID
+
+## Setting
+  
+- $(Y_{it}, G_{it})$, $i = 1, \cdots, N$.
+- Period: $t \in \{1, T\}$.
+- Group: $G_i \in \{q, \cdots, T, \infty\}$.
+- Treatment: $D_{it} = 1\{t \ge G_i\}$, that is, units in group $G_i$ is treated in period $G_i$.
+- Potential outcomes: $Y_{it}^\ast(r)$ the potential outcome in period $t$ if it received treatment in period $r$.
+- Observed outcome: $Y_{it} = D_{it} \cdot Y_{it}^\ast(G_i) + (1 - D_{it}) \cdot Y_{it}^\ast(\infty)$.
+
+
+## Estimand
+
+- The individual treatment effect:
+$$
+Y_{it}^\ast(r) - Y_{it}^\ast(\infty), r = q, \cdots, T.
+$$
+- The average treatment effect on treated in period $r$:
+$$
+\tau_t(r) = \mathbb{E}[Y_{it}^\ast(r) - Y_{it}^\ast(\infty) | G_i = r].
+$$
+
+
+## No-anticipation assumption
+
+- __Assumption: No anticipation__ 
+  - For treatment timing groups $r = q, q + 1, \cdots, T$:
+  $$
+  Y_{it} = Y_{it}^\ast(\infty),
+  $$
+  for $t < r$.
+
+
+## Common trend assumption
+
+- __Assumption: Common trend__
+  - For $t = 2, \cdots, T$:
+  $$
+  \mathbb{E}[Y_{it}^\ast(\infty) - Y_{i1}^\ast(\infty) | G_i] = \mathbb{E}[Y_{it}^\ast(\infty) - Y_{i1}^\ast(\infty)] = \theta_t.
+  $$
+- This is equivalent to:
+$$
+\mathbb{E}[Y_{it}^\ast(\infty) - Y_{i, t - 1}(\infty) | G_i] = \mathbb{E}[Y_{it}^\ast(\infty) - Y_{i, t - 1}(\infty)].
+$$
+
+## Potential outcome when untreated and never-treated
+
+- Potential outcome when untreated and never-treated is conceptually different, but are the same under the no-anticipation assumption.
+- To simplify the notation, we use $Y_{it}^\ast(\infty)$ as the control.
+
+
+## Observed outcome
+
+- Let $g_{i, r} = 1\{G_i = r\}$.
+- The observed outcome is:
+$$
+Y_{it} = Y_{i1}^\ast(\infty) + [Y_{it}^\ast(\infty) - Y_{i1}^\ast(\infty)] + \sum_{r = q}^{T} \sum_{s = r}^T g_{i, r} \cdot f_{s, t} \cdot [Y_{is}(r) - Y_{is}(\infty)].
+$$
+
+## Conditional expectation
+
+- Under the aforementioned assumptions, the conditional expectation on the treatment timing group is:
+$$
+\begin{split}
+&\mathbb{E}[Y_{it} | G_i]\\
+&= \mathbb{E}[Y_{i1}^\ast(\infty)| G_i] + \mathbb{E}[Y_{it}^\ast(\infty) - Y_{i1}^\ast(\infty)| G_i]\\
+&+ \sum_{r = q}^{T} \sum_{s = r}^T g_{i, r} f_{s, t} \cdot \mathbb{E}[Y_{is}(r) - Y_{is}(\infty)| G_i]\\
+&= \lambda + \sum_{r = q}^T g_{i, r} \cdot \xi_r + \sum_{s = 2}^T f_{s, t} \theta_s + \sum_{r = q}^{T} \sum_{s = r}^T g_{i, r} \cdot f_{s, t} \cdot \tau_s(r).
+\end{split}
+$$
+- $\tau_t(r)$ is identified for $t \ge r$.
+
+
+## Pooled OLS estimator
+
+- Therefore, the parameters can be estimated by the pooled OLS estimator of the following regression function:
+$$
+Y_{it} = \lambda + \sum_{r = q}^T g_{i, r} \cdot \xi_r + \sum_{s = 2}^T f_{s, t} \theta_s + \sum_{r = q}^{T} \sum_{s = r}^T g_{i, r} \cdot f_{s, t} \cdot \tau_s(r) + \epsilon_{it}.
+$$
+
+## Two-way fixed effect estimator
+
+- The pooled OLS estimator $\hat{\tau}^{OLS}_t$ is equivalent to the two-way fixed effect estimator $\hat{\tau}_t^{TWFE}$ of the following regression function:
+$$
+Y_{it} = \mu_i + \lambda_t + \sum_{r = q}^{T} \sum_{s = r}^T g_{i, r} \cdot f_{s, t} \cdot \tau_s(r) + \epsilon_{it}.
+$$
+- This uses Theorem 3.1 of Wooldridge (2021).
+
+
+## Separate DID estimator
+
+- We can also construct the equivalent estimator of $\tau_t(r)$ by separately estimating $\tau_t(r)$ for each post-treatment period of each treatment timing group:
+$$
+\Delta Y_{it}^\ast(r) = Y_{it} - \frac{1}{r - 1} \sum_{t = 1}^{r - 1} Y_{it} = Y_{it} - \overline{Y}_{i}^{PRE},
+$$
+$$
+\hat{\tau}_t^{DID}(r) = \frac{1}{N_r} \sum_{i = 1}^N g_{i, r} \cdot \Delta Y_{it}^\ast(r) - \frac{1}{N_0} \sum_{i = 1}^N g_{i, \infty} \cdot \Delta Y_{it}^\ast(\infty).
+$$
+- $\hat{\tau}_t^{OLS}(r) = \hat{\tau}_t^{TWFE}(r)$ and $\hat{\tau}_t^{DID}(r)$ are _asymptotically_ equivalent.
+  - They differ in whether use never-treated data in $q \le t < r$.
+
+# Aggregation
+
+## Aggregated estimand
+
+- The simple average treatment effect on treated:
+$$
+\overline{\tau} \equiv \frac{1}{(T - q + 1)(T - q + 2)/2} \sum_{r = q}^T \sum_{t = r}^T \tau_t(r).
+$$
+- The simple average treatment effect on treatment timing group:
+$$
+\overline{\tau}_r \equiv \frac{1}{T - r + 1} \sum_{t = r}^T \tau_t(r).
+$$
+- Because they are linear in $\tau_t(r)$, constructing the estimators and their standard errors from the pooled OLS estimators $\hat{\tau}_t(r)^{OLS}$ is straightforward.
+
+## Aggregate estimand
+
+- One can also directly impose restriction on the regression function.
+- Impose homogeneity within treatment timng group, $\tau_t(r) = \tau(r)$:
+$$
+\begin{split}
+&\mathbb{E}[Y_{it} | G_i]\\
+&= \lambda + \sum_{r = q}^T g_{i, r} \cdot \xi_r + \sum_{s = 2}^T f_{s, t} \theta_s + \sum_{r = q}^T \sum_{s = r}^T g_{i, r} \cdot f_{s, t} \cdot \tau(r)\\
+&= \lambda + \sum_{r = q}^T g_{i, r} \cdot \xi_r + \sum_{s = 2}^T f_{s, t} \theta_s + \sum_{r = q}^T g_{i, r} \cdot 1\{t \ge r\} \cdot \tau(r).
+\end{split}
+$$
+
+## Aggregated estimand
+
+- Impose homogeneity within calendar date, $\tau_t(r) = \tau_t$:
+$$
+\begin{split}
+&\mathbb{E}[Y_{it} | G_i]\\
+&= \lambda + \sum_{r = q}^T g_{i, r} \cdot \xi_r + \sum_{s = 2}^T f_{s, t} \theta_s + \sum_{r = q}^T \sum_{s = r}^T g_{i, r} \cdot f_{s, t} \cdot \tau_s\\
+&= \lambda + \sum_{r = q}^T g_{i, r} \cdot \xi_r + \sum_{s = 2}^T f_{s, t} \theta_s + \sum_{s = 2}^T 1\{t \ge G_i\} \cdot f_{s, t} \cdot \tau_s
+\end{split}
+$$
+
+
+## Aggregated estimand
+
+- Impose homogeneity within elasped time (treatment intensity), $\tau_t(r) = \tau(t - r + 1)$:
+$$
+\begin{split}
+&\mathbb{E}[Y_{it} | G_i]\\
+&= \lambda + \sum_{r = q}^T g_{i, r} \cdot \xi_r + \sum_{s = 2}^T f_{s, t} \theta_s + \sum_{r = q}^T \sum_{s = r}^T g_{i, r} \cdot f_{s, t} \cdot \tau(t - r + 1)\\
+&= \lambda + \sum_{r = q}^T g_{i, r} \cdot \xi_r + \sum_{s = 2}^T f_{s, t} \theta_s + \sum_{s = 0}^{T - q + 1} 1\{t - G_i = s\} \cdot \tau(s).
+\end{split}
+$$
+
+# Testing pre-trend
+
+## $2 \times T$ DID
+
+- We can estimate the following expanded regression function:
+$$
+Y_{it} = \lambda + \xi \cdot G_i + \sum_{s = 1}^T \theta_s f_{s, t} + \sum_{s = 2}^{q - 1} G_i \cdot f_{s, t} \cdot \tau_s + \sum_{s = q}^{T} G_i \cdot f_{s, t} \cdot \tau_s,
+$$
+- Then, test the null hypothesis:
+$$
+H_0: \tau_s = 0, s = 2, \cdots, q - 1.
+$$
+- This null hypothesis can be violated either because No anticipation or Common trend assumption is violated.
+- Note that the estimates of $\delta_s$ are NOT interpreted as the average treatment effect on treated, because this equation does not impose No anticipation and Common trend assumption.
+
+## $G \times T$ DID
+
+
+- We can estimate the following expanded regression function:
+$$
+\begin{split}
+Y_{it} &= \lambda + \sum_{r = q}^T g_{i, r} \cdot \xi_r + \sum_{s = 2}^T f_{s, t} \theta_s\\
+&+ \sum_{r = q}^{T} \sum_{s = 2}^{r - 1} g_{i, r} \cdot f_{s, t} \cdot \tau_s(r) + \sum_{r = q}^{T} \sum_{s = r}^T g_{i, r} \cdot f_{s, t} \cdot \tau_s(r) + \epsilon_{it}.
+\end{split}
+$$
+- Then, test the null hypothesis:
+$$
+H_0: \tau_s(r) = 0, s = 2, \cdots, q - 1, r = q, \cdots, T.
+$$
+- This null hypothesis can be violated either because No anticipation or Common trend assumption is violated.
+
+## Uniform confidence interval
+
+- Testing pre-trend and testing the treatment effects are multiple testing.
+- Therefore, the confidence interval for each null hypothesis is not appropriate.
+- The $(1 - \alpha)$-uniform confidence interval $CI_t(r)$ for $r = q, \cdots, T, \infty$ and $t = 1, \cdots, T$
+$$
+\mathbb{P}[\tau_t(r) \in CI_t(r), r = q, \cdots, T, \infty, t = 1, \cdots, T] \le 1 - \alpha.
+$$
+- Callaway and Sant'Anna (2021) proposed a bootstrap estimator $\widehat{CI}_t(r)$ such that
+$$
+\mathbb{P}[\tau_t(r) \in \widehat{CI}_t(r), r = q, \cdots, T, \infty, t = 1, \cdots, T] \to 1 - \alpha,
+$$
+as $N \to \infty$.
+
+## Covariates
+
+- We can use OR, IPW, or DR techinques for time-invariant covariates for each 2 by 2 comparisoin. 
+- When the covariates are time-varying, then additional assumptions are required, among others, _strong exeogeneity_, that the covariates are not affected by the treatment is required.
+- Here, the question is whether the parallel trend assumption holds conditional on which covariates.
+- If the identification assumption requires the conditional parallel trend on the time-varying covariates, they must be included in the estimation. Otherwise, not.
+
+
+## Reference
+

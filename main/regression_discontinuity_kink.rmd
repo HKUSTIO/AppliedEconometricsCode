@@ -1,0 +1,116 @@
+
+---
+title: "Regression Discontinuity"
+subtitle: "Regression Kink Design"
+output: 
+  html_document:
+    css: style_do.css
+    number_sections: yes
+    toc: yes
+    toc_depth: '3'
+    toc_float: yes
+    theme: "spacelab" #"default", "bootstrap", "cerulean", "cosmo", "darkly", "flatly",
+                 # "journal", "lumen", "paper", "readable", "sandstone", "simplex",
+                 # "spacelab", "united", "yeti"
+    highlight: "pygments" #"default", "tango", "pygments", "kate", "monochrome",
+                 # "espresso", "zenburn", "haddock", "textmate"
+    df_print: paged
+    code_folding: show
+date: 'Last update: `r Sys.Date()`'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(cache = FALSE, echo = TRUE, fig.align = "center")
+library(AppliedEconometricsCode)
+library(foreach)
+library(magrittr)
+library(ggplot2)
+library(kableExtra)
+library(modelsummary)
+color_main <- scales::viridis_pal(option = "C")(1)
+```
+
+## Set simulation parameters
+
+```{r}
+set.seed(1)
+N <- 1000
+```
+
+## Simulate data
+
+```{r}
+df <-
+  tibble::tibble(
+    u = rnorm(N),
+    v = rnorm(N) + 0.1 * u
+  ) %>%
+  dplyr::mutate(
+    b = compute_b(v),
+    y = compute_y(b, v, u)
+  )
+```
+
+## Kink between v and b
+
+```{r}
+df %>% 
+  ggplot(
+    aes(
+      x = v, 
+      y = b
+    )
+  ) + 
+  geom_point() + 
+  theme_classic()
+```
+
+## Kink between v and y
+
+```{r}
+df %>% 
+  ggplot(
+    aes(
+      x = v, 
+      y = y
+    )
+  ) + 
+  geom_point() + 
+  theme_classic()
+```
+
+## Kink between v and y with a binned scatter plot
+
+```{r}
+rdrobust::rdplot(
+  y = df$y, 
+  x = df$v, 
+  c = 0, 
+  binselect = "espr", 
+  x.label = "v", 
+  y.label = "y"
+)
+```
+
+## `rdrobust::rdrobust` does not accept a sharp RKD with a continuous treatment
+- The following is the inference for $\lim_{v \downarrow 0} \frac{d \mathbb{E}[Y|V = v]}{\partial v} - \lim_{v \uparrow 0} \frac{d \mathbb{E}[Y|V = v]}{\partial v}$.
+- Dividing by $\lim_{v \downarrow 0} b'(v) - \lim_{v \uparrow 0} b'(v) = 1 - 2 = -1$ gives roughly an estimate of 2.
+
+```{r}
+result <- 
+  rdrobust::rdrobust(
+    y = df$y, 
+    x = df$v, 
+    c = 0, 
+    deriv = 1, 
+    kernel = "triangular", 
+    bwselect = "mserd", 
+    all = "true"
+  )
+cbind(
+  result$coef, 
+  result$se
+) %>% 
+kbl() %>% 
+kable_styling()
+```

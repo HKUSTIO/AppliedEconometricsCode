@@ -1,0 +1,343 @@
+---
+title: "Non-compliance"
+subtitle: "One-sided compliance"
+output: 
+  html_document:
+    css: style_do.css
+    number_sections: yes
+    toc: yes
+    toc_depth: '3'
+    toc_float: yes
+    theme: "spacelab" #"default", "bootstrap", "cerulean", "cosmo", "darkly", "flatly",
+                 # "journal", "lumen", "paper", "readable", "sandstone", "simplex",
+                 # "spacelab", "united", "yeti"
+    highlight: "pygments" #"default", "tango", "pygments", "kate", "monochrome",
+                 # "espresso", "zenburn", "haddock", "textmate"
+    df_print: paged
+    code_folding: show
+#date: '2022-03-30'
+date: 'Last update: `r Sys.Date()`'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(cache = FALSE, echo = TRUE, fig.align = "center")
+library(AppliedEconometricsCode)
+library(foreach)
+library(magrittr)
+library(ggplot2)
+library(kableExtra)
+color_main <- scales::viridis_pal(option = "C")(1)
+```
+
+In this section, we implement the estimation of the intent-to-treat effect and the local average treatment effect in the case of one-sided compliance in the chapter "Non-compliance". The functions called from `AppliedEconometricsCode` are defined in `R/functions_noncompliance.R`. First, we generate the latent outcomes of the sample, and then generate the treatment vector and the realized outcomes. When doing so, we consider a situation where the average treatment effect differs for each compliance type. Based on the realized treatment assignment vector, the realized treatment receipt vector, and the realized outcomes, we estimate the treatment receipt and the treatment assignment effect. Next, using these estimated values, we estimate the local average treatment effect.
+
+In the case of non-compliance, the exclusion restriction is necessary to estimate the local average treatment effect. To confirm this, we generate data that satisfies the exclusion restriction and data that does not satisfy the exclusion restriction, and compare the estimation results.
+
+# Generating simulation data
+
+## Setting constants and parameters
+
+First, fix the seed and set the number of individuals `N`, the number of draws in the Monte Carlo simulation `R`, and the size of the treatment group `N_1`. The set of compliance types is given by `G`. `bias` is the size of the bias when the exclusion restriction of the treatment assignment is not satisfied.
+
+```{r}
+set.seed(1)
+N <- 1000
+N_1 <- 500
+G <- 
+  c(
+    "nc",
+    "co"
+  )
+bias <- 0.5 
+```
+
+Next, set the average treatment effect `tau_population` in the population.
+
+```{r}
+tau_population <- 
+  c(
+    1, 
+    2
+  )
+```
+
+## Generating data
+
+Based on the above constants and parameters, we generate the latent outcomes of the sample. This operation corresponds to one random sampling. We also calculate the average treatment effect `tau` in the sample. The compliance type is represented by `g`. `y_z` is the variation in the treatment assignment to `y_1` when the exclusion restriction of the treatment assignment is not satisfied.
+
+```{r}
+outcome_potential <-
+  1:length(G) %>%
+  purrr::map(
+    function (n) {
+      df <-
+        tibble::tibble(
+          g = G[n],
+          y_0 = 
+            rnorm(
+              N / length(G), 
+              mean = 0, 
+              sd = 1
+            ),
+          y_1 = 
+            rnorm(
+              N / length(G), 
+              mean = tau_population[n], 
+              sd = 1
+            ),
+          y_z = 
+            rnorm(
+              N / length(G),
+              mean = bias,
+              sd = 1
+            )
+        )
+      return(df)
+    }
+  ) %>%
+  dplyr::bind_rows()
+
+tau <-
+  outcome_potential %>%
+  dplyr::group_by(g) %>%
+  dplyr::summarise(
+    tau = mean(y_1 - y_0)
+  ) %>%
+  dplyr::ungroup() 
+
+outcome_potential %>%
+  head() %>%
+  kbl() %>%
+  kable_styling()
+
+outcome_potential %>%
+  modelsummary::datasummary_skim()
+
+tau
+```
+
+Next, we generate the observed data. To do this, we first generate the treatment assignment vector `z`. Based on this treatment assignment vector and the compliance type, we generate the treatment receipt vector `d`. This operation corresponds to one randomization experiment. Note that the realized data does not include the compliance type `g`.
+
+```{r}
+data_realized_excluded <-
+  generate_data_noncompliance_oneside(
+    outcome_potential = outcome_potential,
+    N_1 = N_1,
+    seed = 1,
+    exclusion = 1
+  ) 
+data_realized_excluded %>%
+  head() %>%
+  kbl() %>%
+  kable_styling()
+data_realized_excluded %>%
+  modelsummary::datasummary_skim()
+```
+
+
+```{r}
+data_realized_included <-
+  generate_data_noncompliance_oneside(
+    outcome_potential = outcome_potential,
+    N_1 = N_1,
+    seed = 1,
+    exclusion = 0
+  ) 
+data_realized_included %>%
+  head() %>%
+  kbl() %>%
+  kable_styling()
+data_realized_included %>%
+  modelsummary::datasummary_skim()
+```
+
+# Analysis
+
+## Manually calculating $\tilde{\tau}_D$
+
+Based on the observed data, we calculate the probability of receiving treatment when treatment is assigned. This is the estimated value of the treatment assignment effect $\tilde{\tau}_D$.
+
+```{r}
+tau_tilde_d_excluded <-
+  data_realized_excluded %>%
+  dplyr::filter(
+    z == 1
+  ) %>%
+  dplyr::summarise(
+    d = 
+      sum(d) / 
+      length(d)
+  ) %>%
+  dplyr::pull(d)
+tau_tilde_d_excluded
+```
+
+```{r}
+tau_tilde_d_included <-
+  data_realized_excluded %>%
+  dplyr::filter(
+    z == 1
+  ) %>%
+  dplyr::summarise(
+    d = 
+      sum(d) / 
+      length(d)
+    ) %>%
+  dplyr::pull(d)
+tau_tilde_d_included
+```
+
+## Estimation of $\tilde{\tau}_D$ by regression analysis
+
+We obtain equivalent estimates by regression analysis.
+
+```{r}
+data_realized_excluded %>%
+  lm(
+    data = .,
+    formula = d ~ z
+  ) %>%
+  modelsummary::modelsummary(
+    fmt = 6
+  )
+```
+
+```{r}
+data_realized_included %>%
+  lm(
+    data = .,
+    formula = d ~ z
+  ) %>%
+  modelsummary::modelsummary(
+    fmt = 6
+  )
+```
+
+## Manually calculating $\tilde{\tau}_Y$
+
+Based on the observed data, we calculate the difference in the average of the outcomes. This is the estimated value of the treatment assignment effect $\tilde{\tau}_Y$.
+
+```{r}
+tau_tilde_y_excluded <-
+  data_realized_excluded %>%
+  dplyr::group_by(z) %>%
+  dplyr::summarise(
+    y = mean(y)
+  ) %>%
+  dplyr::ungroup() %>%
+  dplyr::summarise(
+    y = 
+      sum(y * z) - 
+      sum(y * (1 - z))
+    ) %>%
+  dplyr::pull(y)
+tau_tilde_y_excluded
+```
+
+```{r}
+tau_tilde_y_included <-
+  data_realized_included %>%
+  dplyr::group_by(z) %>%
+  dplyr::summarise(
+    y = mean(y)
+  ) %>%
+  dplyr::ungroup() %>%
+  dplyr::summarise(
+    y = 
+      sum(y * z) - 
+      sum(y * (1 - z))
+  ) %>%
+  dplyr::pull(y)
+tau_tilde_y_included
+```
+
+## Estimation of $\tilde{\tau}_Y$ by regression analysis
+
+We obtain equivalent estimates by regression analysis.
+
+```{r}
+data_realized_excluded %>%
+  lm(
+    data = .,
+    formula = y ~ z
+  ) %>%
+  modelsummary::modelsummary(fmt = 6)
+```
+
+```{r}
+data_realized_included %>%
+  lm(
+    data = .,
+    formula = y ~ z
+  ) %>%
+  modelsummary::modelsummary(fmt = 6)
+```
+
+## Manually calculating $\tilde{\tau}_{Y, co} = \tau_{late}$
+
+Next, we obtain the estimated value of the local average treatment effect by dividing the intent-to-treat effect of the outcome by the treatment effect on the treatment receipt. We confirm that the result is close to the average treatment effect of the compliers.
+
+```{r}
+tau_late_excluded <-
+  tau_tilde_y_excluded / 
+  tau_tilde_d_excluded
+tau_late_excluded
+```
+
+```{r}
+tau_late_included <-
+  tau_tilde_y_included / 
+  tau_tilde_d_included
+tau_late_included
+```
+
+## Estimation of $\tilde{\tau}_{Y, co} = \tau_{late}$ by two-stage least squares method
+
+Equivalent estimates are obtained by the two-stage least squares method. Estimating the estimation error is more efficient using regression analysis.
+
+```{r}
+data_realized_excluded %>%
+  estimatr::iv_robust(
+    data = .,
+    formula = y ~ d | z
+  ) %>%
+  modelsummary::modelsummary(
+    fmt = 6
+  )
+```
+```{r}
+data_realized_included %>%
+  estimatr::iv_robust(
+    data = .,
+    formula = y ~ d | z
+  ) %>%
+  modelsummary::modelsummary(
+    fmt = 6
+  )
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

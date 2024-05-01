@@ -11,7 +11,7 @@
 
 
 
-<title>Cluster-Robust Standard Errors</title>
+<title>Multiple Testing</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -2680,7 +2680,7 @@ div.sourceCode { overflow: auto; }
 }
 @media print {
 pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
 }
 pre.numberSource code
 { counter-reset: source-line 0; }
@@ -2942,498 +2942,461 @@ border-radius: 0px;
 
 
 
-<h1 class="title toc-ignore">Cluster-Robust Standard Errors</h1>
-<h4 class="date">Last Update: 2024-02-26</h4>
+<h1 class="title toc-ignore">Multiple Testing</h1>
+<h3 class="subtitle">FDR Control</h3>
+<h4 class="date">Last update: 2024-03-12</h4>
 
 </div>
 
 
-<p>We will introduce robust inference for cluster correlation using the
-<code>clubSandwich</code> package and the <code>fwildclusterboot</code>
-package.</p>
-<p>In addition to <code>set.seed()</code>, you need to fix
-<code>dqrng::dqset.seed()</code> in <code>fwildclusterboot</code>.</p>
-<p>The function <code>return_dgp_cluster</code> defined in
-<code>function_inference</code> generates <code>N</code> observations
-for <code>N_C</code> clusters, and generates <code>X</code> following
-the normal distribution <code>N(0,1)</code>, <code>e</code> following
-the normal distribution <code>N(0,0.1)</code>, and
-<code>Y = 0.5 + X * tau_C + e</code> by adding cluster-specific normal
-errors to <code>e</code>. Here, <code>tau_C</code> gives the value
-divided from <code>[-2,2]</code> to each cluster.</p>
-<p>Because the sample size is common for each cluster, the average
-treatment effect for the entire population is <code>0</code>.</p>
-<div id="the-case-of-quite-a-few-clusters" class="section level1" number="1">
-<h1><span class="header-section-number">1</span> The Case of Quite a Few
-Clusters</h1>
-<p>First, set <code>N_C</code> to <code>100</code>. Using
-<code>clubSandwich::vcov</code> and <code>clubSandwich::coef_test</code>
-for the linear regression output of <code>lm</code>, we can obtain the
-estimated statistics based on cluster-robust variance estimation.</p>
-<p>In this case, <code>vcov</code> can choose the degree of freedom
-correction for variance estimation. <code>CR0</code> is the one without
-correction, and <code>CR3</code> is the one by jackknife variance
-estimation.</p>
+<p>In this section, we introduce an example of the multiple testing
+problem and the FDR control method.</p>
+<div id="setting-constants-and-parameters" class="section level1" number="1">
+<h1><span class="header-section-number">1</span> Setting constants and
+parameters</h1>
+<p>First, we set the constants for the simulation. <code>N</code> is the
+sample size, <code>M</code> is the number of null hypotheses,
+<code>M_0</code> is the number of true null hypotheses, <code>L</code>
+is the number of simulations, and <code>alpha</code> is the significance
+level.`</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
-<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>dqrng<span class="sc">::</span><span class="fu">dqset.seed</span>(<span class="dv">1</span>)</span>
-<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>N <span class="ot">&lt;-</span> <span class="dv">50</span></span>
-<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>N_C <span class="ot">&lt;-</span> <span class="dv">100</span></span>
-<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>N_M <span class="ot">&lt;-</span> <span class="dv">5000</span></span>
-<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a>N_B <span class="ot">&lt;-</span> <span class="dv">9999</span></span></code></pre></div>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>data <span class="ot">&lt;-</span> </span>
-<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>  AppliedEconometricsCode<span class="sc">::</span><span class="fu">return_dgp_cluster</span>(</span>
-<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>    <span class="at">N =</span> N,</span>
-<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>    <span class="at">N_C =</span> N_C</span>
-<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>  )</span></code></pre></div>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>lm_fit <span class="ot">&lt;-</span> </span>
-<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>  <span class="fu">lm</span>(</span>
-<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>    Y <span class="sc">~</span> X,</span>
-<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>    <span class="at">data =</span> data</span>
-<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>  )</span></code></pre></div>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">cat</span>(</span>
-<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>  <span class="st">&quot;Heteroskedasticity-robust t-statistics&quot;</span>, </span>
-<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  <span class="fu">summary</span>(lm_fit)<span class="sc">$</span>coefficients[<span class="dv">2</span>,<span class="dv">3</span>], </span>
-<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>  <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span></span>
-<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>)</span></code></pre></div>
-<pre><code>## Heteroskedasticity-robust t-statistics 0.3206339</code></pre>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>vc_cr0 <span class="ot">&lt;-</span> </span>
-<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>  clubSandwich<span class="sc">::</span><span class="fu">vcovCR</span>(</span>
-<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>    lm_fit,</span>
-<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>    <span class="at">cluster =</span> data<span class="sc">$</span>C,</span>
-<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>    <span class="at">type =</span> <span class="st">&quot;CR0&quot;</span></span>
-<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>  )</span></code></pre></div>
-<pre><code>## Registered S3 method overwritten by &#39;clubSandwich&#39;:
-##   method    from    
-##   bread.mlm sandwich</code></pre>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>vc_cr3 <span class="ot">&lt;-</span> </span>
-<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>  clubSandwich<span class="sc">::</span><span class="fu">vcovCR</span>(</span>
-<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>    lm_fit,</span>
-<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>    <span class="at">cluster =</span> data<span class="sc">$</span>C,</span>
-<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>    <span class="at">type =</span> <span class="st">&quot;CR3&quot;</span></span>
-<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>  )</span>
-<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a></span>
-<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="fu">cat</span>(</span>
-<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a>  <span class="st">&quot;Cluster-robust t-statistics, CR0&quot;</span>, </span>
-<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a>  clubSandwich<span class="sc">::</span><span class="fu">coef_test</span>(</span>
-<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a>    lm_fit,</span>
-<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a>    vc_cr0,</span>
-<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a>    <span class="at">coefs =</span> <span class="st">&quot;X&quot;</span></span>
-<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a>  )<span class="sc">$</span>tstat, </span>
-<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a>  <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span></span>
-<span id="cb8-16"><a href="#cb8-16" tabindex="-1"></a>)</span></code></pre></div>
-<pre><code>## Cluster-robust t-statistics, CR0 0.2098906</code></pre>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">cat</span>(</span>
-<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>  <span class="st">&quot;Cluster-robust t-statistics, CR3&quot;</span>, </span>
-<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  clubSandwich<span class="sc">::</span><span class="fu">coef_test</span>(</span>
-<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>    lm_fit,</span>
-<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>    vc_cr3,</span>
-<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>    <span class="at">coefs =</span> <span class="st">&quot;X&quot;</span></span>
-<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a>  )<span class="sc">$</span>tstat, </span>
-<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a>  <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span></span>
-<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a>)</span></code></pre></div>
-<pre><code>## Cluster-robust t-statistics, CR3 0.2073183</code></pre>
-<p>The function <code>fwildclusterboot::boottest</code> gives the
-estimated statistics based on wild cluster-bootstrap.</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>p_val_w <span class="ot">&lt;-</span> </span>
-<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>  fwildclusterboot<span class="sc">::</span><span class="fu">boottest</span>(</span>
-<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>    <span class="at">object =</span> lm_fit,</span>
-<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>    <span class="at">clustid =</span> <span class="st">&quot;C&quot;</span>,</span>
-<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>    <span class="at">param =</span> <span class="st">&quot;X&quot;</span>,</span>
-<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>    <span class="at">B =</span> N_B,</span>
-<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a>    <span class="at">type =</span> <span class="st">&quot;webb&quot;</span></span>
-<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a>  )<span class="sc">$</span>p_val</span></code></pre></div>
-<pre><code>## Warning: Please note that the seeding behavior for random number generation for
-## `boottest()` has changed with `fwildclusterboot` version 0.13.
-## 
-## It will no longer be possible to exactly reproduce results produced by versions
-## lower than 0.13.
-## 
-## If your prior results were produced under sufficiently many bootstrap
-## iterations, none of your conclusions will change.  For more details about this
-## change, please read the notes in
-## [news.md](https://cran.r-project.org/web/packages/fwildclusterboot/news/news.html).
-## This warning is displayed once per session.</code></pre>
-<pre><code>## Too guarantee reproducibility, don&#39;t forget to set a global random seed
-## **both** via `set.seed()` and `dqrng::dqset.seed()`.
-## This message is displayed once every 8 hours.</code></pre>
-<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Wild cluster-bootstrap p-value&quot;</span>, p_val_w, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code></pre></div>
-<pre><code>## Wild cluster-bootstrap p-value 0.8324832</code></pre>
-<p>When <code>N_C</code> is <code>100</code>, the result of
-<code>5000</code> simulations is as follows.</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a>t_w <span class="ot">&lt;-</span> </span>
-<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a>  <span class="fu">rep</span>(</span>
-<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a>    <span class="cn">NA</span>,</span>
-<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a>    N_M</span>
-<span id="cb17-5"><a href="#cb17-5" tabindex="-1"></a>  )</span>
-<span id="cb17-6"><a href="#cb17-6" tabindex="-1"></a>t_cr0 <span class="ot">&lt;-</span> </span>
-<span id="cb17-7"><a href="#cb17-7" tabindex="-1"></a>  <span class="fu">rep</span>(</span>
-<span id="cb17-8"><a href="#cb17-8" tabindex="-1"></a>    <span class="cn">NA</span>,</span>
-<span id="cb17-9"><a href="#cb17-9" tabindex="-1"></a>    N_M</span>
-<span id="cb17-10"><a href="#cb17-10" tabindex="-1"></a>  )</span>
-<span id="cb17-11"><a href="#cb17-11" tabindex="-1"></a>t_cr3 <span class="ot">&lt;-</span> </span>
-<span id="cb17-12"><a href="#cb17-12" tabindex="-1"></a>  <span class="fu">rep</span>(</span>
-<span id="cb17-13"><a href="#cb17-13" tabindex="-1"></a>    <span class="cn">NA</span>,</span>
-<span id="cb17-14"><a href="#cb17-14" tabindex="-1"></a>    N_M</span>
-<span id="cb17-15"><a href="#cb17-15" tabindex="-1"></a>  )</span>
-<span id="cb17-16"><a href="#cb17-16" tabindex="-1"></a>p_cr_w <span class="ot">&lt;-</span> </span>
-<span id="cb17-17"><a href="#cb17-17" tabindex="-1"></a>  <span class="fu">rep</span>(</span>
-<span id="cb17-18"><a href="#cb17-18" tabindex="-1"></a>    <span class="cn">NA</span>,</span>
-<span id="cb17-19"><a href="#cb17-19" tabindex="-1"></a>    N_M</span>
-<span id="cb17-20"><a href="#cb17-20" tabindex="-1"></a>  )</span>
-<span id="cb17-21"><a href="#cb17-21" tabindex="-1"></a><span class="cf">for</span> (</span>
-<span id="cb17-22"><a href="#cb17-22" tabindex="-1"></a>  i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>N_M</span>
-<span id="cb17-23"><a href="#cb17-23" tabindex="-1"></a>) {</span>
-<span id="cb17-24"><a href="#cb17-24" tabindex="-1"></a>  data <span class="ot">&lt;-</span> </span>
-<span id="cb17-25"><a href="#cb17-25" tabindex="-1"></a>    AppliedEconometricsCode<span class="sc">::</span><span class="fu">return_dgp_cluster</span>(</span>
-<span id="cb17-26"><a href="#cb17-26" tabindex="-1"></a>      <span class="at">N =</span> N,</span>
-<span id="cb17-27"><a href="#cb17-27" tabindex="-1"></a>      <span class="at">N_C =</span> N_C</span>
-<span id="cb17-28"><a href="#cb17-28" tabindex="-1"></a>    )</span>
-<span id="cb17-29"><a href="#cb17-29" tabindex="-1"></a></span>
-<span id="cb17-30"><a href="#cb17-30" tabindex="-1"></a>  lm_fit <span class="ot">&lt;-</span> </span>
-<span id="cb17-31"><a href="#cb17-31" tabindex="-1"></a>    <span class="fu">lm</span>(</span>
-<span id="cb17-32"><a href="#cb17-32" tabindex="-1"></a>      Y <span class="sc">~</span> X,</span>
-<span id="cb17-33"><a href="#cb17-33" tabindex="-1"></a>      <span class="at">data =</span> data</span>
-<span id="cb17-34"><a href="#cb17-34" tabindex="-1"></a>    )</span>
-<span id="cb17-35"><a href="#cb17-35" tabindex="-1"></a>  </span>
-<span id="cb17-36"><a href="#cb17-36" tabindex="-1"></a>  t_w[i] <span class="ot">&lt;-</span> <span class="fu">summary</span>(lm_fit)<span class="sc">$</span>coefficients[<span class="dv">2</span>,<span class="dv">3</span>]</span>
-<span id="cb17-37"><a href="#cb17-37" tabindex="-1"></a></span>
-<span id="cb17-38"><a href="#cb17-38" tabindex="-1"></a>  vc_cr0 <span class="ot">&lt;-</span> </span>
-<span id="cb17-39"><a href="#cb17-39" tabindex="-1"></a>    clubSandwich<span class="sc">::</span><span class="fu">vcovCR</span>(</span>
-<span id="cb17-40"><a href="#cb17-40" tabindex="-1"></a>      lm_fit,</span>
-<span id="cb17-41"><a href="#cb17-41" tabindex="-1"></a>      <span class="at">cluster =</span> data<span class="sc">$</span>C,</span>
-<span id="cb17-42"><a href="#cb17-42" tabindex="-1"></a>      <span class="at">type =</span> <span class="st">&quot;CR0&quot;</span></span>
-<span id="cb17-43"><a href="#cb17-43" tabindex="-1"></a>    )</span>
-<span id="cb17-44"><a href="#cb17-44" tabindex="-1"></a>  </span>
-<span id="cb17-45"><a href="#cb17-45" tabindex="-1"></a>  vc_cr3 <span class="ot">&lt;-</span> </span>
-<span id="cb17-46"><a href="#cb17-46" tabindex="-1"></a>    clubSandwich<span class="sc">::</span><span class="fu">vcovCR</span>(</span>
-<span id="cb17-47"><a href="#cb17-47" tabindex="-1"></a>      lm_fit,</span>
-<span id="cb17-48"><a href="#cb17-48" tabindex="-1"></a>      <span class="at">cluster =</span> data<span class="sc">$</span>C,</span>
-<span id="cb17-49"><a href="#cb17-49" tabindex="-1"></a>      <span class="at">type =</span> <span class="st">&quot;CR3&quot;</span></span>
-<span id="cb17-50"><a href="#cb17-50" tabindex="-1"></a>    )</span>
-<span id="cb17-51"><a href="#cb17-51" tabindex="-1"></a></span>
-<span id="cb17-52"><a href="#cb17-52" tabindex="-1"></a>  t_cr0[i] <span class="ot">&lt;-</span> </span>
-<span id="cb17-53"><a href="#cb17-53" tabindex="-1"></a>    clubSandwich<span class="sc">::</span><span class="fu">coef_test</span>(</span>
-<span id="cb17-54"><a href="#cb17-54" tabindex="-1"></a>      lm_fit,</span>
-<span id="cb17-55"><a href="#cb17-55" tabindex="-1"></a>      vc_cr0,</span>
-<span id="cb17-56"><a href="#cb17-56" tabindex="-1"></a>      <span class="at">coefs =</span> <span class="st">&quot;X&quot;</span></span>
-<span id="cb17-57"><a href="#cb17-57" tabindex="-1"></a>    )<span class="sc">$</span>tstat</span>
-<span id="cb17-58"><a href="#cb17-58" tabindex="-1"></a>  </span>
-<span id="cb17-59"><a href="#cb17-59" tabindex="-1"></a>  t_cr3[i] <span class="ot">&lt;-</span> </span>
-<span id="cb17-60"><a href="#cb17-60" tabindex="-1"></a>    clubSandwich<span class="sc">::</span><span class="fu">coef_test</span>(</span>
-<span id="cb17-61"><a href="#cb17-61" tabindex="-1"></a>      lm_fit,</span>
-<span id="cb17-62"><a href="#cb17-62" tabindex="-1"></a>      vc_cr3,</span>
-<span id="cb17-63"><a href="#cb17-63" tabindex="-1"></a>      <span class="at">coefs =</span> <span class="st">&quot;X&quot;</span></span>
-<span id="cb17-64"><a href="#cb17-64" tabindex="-1"></a>    )<span class="sc">$</span>tstat</span>
-<span id="cb17-65"><a href="#cb17-65" tabindex="-1"></a></span>
-<span id="cb17-66"><a href="#cb17-66" tabindex="-1"></a>  <span class="fu">invisible</span>(</span>
-<span id="cb17-67"><a href="#cb17-67" tabindex="-1"></a>    <span class="fu">capture.output</span>(</span>
-<span id="cb17-68"><a href="#cb17-68" tabindex="-1"></a>      boot_lm <span class="ot">&lt;-</span> </span>
-<span id="cb17-69"><a href="#cb17-69" tabindex="-1"></a>        fwildclusterboot<span class="sc">::</span><span class="fu">boottest</span>(</span>
-<span id="cb17-70"><a href="#cb17-70" tabindex="-1"></a>          <span class="at">object =</span> lm_fit,</span>
-<span id="cb17-71"><a href="#cb17-71" tabindex="-1"></a>          <span class="at">clustid =</span> <span class="st">&quot;C&quot;</span>,</span>
-<span id="cb17-72"><a href="#cb17-72" tabindex="-1"></a>          <span class="at">param =</span> <span class="st">&quot;X&quot;</span>,</span>
-<span id="cb17-73"><a href="#cb17-73" tabindex="-1"></a>          <span class="at">B =</span> N_B,</span>
-<span id="cb17-74"><a href="#cb17-74" tabindex="-1"></a>          <span class="at">type =</span> <span class="st">&quot;webb&quot;</span></span>
-<span id="cb17-75"><a href="#cb17-75" tabindex="-1"></a>        )</span>
-<span id="cb17-76"><a href="#cb17-76" tabindex="-1"></a>      )</span>
-<span id="cb17-77"><a href="#cb17-77" tabindex="-1"></a>    )</span>
-<span id="cb17-78"><a href="#cb17-78" tabindex="-1"></a>    </span>
-<span id="cb17-79"><a href="#cb17-79" tabindex="-1"></a>  <span class="fu">invisible</span>(</span>
-<span id="cb17-80"><a href="#cb17-80" tabindex="-1"></a>    <span class="fu">capture.output</span>(</span>
-<span id="cb17-81"><a href="#cb17-81" tabindex="-1"></a>      p_cr_w[i] <span class="ot">&lt;-</span> boot_lm<span class="sc">$</span>p_val</span>
-<span id="cb17-82"><a href="#cb17-82" tabindex="-1"></a>    )</span>
-<span id="cb17-83"><a href="#cb17-83" tabindex="-1"></a>  )</span>
-<span id="cb17-84"><a href="#cb17-84" tabindex="-1"></a>}</span></code></pre></div>
-<p>The (false) rejection probability based on heteroskedasticity-robust
-variance estimation:</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a><span class="fu">mean</span>(<span class="fu">abs</span>(t_w) <span class="sc">&gt;=</span> <span class="fl">1.965</span>)</span></code></pre></div>
-<pre><code>## [1] 0.0576</code></pre>
-<p>The (false) rejection probability based on cluster-robust variance
-estimation, CR0:</p>
-<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a><span class="fu">mean</span>(<span class="fu">abs</span>(t_cr0) <span class="sc">&gt;=</span> <span class="fl">1.965</span>)</span></code></pre></div>
-<pre><code>## [1] 0.002</code></pre>
-<p>The (false) rejection probability based on cluster-robust variance
-estimation, CR3:</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" tabindex="-1"></a><span class="fu">mean</span>(<span class="fu">abs</span>(t_cr3) <span class="sc">&gt;=</span> <span class="fl">1.965</span>)</span></code></pre></div>
-<pre><code>## [1] 0.002</code></pre>
-<p>The (false) rejection probability based on wild-cluster
-bootstrap:</p>
-<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" tabindex="-1"></a><span class="fu">mean</span>(p_cr_w <span class="sc">&lt;</span> <span class="fl">0.05</span>)</span></code></pre></div>
-<pre><code>## [1] 0.002</code></pre>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>N <span class="ot">&lt;-</span> <span class="dv">500</span></span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>M <span class="ot">&lt;-</span> <span class="dv">60</span></span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>M_0 <span class="ot">&lt;-</span> <span class="dv">45</span></span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>L <span class="ot">&lt;-</span> <span class="dv">100</span></span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a>alpha <span class="ot">&lt;-</span> <span class="fl">0.05</span></span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a>tau_population <span class="ot">&lt;-</span> <span class="fl">0.2</span></span></code></pre></div>
 </div>
-<div id="the-case-of-quite-a-few-clusters-1" class="section level1" number="2">
-<h1><span class="header-section-number">2</span> The Case of Quite a Few
-Clusters</h1>
-<p>When <code>N_C</code> is <code>10</code>, it is difficult to say that
-the number of clusters is sufficient for cluster-robust estimation.</p>
-<p>In addition, the default <code>type=rademacher</code> of
-<code>boottest</code> gives a warning that there are limited values of
-the statistics when the number of clusters is around <code>10</code>. If
-you use <code>type=webb</code>, it gives weights of
-<code>-(1/2)^{1/2}</code>,<code>-(3/2)^{1/2}</code>,
-<code>(1/2)^{1/2}</code>, <code>(3/2)^{1/2}</code>, in addition to
-<code>-1</code> and <code>1</code>.</p>
-<p><a href="https://ideas.repec.org/p/qed/wpaper/1315.html">Webb, M. D.
-2014. Reworking wild bootstrap based inference for clustered errors.
-Queen’s University, Department of Economics, Working Paper
-No. 1315</a></p>
-<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
-<span id="cb26-2"><a href="#cb26-2" tabindex="-1"></a>dqrng<span class="sc">::</span><span class="fu">dqset.seed</span>(<span class="dv">1</span>)</span>
-<span id="cb26-3"><a href="#cb26-3" tabindex="-1"></a>N <span class="ot">&lt;-</span> <span class="dv">50</span></span>
-<span id="cb26-4"><a href="#cb26-4" tabindex="-1"></a>N_C <span class="ot">&lt;-</span> <span class="dv">10</span></span>
-<span id="cb26-5"><a href="#cb26-5" tabindex="-1"></a>N_M <span class="ot">&lt;-</span> <span class="dv">5000</span></span>
-<span id="cb26-6"><a href="#cb26-6" tabindex="-1"></a>N_B <span class="ot">&lt;-</span> <span class="dv">9999</span></span></code></pre></div>
-<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" tabindex="-1"></a>data <span class="ot">&lt;-</span> </span>
-<span id="cb27-2"><a href="#cb27-2" tabindex="-1"></a>  AppliedEconometricsCode<span class="sc">::</span><span class="fu">return_dgp_cluster</span>(</span>
-<span id="cb27-3"><a href="#cb27-3" tabindex="-1"></a>    <span class="at">N =</span> N,</span>
-<span id="cb27-4"><a href="#cb27-4" tabindex="-1"></a>    <span class="at">N_C =</span> N_C</span>
-<span id="cb27-5"><a href="#cb27-5" tabindex="-1"></a>  )</span></code></pre></div>
-<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" tabindex="-1"></a>lm_fit <span class="ot">&lt;-</span> </span>
-<span id="cb28-2"><a href="#cb28-2" tabindex="-1"></a>  <span class="fu">lm</span>(</span>
-<span id="cb28-3"><a href="#cb28-3" tabindex="-1"></a>    Y <span class="sc">~</span> X,</span>
-<span id="cb28-4"><a href="#cb28-4" tabindex="-1"></a>    <span class="at">data =</span> data</span>
-<span id="cb28-5"><a href="#cb28-5" tabindex="-1"></a>  )</span>
-<span id="cb28-6"><a href="#cb28-6" tabindex="-1"></a></span>
-<span id="cb28-7"><a href="#cb28-7" tabindex="-1"></a>boot_lm <span class="ot">&lt;-</span> </span>
-<span id="cb28-8"><a href="#cb28-8" tabindex="-1"></a>  fwildclusterboot<span class="sc">::</span><span class="fu">boottest</span>(</span>
-<span id="cb28-9"><a href="#cb28-9" tabindex="-1"></a>    <span class="at">object =</span> lm_fit, </span>
-<span id="cb28-10"><a href="#cb28-10" tabindex="-1"></a>    <span class="at">clustid =</span> <span class="st">&quot;C&quot;</span>,</span>
-<span id="cb28-11"><a href="#cb28-11" tabindex="-1"></a>    <span class="at">param =</span> <span class="st">&quot;X&quot;</span>,</span>
-<span id="cb28-12"><a href="#cb28-12" tabindex="-1"></a>    <span class="at">B =</span> N_B</span>
-<span id="cb28-13"><a href="#cb28-13" tabindex="-1"></a>  )</span></code></pre></div>
-<pre><code>## Warning: There are only 1024 unique draws from the rademacher distribution for 10
-## bootstrap clusters. Therefore, B = 1024 with full enumeration. Consider using
-## webb weights instead. Further, note that under full enumeration and with B =
-## 1024 bootstrap draws, only 2^(#clusters - 1) = 512 distinct t-statistics and
-## p-values can be computed. For a more thorough discussion, see Webb `Reworking
-## wild bootstrap based inference for clustered errors` (2013).</code></pre>
-<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" tabindex="-1"></a><span class="fu">summary</span>(boot_lm)<span class="sc">$</span>statistic</span></code></pre></div>
-<pre><code>## boottest.lm(object = lm_fit, param = &quot;X&quot;, B = N_B, clustid = &quot;C&quot;)
-##  
-##  Hypothesis: 1*X = 0
-##  Observations: 500
-##   Bootstr. Type: rademacher
-##  Clustering: 1-way
-##  Confidence Sets: 95%
-##  Number of Clusters: 10
-## </code></pre>
-<pre><code>## [1] 0.231</code></pre>
-<p>。 When <code>N_C</code> is <code>10</code>, the result of
-<code>5000</code> simulations is as follows.</p>
-<div class="sourceCode" id="cb33"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" tabindex="-1"></a>t_w <span class="ot">&lt;-</span> </span>
-<span id="cb33-2"><a href="#cb33-2" tabindex="-1"></a>  <span class="fu">rep</span>(</span>
-<span id="cb33-3"><a href="#cb33-3" tabindex="-1"></a>    <span class="cn">NA</span>,</span>
-<span id="cb33-4"><a href="#cb33-4" tabindex="-1"></a>    N_M</span>
-<span id="cb33-5"><a href="#cb33-5" tabindex="-1"></a>  )</span>
-<span id="cb33-6"><a href="#cb33-6" tabindex="-1"></a>t_cr0 <span class="ot">&lt;-</span> </span>
-<span id="cb33-7"><a href="#cb33-7" tabindex="-1"></a>  <span class="fu">rep</span>(</span>
-<span id="cb33-8"><a href="#cb33-8" tabindex="-1"></a>    <span class="cn">NA</span>,</span>
-<span id="cb33-9"><a href="#cb33-9" tabindex="-1"></a>    N_M</span>
-<span id="cb33-10"><a href="#cb33-10" tabindex="-1"></a>  )</span>
-<span id="cb33-11"><a href="#cb33-11" tabindex="-1"></a>t_cr3 <span class="ot">&lt;-</span> </span>
-<span id="cb33-12"><a href="#cb33-12" tabindex="-1"></a>  <span class="fu">rep</span>(</span>
-<span id="cb33-13"><a href="#cb33-13" tabindex="-1"></a>    <span class="cn">NA</span>,</span>
-<span id="cb33-14"><a href="#cb33-14" tabindex="-1"></a>    N_M</span>
-<span id="cb33-15"><a href="#cb33-15" tabindex="-1"></a>  )</span>
-<span id="cb33-16"><a href="#cb33-16" tabindex="-1"></a>p_cr_w <span class="ot">&lt;-</span> </span>
-<span id="cb33-17"><a href="#cb33-17" tabindex="-1"></a>  <span class="fu">rep</span>(</span>
-<span id="cb33-18"><a href="#cb33-18" tabindex="-1"></a>    <span class="cn">NA</span>,</span>
-<span id="cb33-19"><a href="#cb33-19" tabindex="-1"></a>    N_M</span>
-<span id="cb33-20"><a href="#cb33-20" tabindex="-1"></a>  )</span>
-<span id="cb33-21"><a href="#cb33-21" tabindex="-1"></a></span>
-<span id="cb33-22"><a href="#cb33-22" tabindex="-1"></a><span class="cf">for</span> (</span>
-<span id="cb33-23"><a href="#cb33-23" tabindex="-1"></a>  i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>N_M</span>
-<span id="cb33-24"><a href="#cb33-24" tabindex="-1"></a>  ) {</span>
-<span id="cb33-25"><a href="#cb33-25" tabindex="-1"></a></span>
-<span id="cb33-26"><a href="#cb33-26" tabindex="-1"></a>  data <span class="ot">&lt;-</span> </span>
-<span id="cb33-27"><a href="#cb33-27" tabindex="-1"></a>    AppliedEconometricsCode<span class="sc">::</span><span class="fu">return_dgp_cluster</span>(</span>
-<span id="cb33-28"><a href="#cb33-28" tabindex="-1"></a>      <span class="at">N =</span> N,</span>
-<span id="cb33-29"><a href="#cb33-29" tabindex="-1"></a>      <span class="at">N_C =</span> N_C</span>
-<span id="cb33-30"><a href="#cb33-30" tabindex="-1"></a>    )</span>
-<span id="cb33-31"><a href="#cb33-31" tabindex="-1"></a></span>
-<span id="cb33-32"><a href="#cb33-32" tabindex="-1"></a>  lm_fit <span class="ot">&lt;-</span> </span>
-<span id="cb33-33"><a href="#cb33-33" tabindex="-1"></a>    <span class="fu">lm</span>(</span>
-<span id="cb33-34"><a href="#cb33-34" tabindex="-1"></a>      Y <span class="sc">~</span> X,</span>
-<span id="cb33-35"><a href="#cb33-35" tabindex="-1"></a>      <span class="at">data =</span> data</span>
-<span id="cb33-36"><a href="#cb33-36" tabindex="-1"></a>    )</span>
-<span id="cb33-37"><a href="#cb33-37" tabindex="-1"></a></span>
-<span id="cb33-38"><a href="#cb33-38" tabindex="-1"></a>  t_w[i] <span class="ot">&lt;-</span> <span class="fu">summary</span>(lm_fit)<span class="sc">$</span>coefficients[<span class="dv">2</span>,<span class="dv">3</span>]</span>
-<span id="cb33-39"><a href="#cb33-39" tabindex="-1"></a></span>
-<span id="cb33-40"><a href="#cb33-40" tabindex="-1"></a>  vc_cr0 <span class="ot">&lt;-</span> </span>
-<span id="cb33-41"><a href="#cb33-41" tabindex="-1"></a>    clubSandwich<span class="sc">::</span><span class="fu">vcovCR</span>(</span>
-<span id="cb33-42"><a href="#cb33-42" tabindex="-1"></a>      lm_fit,</span>
-<span id="cb33-43"><a href="#cb33-43" tabindex="-1"></a>      <span class="at">cluster =</span> data<span class="sc">$</span>C,</span>
-<span id="cb33-44"><a href="#cb33-44" tabindex="-1"></a>      <span class="at">type =</span> <span class="st">&quot;CR0&quot;</span></span>
-<span id="cb33-45"><a href="#cb33-45" tabindex="-1"></a>    )</span>
-<span id="cb33-46"><a href="#cb33-46" tabindex="-1"></a></span>
-<span id="cb33-47"><a href="#cb33-47" tabindex="-1"></a>  vc_cr3 <span class="ot">&lt;-</span> </span>
-<span id="cb33-48"><a href="#cb33-48" tabindex="-1"></a>    clubSandwich<span class="sc">::</span><span class="fu">vcovCR</span>(</span>
-<span id="cb33-49"><a href="#cb33-49" tabindex="-1"></a>      lm_fit,</span>
-<span id="cb33-50"><a href="#cb33-50" tabindex="-1"></a>      <span class="at">cluster =</span> data<span class="sc">$</span>C,</span>
-<span id="cb33-51"><a href="#cb33-51" tabindex="-1"></a>      <span class="at">type =</span> <span class="st">&quot;CR3&quot;</span></span>
-<span id="cb33-52"><a href="#cb33-52" tabindex="-1"></a>    )</span>
-<span id="cb33-53"><a href="#cb33-53" tabindex="-1"></a></span>
-<span id="cb33-54"><a href="#cb33-54" tabindex="-1"></a>  t_cr0[i] <span class="ot">&lt;-</span> </span>
-<span id="cb33-55"><a href="#cb33-55" tabindex="-1"></a>    clubSandwich<span class="sc">::</span><span class="fu">coef_test</span>(</span>
-<span id="cb33-56"><a href="#cb33-56" tabindex="-1"></a>      lm_fit,</span>
-<span id="cb33-57"><a href="#cb33-57" tabindex="-1"></a>      vc_cr0,</span>
-<span id="cb33-58"><a href="#cb33-58" tabindex="-1"></a>      <span class="at">coefs =</span> <span class="st">&quot;X&quot;</span></span>
-<span id="cb33-59"><a href="#cb33-59" tabindex="-1"></a>    )<span class="sc">$</span>tstat</span>
-<span id="cb33-60"><a href="#cb33-60" tabindex="-1"></a></span>
-<span id="cb33-61"><a href="#cb33-61" tabindex="-1"></a>  t_cr3[i] <span class="ot">&lt;-</span> </span>
-<span id="cb33-62"><a href="#cb33-62" tabindex="-1"></a>    clubSandwich<span class="sc">::</span><span class="fu">coef_test</span>(</span>
-<span id="cb33-63"><a href="#cb33-63" tabindex="-1"></a>      lm_fit,</span>
-<span id="cb33-64"><a href="#cb33-64" tabindex="-1"></a>      vc_cr3,</span>
-<span id="cb33-65"><a href="#cb33-65" tabindex="-1"></a>      <span class="at">coefs =</span> <span class="st">&quot;X&quot;</span></span>
-<span id="cb33-66"><a href="#cb33-66" tabindex="-1"></a>    )<span class="sc">$</span>tstat</span>
-<span id="cb33-67"><a href="#cb33-67" tabindex="-1"></a></span>
-<span id="cb33-68"><a href="#cb33-68" tabindex="-1"></a>  <span class="fu">invisible</span>(</span>
-<span id="cb33-69"><a href="#cb33-69" tabindex="-1"></a>    <span class="fu">capture.output</span>(</span>
-<span id="cb33-70"><a href="#cb33-70" tabindex="-1"></a>      boot_lm <span class="ot">&lt;-</span> </span>
-<span id="cb33-71"><a href="#cb33-71" tabindex="-1"></a>        fwildclusterboot<span class="sc">::</span><span class="fu">boottest</span>(</span>
-<span id="cb33-72"><a href="#cb33-72" tabindex="-1"></a>          <span class="at">object =</span> lm_fit,</span>
-<span id="cb33-73"><a href="#cb33-73" tabindex="-1"></a>          <span class="at">clustid =</span> <span class="st">&quot;C&quot;</span>,</span>
-<span id="cb33-74"><a href="#cb33-74" tabindex="-1"></a>          <span class="at">param =</span> <span class="st">&quot;X&quot;</span>,</span>
-<span id="cb33-75"><a href="#cb33-75" tabindex="-1"></a>          <span class="at">B =</span> N_B,</span>
-<span id="cb33-76"><a href="#cb33-76" tabindex="-1"></a>          <span class="at">type =</span> <span class="st">&quot;webb&quot;</span></span>
-<span id="cb33-77"><a href="#cb33-77" tabindex="-1"></a>        )</span>
-<span id="cb33-78"><a href="#cb33-78" tabindex="-1"></a>      )</span>
-<span id="cb33-79"><a href="#cb33-79" tabindex="-1"></a>    )</span>
-<span id="cb33-80"><a href="#cb33-80" tabindex="-1"></a>  <span class="fu">invisible</span>(</span>
-<span id="cb33-81"><a href="#cb33-81" tabindex="-1"></a>    <span class="fu">capture.output</span>(</span>
-<span id="cb33-82"><a href="#cb33-82" tabindex="-1"></a>      p_cr_w[i] <span class="ot">&lt;-</span> boot_lm<span class="sc">$</span>p_val</span>
-<span id="cb33-83"><a href="#cb33-83" tabindex="-1"></a>    )</span>
-<span id="cb33-84"><a href="#cb33-84" tabindex="-1"></a>  )</span>
-<span id="cb33-85"><a href="#cb33-85" tabindex="-1"></a>}</span></code></pre></div>
-<p>The (false) rejection probability based on heteroskedasticity-robust
-variance estimation:</p>
-<div class="sourceCode" id="cb34"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" tabindex="-1"></a><span class="fu">mean</span>(<span class="fu">abs</span>(t_w) <span class="sc">&gt;=</span> <span class="fl">1.965</span>)</span></code></pre></div>
-<pre><code>## [1] 0.0614</code></pre>
-<p>The (false) rejection probability based on cluster-robust variance
-estimation, CR0:</p>
-<div class="sourceCode" id="cb36"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" tabindex="-1"></a><span class="fu">mean</span>(<span class="fu">abs</span>(t_cr0) <span class="sc">&gt;=</span> <span class="fl">1.965</span>)</span></code></pre></div>
-<pre><code>## [1] 0.0062</code></pre>
-<p>The (false) rejection probability based on cluster-robust variance
-estimation, CR3:</p>
-<div class="sourceCode" id="cb38"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" tabindex="-1"></a><span class="fu">mean</span>(<span class="fu">abs</span>(t_cr3) <span class="sc">&gt;=</span> <span class="fl">1.965</span>)</span></code></pre></div>
-<pre><code>## [1] 0.0022</code></pre>
-<p>The (false) rejection probability based on wild-cluster
-bootstrap:</p>
-<div class="sourceCode" id="cb40"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" tabindex="-1"></a><span class="fu">mean</span>(p_cr_w <span class="sc">&lt;</span> <span class="fl">0.05</span>)</span></code></pre></div>
-<pre><code>## [1] 0.0018</code></pre>
+<div id="failure-to-control-the-type-i-error" class="section level1" number="2">
+<h1><span class="header-section-number">2</span> Failure to control the
+type I error</h1>
+<div id="generating-data" class="section level2" number="2.1">
+<h2><span class="header-section-number">2.1</span> Generating data</h2>
+<p>We first fix the seed and generate samples from a randomized
+experiment. We generate a treatment assignment variable from a uniform
+random number, multiply it by the average treatment effect
+<code>tau_population</code>, and add independent standard normal
+distributions to make the observed outcomes. However, at this time, the
+first 15 latent results have a treatment effect, and the remaining 45
+latent results do not have a treatment effect.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>z <span class="ot">&lt;-</span> </span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>  (</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>    <span class="fu">runif</span>(N) <span class="sc">&gt;=</span> <span class="fl">0.5</span></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>  )</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>df_list_1 <span class="ot">&lt;-</span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>  <span class="fu">seq_len</span>(M <span class="sc">-</span> M_0) <span class="sc">%&gt;%</span></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>  purrr<span class="sc">::</span><span class="fu">map</span>(</span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>    <span class="sc">~</span> tibble<span class="sc">::</span><span class="fu">tibble</span>(</span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>        <span class="at">z =</span> z,</span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a>        <span class="at">y =</span> <span class="fu">rnorm</span>(N) <span class="sc">+</span> tau_population <span class="sc">*</span> z</span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a>      )</span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a>  ) </span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a>df_list_0 <span class="ot">&lt;-</span></span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a>  <span class="fu">seq_len</span>(M_0) <span class="sc">%&gt;%</span></span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a>  purrr<span class="sc">::</span><span class="fu">map</span>(</span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a>    <span class="sc">~</span> tibble<span class="sc">::</span><span class="fu">tibble</span>(</span>
+<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a>        <span class="at">z =</span> z,</span>
+<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a>        <span class="at">y =</span> <span class="fu">rnorm</span>(N)</span>
+<span id="cb2-19"><a href="#cb2-19" tabindex="-1"></a>      )</span>
+<span id="cb2-20"><a href="#cb2-20" tabindex="-1"></a>  )</span>
+<span id="cb2-21"><a href="#cb2-21" tabindex="-1"></a>df_list <span class="ot">&lt;-</span></span>
+<span id="cb2-22"><a href="#cb2-22" tabindex="-1"></a>  <span class="fu">c</span>(</span>
+<span id="cb2-23"><a href="#cb2-23" tabindex="-1"></a>    df_list_1, </span>
+<span id="cb2-24"><a href="#cb2-24" tabindex="-1"></a>    df_list_0</span>
+<span id="cb2-25"><a href="#cb2-25" tabindex="-1"></a>  )</span></code></pre></div>
 </div>
-<div id="the-case-of-extremely-few-clusters" class="section level1" number="3">
-<h1><span class="header-section-number">3</span> The Case of Extremely
-Few Clusters</h1>
-<p>When <code>N_C</code> is <code>5</code>, the result of
-<code>5000</code> simulations is as follows.</p>
-<div class="sourceCode" id="cb42"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
-<span id="cb42-2"><a href="#cb42-2" tabindex="-1"></a>dqrng<span class="sc">::</span><span class="fu">dqset.seed</span>(<span class="dv">1</span>)</span>
-<span id="cb42-3"><a href="#cb42-3" tabindex="-1"></a>N <span class="ot">&lt;-</span> <span class="dv">100</span></span>
-<span id="cb42-4"><a href="#cb42-4" tabindex="-1"></a>N_C <span class="ot">&lt;-</span> <span class="dv">5</span></span>
-<span id="cb42-5"><a href="#cb42-5" tabindex="-1"></a>N_M <span class="ot">&lt;-</span> <span class="dv">5000</span></span>
-<span id="cb42-6"><a href="#cb42-6" tabindex="-1"></a>N_B <span class="ot">&lt;-</span> <span class="dv">9999</span></span></code></pre></div>
-<div class="sourceCode" id="cb43"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" tabindex="-1"></a>t_w <span class="ot">&lt;-</span> </span>
-<span id="cb43-2"><a href="#cb43-2" tabindex="-1"></a>  <span class="fu">rep</span>(</span>
-<span id="cb43-3"><a href="#cb43-3" tabindex="-1"></a>    <span class="cn">NA</span>,</span>
-<span id="cb43-4"><a href="#cb43-4" tabindex="-1"></a>    N_M</span>
-<span id="cb43-5"><a href="#cb43-5" tabindex="-1"></a>  )</span>
-<span id="cb43-6"><a href="#cb43-6" tabindex="-1"></a>t_cr0 <span class="ot">&lt;-</span> </span>
-<span id="cb43-7"><a href="#cb43-7" tabindex="-1"></a>  <span class="fu">rep</span>(</span>
-<span id="cb43-8"><a href="#cb43-8" tabindex="-1"></a>    <span class="cn">NA</span>,</span>
-<span id="cb43-9"><a href="#cb43-9" tabindex="-1"></a>    N_M</span>
-<span id="cb43-10"><a href="#cb43-10" tabindex="-1"></a>  )</span>
-<span id="cb43-11"><a href="#cb43-11" tabindex="-1"></a>t_cr3 <span class="ot">&lt;-</span> </span>
-<span id="cb43-12"><a href="#cb43-12" tabindex="-1"></a>  <span class="fu">rep</span>(</span>
-<span id="cb43-13"><a href="#cb43-13" tabindex="-1"></a>    <span class="cn">NA</span>,</span>
-<span id="cb43-14"><a href="#cb43-14" tabindex="-1"></a>    N_M</span>
-<span id="cb43-15"><a href="#cb43-15" tabindex="-1"></a>  )</span>
-<span id="cb43-16"><a href="#cb43-16" tabindex="-1"></a>p_cr_w <span class="ot">&lt;-</span></span>
-<span id="cb43-17"><a href="#cb43-17" tabindex="-1"></a>  <span class="fu">rep</span>(</span>
-<span id="cb43-18"><a href="#cb43-18" tabindex="-1"></a>    <span class="cn">NA</span>,</span>
-<span id="cb43-19"><a href="#cb43-19" tabindex="-1"></a>    N_M</span>
-<span id="cb43-20"><a href="#cb43-20" tabindex="-1"></a>  )</span>
-<span id="cb43-21"><a href="#cb43-21" tabindex="-1"></a></span>
-<span id="cb43-22"><a href="#cb43-22" tabindex="-1"></a><span class="cf">for</span> (</span>
-<span id="cb43-23"><a href="#cb43-23" tabindex="-1"></a>  i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>N_M</span>
-<span id="cb43-24"><a href="#cb43-24" tabindex="-1"></a>  ) {</span>
-<span id="cb43-25"><a href="#cb43-25" tabindex="-1"></a>  </span>
-<span id="cb43-26"><a href="#cb43-26" tabindex="-1"></a>  data <span class="ot">&lt;-</span> </span>
-<span id="cb43-27"><a href="#cb43-27" tabindex="-1"></a>    AppliedEconometricsCode<span class="sc">::</span><span class="fu">return_dgp_cluster</span>(</span>
-<span id="cb43-28"><a href="#cb43-28" tabindex="-1"></a>      <span class="at">N =</span> N,</span>
-<span id="cb43-29"><a href="#cb43-29" tabindex="-1"></a>      <span class="at">N_C =</span> N_C</span>
-<span id="cb43-30"><a href="#cb43-30" tabindex="-1"></a>    )</span>
-<span id="cb43-31"><a href="#cb43-31" tabindex="-1"></a></span>
-<span id="cb43-32"><a href="#cb43-32" tabindex="-1"></a>  lm_fit <span class="ot">&lt;-</span> </span>
-<span id="cb43-33"><a href="#cb43-33" tabindex="-1"></a>    <span class="fu">lm</span>(</span>
-<span id="cb43-34"><a href="#cb43-34" tabindex="-1"></a>      Y <span class="sc">~</span> X,</span>
-<span id="cb43-35"><a href="#cb43-35" tabindex="-1"></a>      <span class="at">data =</span> data</span>
-<span id="cb43-36"><a href="#cb43-36" tabindex="-1"></a>    )</span>
-<span id="cb43-37"><a href="#cb43-37" tabindex="-1"></a></span>
-<span id="cb43-38"><a href="#cb43-38" tabindex="-1"></a>  t_w[i] <span class="ot">&lt;-</span> <span class="fu">summary</span>(lm_fit)<span class="sc">$</span>coefficients[<span class="dv">2</span>,<span class="dv">3</span>]</span>
-<span id="cb43-39"><a href="#cb43-39" tabindex="-1"></a></span>
-<span id="cb43-40"><a href="#cb43-40" tabindex="-1"></a>  vc_cr0 <span class="ot">&lt;-</span> </span>
-<span id="cb43-41"><a href="#cb43-41" tabindex="-1"></a>    clubSandwich<span class="sc">::</span><span class="fu">vcovCR</span>(</span>
-<span id="cb43-42"><a href="#cb43-42" tabindex="-1"></a>      lm_fit,</span>
-<span id="cb43-43"><a href="#cb43-43" tabindex="-1"></a>      <span class="at">cluster =</span> data<span class="sc">$</span>C,</span>
-<span id="cb43-44"><a href="#cb43-44" tabindex="-1"></a>      <span class="at">type =</span> <span class="st">&quot;CR0&quot;</span></span>
-<span id="cb43-45"><a href="#cb43-45" tabindex="-1"></a>    )</span>
-<span id="cb43-46"><a href="#cb43-46" tabindex="-1"></a></span>
-<span id="cb43-47"><a href="#cb43-47" tabindex="-1"></a>  vc_cr3 <span class="ot">&lt;-</span> </span>
-<span id="cb43-48"><a href="#cb43-48" tabindex="-1"></a>    clubSandwich<span class="sc">::</span><span class="fu">vcovCR</span>(</span>
-<span id="cb43-49"><a href="#cb43-49" tabindex="-1"></a>      lm_fit,</span>
-<span id="cb43-50"><a href="#cb43-50" tabindex="-1"></a>      <span class="at">cluster =</span> data<span class="sc">$</span>C,</span>
-<span id="cb43-51"><a href="#cb43-51" tabindex="-1"></a>      <span class="at">type =</span> <span class="st">&quot;CR3&quot;</span></span>
-<span id="cb43-52"><a href="#cb43-52" tabindex="-1"></a>    )</span>
-<span id="cb43-53"><a href="#cb43-53" tabindex="-1"></a></span>
-<span id="cb43-54"><a href="#cb43-54" tabindex="-1"></a>  t_cr0[i] <span class="ot">&lt;-</span> </span>
-<span id="cb43-55"><a href="#cb43-55" tabindex="-1"></a>    clubSandwich<span class="sc">::</span><span class="fu">coef_test</span>(</span>
-<span id="cb43-56"><a href="#cb43-56" tabindex="-1"></a>      lm_fit,</span>
-<span id="cb43-57"><a href="#cb43-57" tabindex="-1"></a>      vc_cr0,</span>
-<span id="cb43-58"><a href="#cb43-58" tabindex="-1"></a>      <span class="at">coefs =</span> <span class="st">&quot;X&quot;</span></span>
-<span id="cb43-59"><a href="#cb43-59" tabindex="-1"></a>    )<span class="sc">$</span>tstat</span>
-<span id="cb43-60"><a href="#cb43-60" tabindex="-1"></a>  </span>
-<span id="cb43-61"><a href="#cb43-61" tabindex="-1"></a>  t_cr3[i] <span class="ot">&lt;-</span> </span>
-<span id="cb43-62"><a href="#cb43-62" tabindex="-1"></a>    clubSandwich<span class="sc">::</span><span class="fu">coef_test</span>(</span>
-<span id="cb43-63"><a href="#cb43-63" tabindex="-1"></a>      lm_fit,</span>
-<span id="cb43-64"><a href="#cb43-64" tabindex="-1"></a>      vc_cr3,</span>
-<span id="cb43-65"><a href="#cb43-65" tabindex="-1"></a>      <span class="at">coefs =</span> <span class="st">&quot;X&quot;</span></span>
-<span id="cb43-66"><a href="#cb43-66" tabindex="-1"></a>    )<span class="sc">$</span>tstat</span>
-<span id="cb43-67"><a href="#cb43-67" tabindex="-1"></a></span>
-<span id="cb43-68"><a href="#cb43-68" tabindex="-1"></a>  <span class="fu">invisible</span>(</span>
-<span id="cb43-69"><a href="#cb43-69" tabindex="-1"></a>    <span class="fu">capture.output</span>(</span>
-<span id="cb43-70"><a href="#cb43-70" tabindex="-1"></a>      boot_lm <span class="ot">&lt;-</span> </span>
-<span id="cb43-71"><a href="#cb43-71" tabindex="-1"></a>        fwildclusterboot<span class="sc">::</span><span class="fu">boottest</span>(</span>
-<span id="cb43-72"><a href="#cb43-72" tabindex="-1"></a>          <span class="at">object =</span> lm_fit,</span>
-<span id="cb43-73"><a href="#cb43-73" tabindex="-1"></a>          <span class="at">clustid =</span> <span class="st">&quot;C&quot;</span>,</span>
-<span id="cb43-74"><a href="#cb43-74" tabindex="-1"></a>          <span class="at">param =</span> <span class="st">&quot;X&quot;</span>,</span>
-<span id="cb43-75"><a href="#cb43-75" tabindex="-1"></a>          <span class="at">B =</span> N_B,</span>
-<span id="cb43-76"><a href="#cb43-76" tabindex="-1"></a>          <span class="at">type =</span> <span class="st">&quot;webb&quot;</span></span>
-<span id="cb43-77"><a href="#cb43-77" tabindex="-1"></a>        )</span>
-<span id="cb43-78"><a href="#cb43-78" tabindex="-1"></a>      )</span>
-<span id="cb43-79"><a href="#cb43-79" tabindex="-1"></a>    )</span>
-<span id="cb43-80"><a href="#cb43-80" tabindex="-1"></a>  <span class="fu">invisible</span>(</span>
-<span id="cb43-81"><a href="#cb43-81" tabindex="-1"></a>    <span class="fu">capture.output</span>(</span>
-<span id="cb43-82"><a href="#cb43-82" tabindex="-1"></a>      p_cr_w[i] <span class="ot">&lt;-</span> boot_lm<span class="sc">$</span>p_val</span>
-<span id="cb43-83"><a href="#cb43-83" tabindex="-1"></a>    )</span>
-<span id="cb43-84"><a href="#cb43-84" tabindex="-1"></a>  )</span>
-<span id="cb43-85"><a href="#cb43-85" tabindex="-1"></a>}</span></code></pre></div>
-<p>The (false) rejection probability based on heteroskedasticity-robust
-variance estimation:</p>
-<div class="sourceCode" id="cb44"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" tabindex="-1"></a><span class="fu">mean</span>(<span class="fu">abs</span>(t_w) <span class="sc">&gt;=</span> <span class="fl">1.965</span>)</span></code></pre></div>
-<pre><code>## [1] 0.0604</code></pre>
-<p>The (false) rejection probability based on cluster-robust variance
-estimation, CR0:</p>
-<div class="sourceCode" id="cb46"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" tabindex="-1"></a><span class="fu">mean</span>(<span class="fu">abs</span>(t_cr0) <span class="sc">&gt;=</span> <span class="fl">1.965</span>)</span></code></pre></div>
-<pre><code>## [1] 0.0012</code></pre>
-<p>The (false) rejection probability based on cluster-robust variance
-estimation, CR3:</p>
-<div class="sourceCode" id="cb48"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" tabindex="-1"></a><span class="fu">mean</span>(<span class="fu">abs</span>(t_cr3) <span class="sc">&gt;=</span> <span class="fl">1.965</span>)</span></code></pre></div>
-<pre><code>## [1] 2e-04</code></pre>
-<p>The (false) rejection probability based on wild-cluster
-bootstrap:</p>
-<div class="sourceCode" id="cb50"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" tabindex="-1"></a><span class="fu">mean</span>(p_cr_w <span class="sc">&lt;</span> <span class="fl">0.05</span>)</span></code></pre></div>
-<pre><code>## [1] 2e-04</code></pre>
+<div id="hypothesis-testing" class="section level2" number="2.2">
+<h2><span class="header-section-number">2.2</span> Hypothesis
+testing</h2>
+<p>We perform 60 independent linear regressions to test each null
+hypothesis. We then calculate the t-value and p-value of the regression
+coefficient.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>result_list_1 <span class="ot">&lt;-</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>  df_list_1 <span class="sc">%&gt;%</span></span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>  purrr<span class="sc">::</span><span class="fu">map</span>(</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>    <span class="sc">~</span> <span class="fu">lm</span>(</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>        <span class="at">formula =</span> y <span class="sc">~</span> z, </span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>        <span class="at">data =</span> .</span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>      )</span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>  )</span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>result_list_0 <span class="ot">&lt;-</span></span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>  df_list_0 <span class="sc">%&gt;%</span></span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a>  purrr<span class="sc">::</span><span class="fu">map</span>(</span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a>    <span class="sc">~</span> <span class="fu">lm</span>(</span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a>        <span class="at">formula =</span> y <span class="sc">~</span> z, </span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a>        <span class="at">data =</span> .</span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a>      )</span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a>  )</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>t_list_1 <span class="ot">&lt;-</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>  result_list_1 <span class="sc">%&gt;%</span></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  purrr<span class="sc">::</span><span class="fu">map</span>(</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>    <span class="sc">~</span> <span class="fu">summary</span>(.) <span class="sc">%&gt;%</span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>      <span class="fu">coef</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>      .[</span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>        <span class="st">&quot;zTRUE&quot;</span>,</span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>        <span class="st">&quot;t value&quot;</span></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>      ]</span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a>  purrr<span class="sc">::</span><span class="fu">reduce</span>(c)</span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a>t_list_0 <span class="ot">&lt;-</span></span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a>  result_list_0 <span class="sc">%&gt;%</span></span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a>  purrr<span class="sc">::</span><span class="fu">map</span>(</span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a>    <span class="sc">~</span> <span class="fu">summary</span>(.) <span class="sc">%&gt;%</span></span>
+<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a>      <span class="fu">coef</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a>      .[</span>
+<span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a>        <span class="st">&quot;zTRUE&quot;</span>,</span>
+<span id="cb4-19"><a href="#cb4-19" tabindex="-1"></a>        <span class="st">&quot;t value&quot;</span></span>
+<span id="cb4-20"><a href="#cb4-20" tabindex="-1"></a>      ]</span>
+<span id="cb4-21"><a href="#cb4-21" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb4-22"><a href="#cb4-22" tabindex="-1"></a>  purrr<span class="sc">::</span><span class="fu">reduce</span>(c)</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>p_list_1 <span class="ot">&lt;-</span></span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>  result_list_1 <span class="sc">%&gt;%</span></span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>  purrr<span class="sc">::</span><span class="fu">map</span>(</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>    <span class="sc">~</span> <span class="fu">summary</span>(.) <span class="sc">%&gt;%</span></span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>      <span class="fu">coef</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>      .[</span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>        <span class="st">&quot;zTRUE&quot;</span>,</span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>        <span class="st">&quot;Pr(&gt;|t|)&quot;</span></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a>      ]</span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a>  purrr<span class="sc">::</span><span class="fu">reduce</span>(c)</span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a>p_list_0 <span class="ot">&lt;-</span></span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a>  result_list_0 <span class="sc">%&gt;%</span></span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a>  purrr<span class="sc">::</span><span class="fu">map</span>(</span>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a>    <span class="sc">~</span> <span class="fu">summary</span>(.) <span class="sc">%&gt;%</span></span>
+<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a>      <span class="fu">coef</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a>      .[</span>
+<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a>        <span class="st">&quot;zTRUE&quot;</span>,</span>
+<span id="cb5-19"><a href="#cb5-19" tabindex="-1"></a>        <span class="st">&quot;Pr(&gt;|t|)&quot;</span></span>
+<span id="cb5-20"><a href="#cb5-20" tabindex="-1"></a>      ]</span>
+<span id="cb5-21"><a href="#cb5-21" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb5-22"><a href="#cb5-22" tabindex="-1"></a>  purrr<span class="sc">::</span><span class="fu">reduce</span>(c)</span></code></pre></div>
+</div>
+<div id="fdr" class="section level2" number="2.3">
+<h2><span class="header-section-number">2.3</span> FDR</h2>
+<p>We plot the absolute values of the test statistics of the 15 null
+hypotheses that are false in ascending order. We also show the rejection
+region corresponding to the significance level 0.05.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">ggplot</span>(</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>  <span class="at">mapping =</span> </span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>    <span class="fu">aes</span>(</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>        <span class="at">x =</span> <span class="fu">seq_along</span>(t_list_1),</span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>        <span class="at">y =</span> t_list_1 <span class="sc">%&gt;%</span> <span class="fu">abs</span>() <span class="sc">%&gt;%</span> <span class="fu">sort</span>()</span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>    )</span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>  ) <span class="sc">+</span> </span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a>  <span class="fu">geom_hline</span>(</span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a>    <span class="at">yintercept =</span> <span class="fu">abs</span>(</span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a>      <span class="fu">qnorm</span>(</span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a>        <span class="dv">1</span> <span class="sc">-</span> alpha <span class="sc">/</span> <span class="dv">2</span></span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a>      )</span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a>    ),</span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a>    <span class="at">color =</span> <span class="st">&quot;red&quot;</span></span>
+<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">&quot;Rank of the test statistic&quot;</span>,</span>
+<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">&quot;Absolute value of the test statistic&quot;</span></span>
+<span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a>  <span class="fu">theme_classic</span>()</span></code></pre></div>
+<p><img role="img" src="data:image/png;base64,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" width="672" style="display: block; margin: auto;" /></p>
+<p>We also plot the p-values in the same way, and the result is as
+follows.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">ggplot</span>(</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>  <span class="at">mapping =</span> </span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>    <span class="fu">aes</span>(</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>        <span class="at">x =</span> <span class="fu">seq_along</span>(p_list_1),</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>        <span class="at">y =</span> p_list_1 <span class="sc">%&gt;%</span> <span class="fu">sort</span>()</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>    )</span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>  ) <span class="sc">+</span> </span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>  <span class="fu">geom_hline</span>(</span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a>    <span class="at">yintercept =</span> alpha,</span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a>    <span class="at">color =</span> <span class="st">&quot;red&quot;</span></span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">&quot;Rank of the test statistic&quot;</span>,</span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">&quot;p-value&quot;</span></span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a>  <span class="fu">theme_classic</span>()</span></code></pre></div>
+<p><img role="img" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABUAAAAPACAMAAADDuCPrAAABR1BMVEUAAAAAADoAAGYAOjoAOmYAOpAAZpAAZrYzMzM6AAA6OgA6Ojo6OmY6OpA6ZmY6ZpA6ZrY6kJA6kLY6kNtNTU1NTW5NTY5Nbm5Nbo5NbqtNjshmAABmADpmOgBmOjpmOpBmZjpmZmZmZpBmkGZmkLZmkNtmtttmtv9uTU1ubk1ubo5ujqtujshuq+SOTU2Obk2Obm6Oq6uOyOSOyP+QOgCQOjqQZjqQZmaQkGaQkLaQtraQttuQ2/+rbk2rjm6ryOSr5P+2ZgC2Zjq2kDq2kGa2kJC2tpC2tra2ttu229u22/+2///Ijk3Ijm7Iq27I5P/I///bkDrbkGbbtmbbtpDbtrbbttvb27bb29vb2//b///kq27kyI7kyKvk5Mjk////AAD/tmb/yI7/25D/27b/29v/5Kv/5Mj//7b//8j//9v//+T///9R7wtEAAAACXBIWXMAAB2HAAAdhwGP5fFlAAAdTElEQVR4nO3da3sb94Gf4ZEPlWR7Y7cauTrU2WTrxmwUKdnY3bSbUGs6brNJ6Mpau01ibtYVbZMWye//uhhgAAIDDAX8ABHg4L6vK4E4A/wFwMSjOaM4AyBSrPsJAFxVAgoQElCAkIAChAQUICSgACEBBQgJKEBIQAFCAgoQElCAkIAChAQUIPSSA1oINNBZAgoQElCAkIAChAQUICSgACEBBQgJKEBIQAFCAgoQElCAkIAChAQUICSgACEBBQgJKEBIQAFCAgoQElCAkIAChAQUICSgACEBBQgJKEBIQAFCAgoQElCAkIAChAQUICSgACEBBQhFgTt9vFOWD56MTzr+Rdmc1B9eQIHOSgL3/FFZeffz80lHO/1Jtz9uDi+gQGclgdsv7z45O94t7349nHK6OzWpHl5Agc4KAne001/2fP7ofHlzxqR6eAEFNk1RrChNwSgH5b369uFw0uFgUm9B9MPG8AIKbJiiWFVBg0H260rW1axYAgWuiqJYWUEXH+N0t67k0c5oi+doG+goqTdqAgpslKJYXUFXE9Cz08/6e+F/NpogoMBG2piAnh/IdPTzfkDvNA8EtQoPbJaNCehoCfRop1r47C2G2gYKbLbNC+h+vUN+/3wjaD28gAKbZa07kWbshZ+5WXQwvIACG2athzENj/88Pw5UQIErZJ0H0s846NMqPLCFgsCd7lZ72ydOfD8s7UQCtk4SuOOxqzEd7fSbeVAOPGzcVUCB7ooCd/y4uvhnf/mzDujZv1XXA/2p64ECW8QV6QFCAgoQElCAkIAChAQUICSgACEBBQgJKEBIQAFCAgoQElCAkIAChAQUICSgACEBBQgJKEBIQAFCAgoQElCAkIAChAQUICSgACEBBQgJKEBIQAFCAgoQElCAkIAChAQUICSgACEBBQgJKEBIQAFCAgoQElCAkIAChAQUICSgACEBBQgJKEBIQAFCAgoQElCAkIAChAQUICSgACEBBQgJKEBIQAFCAgoQElCAkIAChAQUICSgACEBBQgJKEBIQAFCAgoQElCAkIAChAQUICSgACEBBQgJKEBIQAFCAgoQElCAkIAChAQUICSgACEBBQgJKEBIQAFCAgoQElCAkIAChAQUICSgACEBBQgJKEBIQAFCAgoQElCAkIAChAQUICSgACEBBQgJKEBIQAFCAgoQElCAkIAChAQUICSgACEBBQgJKEBIQAFCAgoQElCAkIAChAQUICSgACEBBQgJKEBIQAFCAgoQElCAkIAChAQUICSgACEBBQgJKEBIQAFCAgoQElCAkIAChAQUICSgACEBBQgJKEBIQAFCAgoQElCAkIAChAQUICSgACEBBQgJKEBIQAFCAgoQElCAkIAChAQUICSgACEBBQgJKEBIQAFCAgoQElCAkIAChAQUICSgACEBBQgJKEBIQAFCAgoQElCAkIAChAQUICSgACEBBQgJKEBIQAFCAgoQElCAkIAChAQUICSgACEBBQgJKEBIQAFCAgoQElCAkIAChAQUICSgACEBBQgJKEBIQAFCAgoQElCAkIAChAQUICSgACEBBQgJKEBIQAFCAgoQigJ3+ninLB88mZj0WW/Sf/zl1PACCnRWErjnj8rKu5+fTzoeTCp/1hxeQIHOSgK3X959cna8W979ejjldLe88+Ts9H+Xtz9uDC+gQGcFgTva6S97Pn90XsvDenH0oLzXGF5Agc4KAjes5EH5sJ7SWwD9sGV4AQU6Kwjcfl3Lw9Hi5vNH49tDJ4YXUKCzFg/c6W696n60M9wIWv3pX/9rWd75p9G9btQEFOisVQX08WAv/HClXkCB7lsqoMMV98PqAKavz04/sxce2CIrWQI9HC567tsLD2yPFa3C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" width="672" style="display: block; margin: auto;" /></p>
+<p>Next, we plot the absolute values of the test statistics of the 45
+null hypotheses that are true in ascending order. We also show the
+rejection region corresponding to the significance level 0.05.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">ggplot</span>(</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>  <span class="at">mapping =</span> </span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>    <span class="fu">aes</span>(</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>        <span class="at">x =</span> <span class="fu">seq_along</span>(t_list_0),</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>        <span class="at">y =</span> t_list_0 <span class="sc">%&gt;%</span> <span class="fu">abs</span>() <span class="sc">%&gt;%</span> <span class="fu">sort</span>()</span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>    )</span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a>  ) <span class="sc">+</span> </span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a>  <span class="fu">geom_hline</span>(</span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a>    <span class="at">yintercept =</span> <span class="fu">abs</span>(</span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a>      <span class="fu">qnorm</span>(</span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a>        <span class="dv">1</span> <span class="sc">-</span> alpha <span class="sc">/</span> <span class="dv">2</span></span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a>      )</span>
+<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a>    ),</span>
+<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a>    <span class="at">color =</span> <span class="st">&quot;red&quot;</span></span>
+<span id="cb8-16"><a href="#cb8-16" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb8-17"><a href="#cb8-17" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb8-18"><a href="#cb8-18" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">&quot;Rank of the test statistic&quot;</span>,</span>
+<span id="cb8-19"><a href="#cb8-19" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">&quot;Absolute value of the test statistic&quot;</span></span>
+<span id="cb8-20"><a href="#cb8-20" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb8-21"><a href="#cb8-21" tabindex="-1"></a>  <span class="fu">theme_classic</span>()</span></code></pre></div>
+<p><img role="img" src="data:image/png;base64,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" width="672" style="display: block; margin: auto;" /></p>
+<p>We also plot the p-values in the same way, and the result is as
+follows.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="fu">ggplot</span>(</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>  <span class="at">mapping =</span> </span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>    <span class="fu">aes</span>(</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>        <span class="at">x =</span> <span class="fu">seq_along</span>(p_list_0),</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>        <span class="at">y =</span> p_list_0 <span class="sc">%&gt;%</span> <span class="fu">sort</span>()</span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>    )</span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>  ) <span class="sc">+</span> </span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a>  <span class="fu">geom_hline</span>(</span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a>    <span class="at">yintercept =</span> alpha,</span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a>    <span class="at">color =</span> <span class="st">&quot;red&quot;</span></span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">&quot;Rank of the test statistic&quot;</span>,</span>
+<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">&quot;p-value&quot;</span></span>
+<span id="cb9-16"><a href="#cb9-16" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb9-17"><a href="#cb9-17" tabindex="-1"></a>  <span class="fu">theme_classic</span>()</span></code></pre></div>
+<p><img role="img" src="data:image/png;base64,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" width="672" style="display: block; margin: auto;" /></p>
+<p>We list the test statistics of the null hypotheses that are correctly
+rejectegd among the 15 null hypotheses.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>t_list_rejected_1 <span class="ot">&lt;-</span></span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>  t_list_1[</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>    t_list_1 <span class="sc">%&gt;%</span> <span class="fu">abs</span>() <span class="sc">&gt;</span> </span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>    <span class="fu">abs</span>(<span class="fu">qnorm</span>(<span class="dv">1</span> <span class="sc">-</span> alpha <span class="sc">/</span> <span class="dv">2</span>))</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>  ]</span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>t_list_rejected_1</span></code></pre></div>
+<pre><code>## [1] 3.824994 2.815632 3.848504 2.061319 2.152388 3.306946 3.137302 3.890358</code></pre>
+<p>On the other hand, we list the test statistics of the null hypotheses
+that are incorrectly rejected among the 45 null hypotheses.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>t_list_rejected_0 <span class="ot">&lt;-</span></span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>  t_list_0[</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>    t_list_0 <span class="sc">%&gt;%</span> <span class="fu">abs</span>() <span class="sc">&gt;</span> </span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>    <span class="fu">abs</span>(<span class="fu">qnorm</span>(<span class="dv">1</span> <span class="sc">-</span> alpha <span class="sc">/</span> <span class="dv">2</span>))</span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>  ]</span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>t_list_rejected_0</span></code></pre></div>
+<pre><code>## [1] -3.875394 -2.214476 -2.222917</code></pre>
+<p>The FDR is the proportion of null hypotheses that are incorrectly
+rejected among the rejected null hypotheses. Specifically, it is
+calculated as follows.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a>fdr <span class="ot">&lt;-</span> </span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>  t_list_rejected_0 <span class="sc">%&gt;%</span> <span class="fu">length</span>() <span class="sc">/</span> (</span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>    t_list_rejected_1 <span class="sc">%&gt;%</span> <span class="fu">length</span>() <span class="sc">+</span></span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a>    t_list_rejected_0 <span class="sc">%&gt;%</span> <span class="fu">length</span>()</span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a>  )</span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a>fdr</span></code></pre></div>
+<pre><code>## [1] 0.2727273</code></pre>
+</div>
+</div>
+<div id="fdr-control" class="section level1" number="3">
+<h1><span class="header-section-number">3</span> FDR control</h1>
+<p>Now let’s apply the method to control the FDR.</p>
+<div id="benjamini-hochberg-correction" class="section level2" number="3.1">
+<h2><span class="header-section-number">3.1</span> Benjamini-Hochberg
+correction</h2>
+<p>The Benjamini-Hochberg method orders the p-values in ascending order
+as <span class="math inline">\(p^{(1)}, \cdots, p^{(M)}\)</span>, and
+then starts from <span class="math inline">\(l = M\)</span>, and if
+<span class="math inline">\(p^{(l)}\)</span> is less than <span class="math inline">\(\alpha l/M\)</span>, all tests with p-values
+smaller than <span class="math inline">\(p^{(l)}\)</span> are
+rejected.</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a>p_list_sorted <span class="ot">&lt;-</span> </span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a>  <span class="fu">c</span>(</span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a>    p_list_1,</span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a>    p_list_0</span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a>  <span class="fu">sort</span>()</span>
+<span id="cb16-7"><a href="#cb16-7" tabindex="-1"></a>i <span class="ot">&lt;-</span> M</span>
+<span id="cb16-8"><a href="#cb16-8" tabindex="-1"></a>flag_continue <span class="ot">&lt;-</span> <span class="cn">TRUE</span></span>
+<span id="cb16-9"><a href="#cb16-9" tabindex="-1"></a><span class="cf">while</span> (</span>
+<span id="cb16-10"><a href="#cb16-10" tabindex="-1"></a>  flag_continue <span class="sc">&amp;</span> i <span class="sc">&gt;</span> <span class="dv">1</span></span>
+<span id="cb16-11"><a href="#cb16-11" tabindex="-1"></a>) {</span>
+<span id="cb16-12"><a href="#cb16-12" tabindex="-1"></a>  test <span class="ot">&lt;-</span> p_list_sorted[i] <span class="sc">&lt;=</span> (i <span class="sc">/</span> M) <span class="sc">*</span> alpha</span>
+<span id="cb16-13"><a href="#cb16-13" tabindex="-1"></a>  <span class="cf">if</span> (</span>
+<span id="cb16-14"><a href="#cb16-14" tabindex="-1"></a>    test</span>
+<span id="cb16-15"><a href="#cb16-15" tabindex="-1"></a>  ) {</span>
+<span id="cb16-16"><a href="#cb16-16" tabindex="-1"></a>    flag_continue <span class="ot">&lt;-</span> <span class="cn">FALSE</span></span>
+<span id="cb16-17"><a href="#cb16-17" tabindex="-1"></a>  }</span>
+<span id="cb16-18"><a href="#cb16-18" tabindex="-1"></a>  i <span class="ot">&lt;-</span> i <span class="sc">-</span> <span class="dv">1</span></span>
+<span id="cb16-19"><a href="#cb16-19" tabindex="-1"></a>}</span></code></pre></div>
+<p>The number of rejected null hypotheses and the p-value threshold are
+as follows.</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a>i</span></code></pre></div>
+<pre><code>## [1] 6</code></pre>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a>p_list_sorted[i]</span></code></pre></div>
+<pre><code>## [1] 0.00180606</code></pre>
+<p>The test statistics of the null hypotheses that are correctly
+rejected among the 15 false null hypotheses are those with p-values less
+than the threshold.</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" tabindex="-1"></a>p_list_rejected_benjamini_hotchberg_1 <span class="ot">&lt;-</span></span>
+<span id="cb21-2"><a href="#cb21-2" tabindex="-1"></a>  p_list_1[</span>
+<span id="cb21-3"><a href="#cb21-3" tabindex="-1"></a>    p_list_1 <span class="sc">&lt;=</span> p_list_sorted[i]</span>
+<span id="cb21-4"><a href="#cb21-4" tabindex="-1"></a>  ]</span>
+<span id="cb21-5"><a href="#cb21-5" tabindex="-1"></a>p_list_rejected_benjamini_hotchberg_1</span></code></pre></div>
+<pre><code>## [1] 0.0001473831 0.0001343046 0.0010113291 0.0018060602 0.0001136919</code></pre>
+<p>The test statistics of the null hypotheses that are incorrectly
+rejected among the 45 true null hypotheses are those with p-values less
+than the threshold.</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" tabindex="-1"></a>p_list_rejected_benjamini_hotchberg_0 <span class="ot">&lt;-</span></span>
+<span id="cb23-2"><a href="#cb23-2" tabindex="-1"></a>  p_list_0[</span>
+<span id="cb23-3"><a href="#cb23-3" tabindex="-1"></a>    p_list_0 <span class="sc">&lt;=</span> p_list_sorted[i]</span>
+<span id="cb23-4"><a href="#cb23-4" tabindex="-1"></a>  ]</span>
+<span id="cb23-5"><a href="#cb23-5" tabindex="-1"></a>p_list_rejected_benjamini_hotchberg_0</span></code></pre></div>
+<pre><code>## [1] 0.0001206915</code></pre>
+<p>Therefore, the FDR is as follows.</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" tabindex="-1"></a>fdr_benjamini_hotchberg <span class="ot">&lt;-</span></span>
+<span id="cb25-2"><a href="#cb25-2" tabindex="-1"></a>  p_list_rejected_benjamini_hotchberg_0 <span class="sc">%&gt;%</span> <span class="fu">length</span>() <span class="sc">/</span> (</span>
+<span id="cb25-3"><a href="#cb25-3" tabindex="-1"></a>    p_list_rejected_benjamini_hotchberg_1 <span class="sc">%&gt;%</span> <span class="fu">length</span>() <span class="sc">+</span></span>
+<span id="cb25-4"><a href="#cb25-4" tabindex="-1"></a>    p_list_rejected_benjamini_hotchberg_0 <span class="sc">%&gt;%</span> <span class="fu">length</span>()</span>
+<span id="cb25-5"><a href="#cb25-5" tabindex="-1"></a>  )</span>
+<span id="cb25-6"><a href="#cb25-6" tabindex="-1"></a>fdr_benjamini_hotchberg</span></code></pre></div>
+<pre><code>## [1] 0.1666667</code></pre>
+<p>The FDR was 0.2727273 earlier, but the FDR by the Benjamini-Hochberg
+method is 0.1666667, which is slightly lower.</p>
+<p>To confirm this, we will write the function for the data generation
+process, perform 100 simulations, and calculate the expected value of
+the FDR.</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" tabindex="-1"></a>p_list_all <span class="ot">&lt;-</span></span>
+<span id="cb27-2"><a href="#cb27-2" tabindex="-1"></a>  <span class="fu">seq_len</span>(L) <span class="sc">%&gt;%</span></span>
+<span id="cb27-3"><a href="#cb27-3" tabindex="-1"></a>  purrr<span class="sc">::</span><span class="fu">map</span>(</span>
+<span id="cb27-4"><a href="#cb27-4" tabindex="-1"></a>    <span class="sc">~</span> <span class="fu">compute_p_value_mixed_effect</span>(</span>
+<span id="cb27-5"><a href="#cb27-5" tabindex="-1"></a>        <span class="at">N =</span> N,</span>
+<span id="cb27-6"><a href="#cb27-6" tabindex="-1"></a>        <span class="at">M =</span> M,</span>
+<span id="cb27-7"><a href="#cb27-7" tabindex="-1"></a>        <span class="at">M_0 =</span> M_0,</span>
+<span id="cb27-8"><a href="#cb27-8" tabindex="-1"></a>        <span class="at">tau_population =</span> tau_population,</span>
+<span id="cb27-9"><a href="#cb27-9" tabindex="-1"></a>        <span class="at">seed =</span> .</span>
+<span id="cb27-10"><a href="#cb27-10" tabindex="-1"></a>      )</span>
+<span id="cb27-11"><a href="#cb27-11" tabindex="-1"></a>  )</span></code></pre></div>
+<p>Moreover, we will write the function to calculate the p-value
+threshold by the Benjamini-Hochberg method and apply it to the
+simulation results.</p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" tabindex="-1"></a>p_value_all <span class="ot">&lt;-</span></span>
+<span id="cb28-2"><a href="#cb28-2" tabindex="-1"></a>  p_list_all <span class="sc">%&gt;%</span></span>
+<span id="cb28-3"><a href="#cb28-3" tabindex="-1"></a>  purrr<span class="sc">::</span><span class="fu">map</span>(</span>
+<span id="cb28-4"><a href="#cb28-4" tabindex="-1"></a>    <span class="sc">~</span> <span class="fu">compute_p_value_benjamini_hotchberg</span>(</span>
+<span id="cb28-5"><a href="#cb28-5" tabindex="-1"></a>        <span class="at">p_list_1 =</span> .<span class="sc">$</span>p_list_1,</span>
+<span id="cb28-6"><a href="#cb28-6" tabindex="-1"></a>        <span class="at">p_list_0 =</span> .<span class="sc">$</span>p_list_0,</span>
+<span id="cb28-7"><a href="#cb28-7" tabindex="-1"></a>        <span class="at">alpha =</span> alpha</span>
+<span id="cb28-8"><a href="#cb28-8" tabindex="-1"></a>      )</span>
+<span id="cb28-9"><a href="#cb28-9" tabindex="-1"></a>  )</span></code></pre></div>
+<p>We will also write the function to calculate the FDR and apply it to
+the simulation results.</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" tabindex="-1"></a>fdr_expected <span class="ot">&lt;-</span></span>
+<span id="cb29-2"><a href="#cb29-2" tabindex="-1"></a> purrr<span class="sc">::</span><span class="fu">map2</span>(</span>
+<span id="cb29-3"><a href="#cb29-3" tabindex="-1"></a>    p_list_all,</span>
+<span id="cb29-4"><a href="#cb29-4" tabindex="-1"></a>    p_value_all,</span>
+<span id="cb29-5"><a href="#cb29-5" tabindex="-1"></a>    <span class="sc">~</span> <span class="fu">compute_fdr</span>(</span>
+<span id="cb29-6"><a href="#cb29-6" tabindex="-1"></a>        <span class="at">p_list_1 =</span> .x<span class="sc">$</span>p_list_1,</span>
+<span id="cb29-7"><a href="#cb29-7" tabindex="-1"></a>        <span class="at">p_list_0 =</span> .x<span class="sc">$</span>p_list_0,</span>
+<span id="cb29-8"><a href="#cb29-8" tabindex="-1"></a>        <span class="at">p_value =</span> .y</span>
+<span id="cb29-9"><a href="#cb29-9" tabindex="-1"></a>    )</span>
+<span id="cb29-10"><a href="#cb29-10" tabindex="-1"></a> ) <span class="sc">%&gt;%</span></span>
+<span id="cb29-11"><a href="#cb29-11" tabindex="-1"></a> purrr<span class="sc">::</span><span class="fu">reduce</span>(c) <span class="sc">%&gt;%</span></span>
+<span id="cb29-12"><a href="#cb29-12" tabindex="-1"></a> <span class="fu">mean</span>()</span>
+<span id="cb29-13"><a href="#cb29-13" tabindex="-1"></a></span>
+<span id="cb29-14"><a href="#cb29-14" tabindex="-1"></a>fdr_expected</span></code></pre></div>
+<pre><code>## [1] 0.02511652</code></pre>
+<p>In this way, we can see that the expected FDR is controlled to a
+value smaller than 0.0251165 and 0.05.</p>
+</div>
+<div id="benjamini-yekutieli-correction" class="section level2" number="3.2">
+<h2><span class="header-section-number">3.2</span> Benjamini-Yekutieli
+correction</h2>
+<p>The Benjamini-Hotchberg correction above has been theoretically shown
+to control the FDR to some extent when the tests are independent or when
+there is a certain positive correlation (Positive Regression
+Dependence), but it cannot control the FDR for general correlations. On
+the other hand, the following Benjamini-Yakutieli method has been shown
+to control the FDR for any correlation.</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" tabindex="-1"></a>p_list_sorted <span class="ot">&lt;-</span> </span>
+<span id="cb31-2"><a href="#cb31-2" tabindex="-1"></a>  <span class="fu">c</span>(</span>
+<span id="cb31-3"><a href="#cb31-3" tabindex="-1"></a>    p_list_1,</span>
+<span id="cb31-4"><a href="#cb31-4" tabindex="-1"></a>    p_list_0</span>
+<span id="cb31-5"><a href="#cb31-5" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb31-6"><a href="#cb31-6" tabindex="-1"></a>  <span class="fu">sort</span>()</span>
+<span id="cb31-7"><a href="#cb31-7" tabindex="-1"></a>i <span class="ot">&lt;-</span> M</span>
+<span id="cb31-8"><a href="#cb31-8" tabindex="-1"></a>flag_continue <span class="ot">&lt;-</span> <span class="cn">TRUE</span></span>
+<span id="cb31-9"><a href="#cb31-9" tabindex="-1"></a><span class="cf">while</span> (</span>
+<span id="cb31-10"><a href="#cb31-10" tabindex="-1"></a>  flag_continue <span class="sc">&amp;</span> i <span class="sc">&gt;</span> <span class="dv">1</span></span>
+<span id="cb31-11"><a href="#cb31-11" tabindex="-1"></a>) {</span>
+<span id="cb31-12"><a href="#cb31-12" tabindex="-1"></a>  test <span class="ot">&lt;-</span> </span>
+<span id="cb31-13"><a href="#cb31-13" tabindex="-1"></a>    (</span>
+<span id="cb31-14"><a href="#cb31-14" tabindex="-1"></a>      p_list_sorted[i] <span class="sc">&lt;=</span> (i <span class="sc">/</span> M) <span class="sc">*</span> alpha <span class="sc">/</span> <span class="fu">sum</span>(<span class="dv">1</span> <span class="sc">/</span> <span class="fu">seq_len</span>(M))</span>
+<span id="cb31-15"><a href="#cb31-15" tabindex="-1"></a>    )</span>
+<span id="cb31-16"><a href="#cb31-16" tabindex="-1"></a>  <span class="cf">if</span> (</span>
+<span id="cb31-17"><a href="#cb31-17" tabindex="-1"></a>    test</span>
+<span id="cb31-18"><a href="#cb31-18" tabindex="-1"></a>  ) {</span>
+<span id="cb31-19"><a href="#cb31-19" tabindex="-1"></a>    flag_continue <span class="ot">&lt;-</span> <span class="cn">FALSE</span></span>
+<span id="cb31-20"><a href="#cb31-20" tabindex="-1"></a>  }</span>
+<span id="cb31-21"><a href="#cb31-21" tabindex="-1"></a>  i <span class="ot">&lt;-</span> i <span class="sc">-</span> <span class="dv">1</span></span>
+<span id="cb31-22"><a href="#cb31-22" tabindex="-1"></a>}</span></code></pre></div>
+<p>The number of rejected null hypotheses and the p-value threshold are
+as follows.</p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" tabindex="-1"></a>i</span></code></pre></div>
+<pre><code>## [1] 3</code></pre>
+<div class="sourceCode" id="cb34"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" tabindex="-1"></a>p_list_sorted[i]</span></code></pre></div>
+<pre><code>## [1] 0.0001343046</code></pre>
+<p>The test statistics of the null hypotheses that are correctly
+rejected among the 15 false null hypotheses are those with p-values less
+than the threshold.</p>
+<div class="sourceCode" id="cb36"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" tabindex="-1"></a>p_list_rejected_benjamini_yekutieli_1 <span class="ot">&lt;-</span></span>
+<span id="cb36-2"><a href="#cb36-2" tabindex="-1"></a>  p_list_1[</span>
+<span id="cb36-3"><a href="#cb36-3" tabindex="-1"></a>    p_list_1 <span class="sc">&lt;=</span> p_list_sorted[i]</span>
+<span id="cb36-4"><a href="#cb36-4" tabindex="-1"></a>  ]</span>
+<span id="cb36-5"><a href="#cb36-5" tabindex="-1"></a>p_list_rejected_benjamini_yekutieli_1</span></code></pre></div>
+<pre><code>## [1] 0.0001343046 0.0001136919</code></pre>
+<p>The test statistics of the null hypotheses that are incorrectly
+rejected among the 45 true null hypotheses are those with p-values less
+than the threshold.</p>
+<div class="sourceCode" id="cb38"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" tabindex="-1"></a>p_list_rejected_benjamini_yekutieli_0 <span class="ot">&lt;-</span></span>
+<span id="cb38-2"><a href="#cb38-2" tabindex="-1"></a>  p_list_0[</span>
+<span id="cb38-3"><a href="#cb38-3" tabindex="-1"></a>    p_list_0 <span class="sc">&lt;=</span> p_list_sorted[i]</span>
+<span id="cb38-4"><a href="#cb38-4" tabindex="-1"></a>  ]</span>
+<span id="cb38-5"><a href="#cb38-5" tabindex="-1"></a>p_list_rejected_benjamini_yekutieli_0</span></code></pre></div>
+<pre><code>## [1] 0.0001206915</code></pre>
+<p>Therefore, the FDR is as follows.</p>
+<div class="sourceCode" id="cb40"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" tabindex="-1"></a>fdr_benjamini_yekutieli <span class="ot">&lt;-</span></span>
+<span id="cb40-2"><a href="#cb40-2" tabindex="-1"></a>  p_list_rejected_benjamini_yekutieli_0 <span class="sc">%&gt;%</span> <span class="fu">length</span>() <span class="sc">/</span> (</span>
+<span id="cb40-3"><a href="#cb40-3" tabindex="-1"></a>    p_list_rejected_benjamini_yekutieli_1 <span class="sc">%&gt;%</span> <span class="fu">length</span>() <span class="sc">+</span></span>
+<span id="cb40-4"><a href="#cb40-4" tabindex="-1"></a>    p_list_rejected_benjamini_yekutieli_0 <span class="sc">%&gt;%</span> <span class="fu">length</span>()</span>
+<span id="cb40-5"><a href="#cb40-5" tabindex="-1"></a>  )</span>
+<span id="cb40-6"><a href="#cb40-6" tabindex="-1"></a>fdr_benjamini_yekutieli</span></code></pre></div>
+<pre><code>## [1] 0.3333333</code></pre>
+<p>When we apply it to the simulation data of 100 times and calculate
+the expected FDR, we get the following.</p>
+<div class="sourceCode" id="cb42"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" tabindex="-1"></a>p_value_all <span class="ot">&lt;-</span></span>
+<span id="cb42-2"><a href="#cb42-2" tabindex="-1"></a>  p_list_all <span class="sc">%&gt;%</span></span>
+<span id="cb42-3"><a href="#cb42-3" tabindex="-1"></a>  purrr<span class="sc">::</span><span class="fu">map</span>(</span>
+<span id="cb42-4"><a href="#cb42-4" tabindex="-1"></a>    <span class="sc">~</span> <span class="fu">compute_p_value_benjamini_yekutieli</span>(</span>
+<span id="cb42-5"><a href="#cb42-5" tabindex="-1"></a>        <span class="at">p_list_1 =</span> .<span class="sc">$</span>p_list_1,</span>
+<span id="cb42-6"><a href="#cb42-6" tabindex="-1"></a>        <span class="at">p_list_0 =</span> .<span class="sc">$</span>p_list_0,</span>
+<span id="cb42-7"><a href="#cb42-7" tabindex="-1"></a>        <span class="at">alpha =</span> alpha</span>
+<span id="cb42-8"><a href="#cb42-8" tabindex="-1"></a>      )</span>
+<span id="cb42-9"><a href="#cb42-9" tabindex="-1"></a>  )</span></code></pre></div>
+<div class="sourceCode" id="cb43"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" tabindex="-1"></a>fdr_expected <span class="ot">&lt;-</span></span>
+<span id="cb43-2"><a href="#cb43-2" tabindex="-1"></a> purrr<span class="sc">::</span><span class="fu">map2</span>(</span>
+<span id="cb43-3"><a href="#cb43-3" tabindex="-1"></a>    p_list_all,</span>
+<span id="cb43-4"><a href="#cb43-4" tabindex="-1"></a>    p_value_all,</span>
+<span id="cb43-5"><a href="#cb43-5" tabindex="-1"></a>    <span class="sc">~</span> <span class="fu">compute_fdr</span>(</span>
+<span id="cb43-6"><a href="#cb43-6" tabindex="-1"></a>        <span class="at">p_list_1 =</span> .x<span class="sc">$</span>p_list_1,</span>
+<span id="cb43-7"><a href="#cb43-7" tabindex="-1"></a>        <span class="at">p_list_0 =</span> .x<span class="sc">$</span>p_list_0,</span>
+<span id="cb43-8"><a href="#cb43-8" tabindex="-1"></a>        <span class="at">p_value =</span> .y</span>
+<span id="cb43-9"><a href="#cb43-9" tabindex="-1"></a>    )</span>
+<span id="cb43-10"><a href="#cb43-10" tabindex="-1"></a> ) <span class="sc">%&gt;%</span></span>
+<span id="cb43-11"><a href="#cb43-11" tabindex="-1"></a> purrr<span class="sc">::</span><span class="fu">reduce</span>(c) <span class="sc">%&gt;%</span></span>
+<span id="cb43-12"><a href="#cb43-12" tabindex="-1"></a> <span class="fu">mean</span>()</span>
+<span id="cb43-13"><a href="#cb43-13" tabindex="-1"></a></span>
+<span id="cb43-14"><a href="#cb43-14" tabindex="-1"></a>fdr_expected</span></code></pre></div>
+<pre><code>## [1] 0.002</code></pre>
+<p>Thus, the rejection probability becomes smaller than 0.05, but is too
+conservative.</p>
+</div>
 </div>
 
 

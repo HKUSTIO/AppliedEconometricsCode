@@ -3093,7 +3093,7 @@ border-radius: 0px;
 
 
 <p>Here, we implement the stratified randomized experiment. The
-functions called from <code>AppliedEconometrics</code> are defined in
+functions called from <code>AppliedEconometricsCode</code> are defined in
 <code>R/functions_randomized.R</code>. First, we generate the potential
 outcomes of the sample, and then we generate the treatment vector and
 the realized outcomes. Based on the realized treatment vector and
@@ -3427,7 +3427,7 @@ experiment. We then calculate the realized outcomes based on the
 realized treatment vector and potential outcomes. The resulting
 <code>data_realized</code> is the observed data.</p>
 <pre class="r"><code>data_realized &lt;-
-  AppliedEconometrics::generate_data_stratified(
+  AppliedEconometricsCode::generate_data_stratified(
     outcome_potential = outcome_potential,
     N_1 = N_1,
     seed = 1
@@ -3883,7 +3883,7 @@ e_g)\)</span>.</p>
   e * 
   (1 - e)
 t &lt;- 
-  AppliedEconometrics::calculate_difference_in_means_stratified(
+  AppliedEconometricsCode::calculate_difference_in_means_stratified(
     data_realized = data_realized, 
     lambda = lambda
   )
@@ -3910,12 +3910,12 @@ t_distribution &lt;-
   1:R %&gt;%
   purrr::map(
     .,
-    ~ AppliedEconometrics::generate_data_stratified(
+    ~ AppliedEconometricsCode::generate_data_stratified(
         outcome_potential = outcome_potential_null,
         N_1 = N_1,
         seed = .
       ) %&gt;%
-      AppliedEconometrics::calculate_difference_in_means_stratified(
+      AppliedEconometricsCode::calculate_difference_in_means_stratified(
         data_realized = .,
         lambda = lambda
       )

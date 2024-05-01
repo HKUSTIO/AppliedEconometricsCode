@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Multiple Testing</title>
+  <title>Shift-Share Design</title>
 
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="chrome=1">
@@ -19,7 +19,7 @@
     var SLIDE_CONFIG = {
       // Slide settings
       settings: {
-                title: 'Multiple Testing',
+                title: 'Shift-Share Design',
                         useBuilds: true,
         usePrettify: true,
         enableSlideAreas: true,
@@ -3142,170 +3142,377 @@ ul.task-list{list-style: none;}
           </hgroup>
   </slide>
 
-<slide class=""><hgroup><h2>Multiple Hypotheses</h2></hgroup><article  id="multiple-hypotheses">
+<style type="text/css">
+div.footnotes {
+  position: absolute;
+  bottom: 0;
+  margin-bottom: 10px;
+  width: 80%;
+  font-size: 10px;
+}
+body, td {
+   font-size: 14px;
+}
+code.r{
+  font-size: 11px;
+}
+pre {
+  font-size: 11px
+}
+blockquote {
+  background: #f9f9f9;
+  border-left: 5px solid #ccc;
+  margin: 1.5em 10px;
+  padding: 0.5em 1.5em;
+}
+</style>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+
+<script>
+$(document).ready(function() {
+  $('slide:not(.backdrop):not(.title-slide)').append('<div class=\"footnotes\">');
+
+  $('footnote').each(function(index) {
+    var text  = $(this).html();
+    var fnNum = (index+1).toString();
+    $(this).html(fnNum.sup());
+
+    var footnote   = fnNum + '. ' + text + '<br/>';
+    var oldContent = $(this).parents('slide').children('div.footnotes').html();
+    var newContent = oldContent + footnote;
+    $(this).parents('slide').children('div.footnotes').html(newContent);
+  });
+});
+</script>
+
+<slide class="segue dark nobackground level1"><hgroup class = 'auto-fadein'><h2>Share-view of Shift-Share Design</h2></hgroup><article  id="share-view-of-shift-share-design">
+
+</article></slide><slide class=""><hgroup><h2>A canonical example</h2></hgroup><article  id="a-canonical-example">
 
 <ul>
-<li>There are \(M\) null hypotheses: \(H_0^m\), \(m = 1, \cdots, M\).</li>
-<li>Suppose that \(H_0^m\), \(m = 1, \cdots, M\) are all true.</li>
-<li>The piece-wise type-I error of a test: \(\mathbb{P}\{\text{Reject   }H_0^m|H_0^m\}\), \(m = 1, \cdots, M\).</li>
-<li>Even if the piece-wise type-I error is \(\alpha\), the probability that at least one of the null hypotheses is rejected is greater than \(\alpha\): \[
+<li>Use a different cross-sectional exposure to the aggregate shock.</li>
+<li>Card (2009).</li>
+<li>Use 1980, 1990, and 2000 US Census data.</li>
+<li>\(y_{lj}\): the residual log wage gap between immigrant and native men in skill group \(j\) in city \(l\).</li>
+<li>\(x_{lj}\): the ratio of immigrant to native hours in skill group \(j\) in city \(l\).</li>
+<li>\(X_l\): a vector of city-level controls.</li>
+<li>Estimate \(\beta\) in: \[
+y_{lj} = \beta_0 + \beta \ln x_{lj} + \beta_2 X_l + \epsilon_{lj}.
+\]</li>
+<li>However, \(x_{lj}\) and \(\epsilon_{lj}\) can be correlated due to a labor demand shock specitic to the skill group and the city.</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>A cannonical example</h2></hgroup><article  id="a-cannonical-example">
+
+<ul>
+<li>Consider aggregate shocks, \(g_{kj}\), the number of people arriving in the United States from 1990 to 2000 from country group \(k\) and skill group \(j\).</li>
+<li>Consider immigrant shares: \[
+z_{lk, 1980} = \frac{N_{lk, 1980}}{N_{k, 1980}} \cdot \frac{1}{P_{l, 2000}},
+\] where:</li>
+<li>\(N_{lk, 1980}\): the number of immigrants from country \(k\) in the United States in 1980 in city \(l\).</li>
+<li>\(N_{k, 1980}\): the number of immigrants from country \(k\) in the United States in 1980.</li>
+<li>\(P_{l, 2000}\): population of city \(l\) in 2000.</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>A canonical example</h2></hgroup><article  id="a-canonical-example-1">
+
+<ul>
+<li>Construct a <em>Bartik instrument</em> (Bartik 1991): \[
+B_{lj} = \sum_{k = 1}^K z_{lk, 1980} \cdot g_{kj}.
+\]</li>
+<li>Consider a first stage of: \[
+\ln x_{lj} = \gamma_0 + \gamma_1 B_{lj} + \gamma_2 X_l + \eta_{lj}.
+\]</li>
+<li>Then, consider a two-stage least-squares (TSLS) estimator of \(\beta\).</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Share-shift design</h2></hgroup><article  id="share-shift-design">
+
+<ul>
+<li>What are identifying assumptions for this estimator?</li>
+<li><em>Share-view</em>: assume the shares \(z_{kl}\) are exogenous (Goldsmith-Pinkham et al. 2020).</li>
+<li><em>Shock-view</em>: assume the shocks \(g_{kj}\) are exogenous (Borusyak et al 2021).</li>
+<li>They differ in the assumptions and valid inference.</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Setting</h2></hgroup><article  id="setting">
+
+<ul>
+<li>There are \(K\) industries and \(T\) times.</li>
+<li>Consider a structural model: \[
+y_{lt} = x_{lt}\beta_0 + W_{lt}\rho + \epsilon_{lt},
+\] where:</li>
+<li>\(y_{lt}\): the outcome in location \(l\) in time \(t\).</li>
+<li>\(x_{lt}\): the treatment in location \(l\) in time \(t\).</li>
+<li>\(W_{lt}\): a vector of observed controls in location \(l\) in tine \(t\).</li>
+<li>\(\epsilon_{lt}\): an error potentially correlated wit \(x_{lt}\).</li>
+<li>\(\beta_0\): parameter of interest.</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Setting</h2></hgroup><article  id="setting-1">
+
+<ul>
+<li>Suppose that \(x_{lt}\) is decomposed as: \[
+x_{lt} = Z_{lt} \cdot G_{lt} = \sum_{k = 1}^K z_{lkt} g_{lkt}.
+\]</li>
+<li>For example, \(x_{lt}\) is the employment growth in location \(l\) in time \(t\), \(z_{lkt}\) is the employment share of industry \(k\) in location \(k\) at the beginning of time \(t\), and \(g_{lkt}\) is the employment growth of industry \(k\) in location \(l\) in time \(t\).</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Setting</h2></hgroup><article  id="setting-2">
+
+<ul>
+<li>The industry-location-time-specific shock \(g_{lkt}\) is further decomposed into: \[
+g_{lkt} = g_{kt} + \tilde{g}_{lkt},
+\] where \(g_{kt}\) is the average shock of industry \(k\) in time \(t\) and \(\tilde{g}_{lkt}\) is an idiosyncratic shock.</li>
+<li>We want to address the correlation between \(\epsilon_{lt}\) and \(\tilde{g}_{lkt}\).</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Bartik instrument and the first-stage regression</h2></hgroup><article  id="bartik-instrument-and-the-first-stage-regression">
+
+<ul>
+<li>Define <em>Bartik</em> instrument as: \[
+B_{lt} = Z_{l0} \cdot G_t = \sum_{k = 1}^K z_{lk0} g_{kt},
+\] where \(G_t = (G_{1t}, \cdots, G_{Kt})\).</li>
+<li>Consider a linear regression of \(x_{lt}\) on \(B_{lt}\) and \(W_{lt}\) as: \[
+x_{lt} \equiv B_{lt} \gamma + W_{lt} \tau + \eta_{lt}.
+\]</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Data-generating process</h2></hgroup><article  id="data-generating-process">
+
+<ul>
+<li>We have data: \[
+\{y_l, W_l, \widetilde{G}_l, Z_l, Z_{l0}\}_{l = 1}^L,
+\] that are i.i.d. across \(l\) where:</li>
+<li>\(y_l = (y_{l1}, \cdots, y_{lt})\);</li>
+<li>\(W_l = (W_{l1}, \cdots, W_{lT})\);</li>
+<li>\(\widetilde{G}_l = (\widetilde{G}_{l1}, \cdots, \widetilde{G}_{lT})\);</li>
+<li>\(Z_l = (Z_{l1}, \cdots, Z_{lT})\).</li>
+<li>We view \(G = (G_{1}, \cdots, G_T)\) as fixed.</li>
+<li>We arrow for non-i.i.d. data within \(l\).</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Bartik estimator</h2></hgroup><article  id="bartik-estimator">
+
+<ul>
+<li>The Bartik estimator of \(\beta\): \[
+\hat{\beta}_{bartik} = (B&#39;M_WX)^{-1} B&#39;M_WY
+\]</li>
+<li>If there is no control: \[
 \begin{split}
-&amp;\mathbb{P}\{\exists m = 1, \cdots, M, H_0^m \text{ is rejected}|\forall m = 1, \cdots, M, H_0^m\} \\
-&amp;= 1 - (1 - \alpha)^M.
+\hat{\beta}_{bartik} &amp;= (B&#39;X)^{-1} B&#39;Y\\ 
+&amp;= \frac{\sum_{l = 1}^L \sum_{t = 1}^T \sum_{k = 1}^K z_{lk0} g_{kt} y_{lt}}{\sum_{l = 1}^L \sum_{t = 1}^T \sum_{k = 1}^K z_{lk0} g_{kt} x_{lt}}.
 \end{split}
 \]</li>
-<li>For example, if \(\alpha = 0.05\) and \(M = 100\), then the probability that at least one of the null hypotheses is rejected is \(1 - (1 - 0.05)^{100} \approx\) 0.9940795.</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Family-Wise Error Rate (FWER)</h2></hgroup><article  id="family-wise-error-rate-fwer">
+</article></slide><slide class=""><hgroup><h2>Two industries and one time example</h2></hgroup><article  id="two-industries-and-one-time-example">
 
 <ul>
-<li><p>Suppose that \(H^m, m = 1, \cdots, M_0\) are true null hypotheses and \(H^m, m = M_0 + 1, \cdots, M\) are false null hypotheses.</p></li>
-<li><p><strong>Definition</strong>: <em>Family-wise error rate</em>: The probability of rejecting at least one null hypotheses when all null hypotheses are true: \[
-\text{FWER} = \mathbb{P}\{\exists m = 1, \cdots, M_0, H_0^m \text{ is rejected}|\forall m = 1, \cdots, M_0, H_0^m\}.
-\]</p></li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Bonferroni Correction</h2></hgroup><article  id="bonferroni-correction">
-
-<ul>
-<li><strong>Bonferroni correction</strong>: The most conservative method to control FWER.</li>
-<li>Depends on the followig inequality: \[
+<li>Bartik instrument: \[
+B_l = z_{l1} g_1 + (1 - z_{l1}) g_2 = g_2 + (g_1 - g_2) z_{l1}.
+\]</li>
+<li>The first-stage regression: \[
 \begin{split}
-&amp;\mathbb{P}\{\exists m = 1, \cdots, M_0, H_0^m \text{ is rejected}|\forall m = 1, \cdots, M_0, H_0^m\}\\
-&amp;\leq \sum_{m=1}^{M_0} \mathbb{P}\{H_0^m \text{ is rejected}|H_0^m\} = M_0 \alpha.
+x_l &amp; = \gamma_0 + \gamma_1 B_t + \eta_{lt}\\
+&amp;= \gamma_0 + \gamma_1 g_2 + \gamma (g_1 - g_2) z_{l1} + \eta_l\\
+&amp;= \tilde{\gamma}_0 + \tilde{\gamma}_1 z_{l1} + \eta_l
 \end{split}
 \]</li>
-<li>Therefore, for each hypothesis, if you consider a test with a significance level \(\alpha/M\), then the FWER is no greater than \(\alpha\).</li>
-<li>The above inequality holds regardless of the dependence structure among the tests.</li>
-<li>The Bonferrorni correction: Reject \(H_0^m\) if the piece-wise p-value for \(H_0^m\) is \(p^m \le \alpha/M\). Then, \(FEWR \le \alpha M_0/M \le \alpha\).</li>
+<li>Thus, this is a TSLS where \(z_{l1}\) is used as an instrument for \(x_l\).</li>
+<li>\(g_1 - g_2\) is the policy size.</li>
+<li>\(z_{l1}\) measures the exposure to the policy that affect industry 1.</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Why Bonferroni Correction is Conservative?</h2></hgroup><article  id="why-bonferroni-correction-is-conservative">
+</article></slide><slide class=""><hgroup><h2>Two industires and two time example</h2></hgroup><article  id="two-industires-and-two-time-example">
 
 <ul>
-<li>Bonferrorni correction controls for the false rejection when all null hypotheses are true.</li>
-<li>However, in reality, only \(m \le M\) null hypotheses may be true.</li>
-<li>Indeed, some p-values may be smaller than others.</li>
-<li>How about rejecting the null hypothesis with the smallest p-value first?</li>
-<li>Then, considering a multiple testing of smaller number of hypotheses?</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Bonferroni-Holm Correction</h2></hgroup><article  id="bonferroni-holm-correction">
-
-<ol>
-<li>Order the p-values: \(p^{(1)} \le p^{(2)} \le \cdots \le p^{(M)}\).</li>
-<li>For \(l = 1, \cdots, M\) (starting with the smallest p-value):
-
-<ol>
-<li>If \(p^{(l)} \le \alpha/(M - l + 1)\), reject \(H_0^{(l)}\) and move to \(l + 1\).</li>
-<li>If \(p^{(l)} &gt; \alpha/(M - l + 1)\) accept \(H_0^{(l)}\) and accept the remaining null hypotheses.</li>
-</ol></li>
-</ol>
-
-<ul>
-<li>If none of the null hypotheses is rejected by the Bonferroni correction, then none of the null hypotheses is rejected by the Bonferroni-Holm correction, either.</li>
-<li>If a null hypothesis is rejected by the Bonferroni correction, then it is also rejected by the Bonferroni-Holm correction because \(p^m \le \alpha/M \le \alpha/(M - m + 1)\).</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Bonferroni-Holm Correction</h2></hgroup><article  id="bonferroni-holm-correction-1">
-
-<ul>
-<li>The Bonferroni-Holm correction controls for the FWER.</li>
-<li>Suppose that there are \(1 \le M_0\le M\) null hypotheses that are true.</li>
-<li>Let \(l\) be the first rejected true null hypothesis in the Bonferroni-Holm correction.</li>
-<li>By definition, \(H_0^{(1)}, \cdots, H_0^{(l-1)}\) were correctly rejected hypotheses that are false.</li>
-<li>Therefore, \(l - 1 \le M - M_0 \Leftrightarrow 1/(M - l + 1) \le 1 / M_0\).</li>
-<li>Because \(l\) is rejected, \(p^{(l)} \le \alpha/(M - l + 1) \le \alpha/M_0\).</li>
-<li>Therefore, if there is at least one true hypothesis that is rejected, then its p-value is no greater than \(\alpha/M_0\).</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Bonferroni-Holm Correction</h2></hgroup><article  id="bonferroni-holm-correction-2">
-
-<p>\[
-\begin{split}   
-\text{FWER} &amp;= \mathbb{P}\{\exists m = 1, \cdots, M_0, H_0^m \text{ is rejected}|\forall m = 1, \cdots, M_0, H_0^m\} \\
-&amp;= \mathbb{P}\left\{\bigcup_{l = 1}^{M_0} \{l \text{   is first rejected}\}||\forall m = 1, \cdots, M_0, H_0^m \right\}\\
-&amp;\le \sum_{l = 1}^{M_0} \mathbb{P}\{l \text{   is first rejected}|\forall m = 1, \cdots, M_0, H_0^m\}\\
-&amp;\le \sum_{l = 1}^{M_0} \mathbb{P}\left\{p^l \le \frac{\alpha}{M_0}|\forall m = 1, \cdots, M_0, H_0^m\right\}\\
-&amp;= \sum_{l = 1}^{M_0} \frac{\alpha}{M_0}\\
-&amp;= \alpha.
+<li>Bartik instrument: \[
+B_{lt} = z_{l10} g_{1t} + z_{l20} g_{2t} = g_{2t} + (g_{1t} - g_{2t}) z_{l10}.
+\]</li>
+<li>The first-stage regression: \[
+\begin{split}
+x_{lt} &amp;= \tau_t + B_{lt} \gamma + \eta_{lt}\\
+&amp;= (\tau_t + g_{2t} \gamma) + z_{l10} (g_{1t} - g_{2t})\gamma + \eta_{lt}\\
+&amp;=(\tau_t + g_{2t} \gamma) + z_{l10}1\{t = 1\}(g_{11} - g_{21}) \gamma\\
+&amp;+ z_{l10} 1\{t = 2\}(g_{12} - g_{22}) \gamma + \eta_{lt}\\
+&amp;=\tilde{\tau}_t + z_{l10} 1\{t = 1\} \tilde{\gamma}_1 + z_{l10} 1\{t = 2\} \tilde{\gamma}_2 + \eta_{lt}.
 \end{split}
-\]</p>
-
-</article></slide><slide class=""><hgroup><h2>Remarks</h2></hgroup><article  id="remarks">
-
-<ul>
-<li>Neither Bonferroni correction or Bonferroni-Holm correction exploit the correlation among test statistics.</li>
-<li>We can improve the power by exploiting the correlation using a bootstrap method (Romano and Wolf, 2010).</li>
+\]</li>
+<li>\(z_{l10}\) measures the exposure to the policy that affect industry 1.</li>
+<li>There are two policy size \(g_{1t} - g_{2t}\) for \(t = 1, 2\).</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>False Discovery Rate (FDR)</h2></hgroup><article  id="false-discovery-rate-fdr">
+</article></slide><slide class=""><hgroup><h2>Connection to 2 x 2 DID</h2></hgroup><article  id="connection-to-2-x-2-did">
 
 <ul>
-<li>FWER is required when making a single type-I error can cause a problem.
+<li>Policy size: \(g_{1t} - g_{2t}\) for \(t = 1, 2\).</li>
+<li>If we know that the policy is introduced at the end of period 1, we expect that the pre-trend is common: \(g_{11} - g_{11} = 0\).</li>
+<li>Then, we should test \(\tilde{\gamma}_1 = 0\).</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>K industries and T times</h2></hgroup><article  id="k-industries-and-t-times">
 
 <ul>
-<li>e.g. The inspection of parts of a car</li>
-<li>e.g. Validation checks for identification assumptions</li>
+<li>The Bartik estimator of \(\beta\): \[
+\hat{\beta}_{bartik} = (B&#39;M_WX)^{-1} B&#39;M_WY
+\] is equivalent to a GMM estimator of \(\beta\): \[
+\hat{\beta}_{GMM} = (X&#39;M_W \tilde{Z} \Omega \tilde{Z}&#39; M_W X)^{-1} X&#39;M_W \tilde{Z} \Omega \tilde{Z}&#39; M_W Y,
+\] where the instrument is: \[
+\tilde{Z} = \text{diag}(Z, \cdots, Z)
+\] and the weight is: \[
+\Omega = G&#39;G
+\] where \(M_W = I - W(W&#39;W)^{-1}W&#39;\).</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Consistency</h2></hgroup><article  id="consistency">
+
+<ul>
+<li><strong>Assumption: Relevance</strong>
+
+<ul>
+<li>For all \(k = 1, \cdots, K\) and \(s = 1, \cdots, T\): \[
+x_{lt} = W_{lt} \tau + z_{lk0} 1\{t = s\} C_{k, s} + \eta_{lt},
+\] where \(\mathbb{E}[\eta_{lt}|z_{lk0}, W_{lt}] = 0\), \(C_{ks}\) is finite for all \(k\) and \(s\), and \(\sum_s \sum_k g_{ks} C_{ks} \neq 0\).</li>
 </ul></li>
-<li>In some situations, as long as there are some true rejections, it is not a problem of having a few false rejections.
+<li>There must be an industry and time period when the indsustry share has predictive power for \(x_{lt}\) conditional on the controls.</li>
+<li>The growth rate \(g_{kt}\) cannot weight the covariances in such a way that they exactly cancel out.</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Consistency</h2></hgroup><article  id="consistency-1">
 
 <ul>
-<li>e.g. The inspection of a car assembly line</li>
-<li>e.g. Multiple conditional average treatment effects</li>
+<li><strong>Assumption: Strict exogeneity</strong>
+
+<ul>
+<li>For all \(k\) where \(g_k \neq 0\): \[
+\mathbb{E}[\epsilon_{lt} z_{lk0}| W_{lt}] = 0.
+\]</li>
+</ul></li>
+<li>Then, the Bartik estimator is consistent with \(L \to \infty\).</li>
+<li>Usually, we take changes in \(y_{lt}\) and \(x_{lt}\).</li>
+<li>Then, the exogeneity means that the initial industry share is exogenous to the changes in the error term conditional on controls.</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Validation tests</h2></hgroup><article  id="validation-tests">
+
+<ul>
+<li>Check the correlation between \(Z_l\) and the other initial characteristics \(W_{l0}\).
+
+<ul>
+<li>If correlated, consider whether it poses any doubt on the exogeneity assumption.</li>
+</ul></li>
+<li>Check the correlation between \(Z_l\) and placebo outcomes, that is likely to be correlated with the error in the main outcome, but should be unrelated to \(Z_l\).</li>
+<li>If there is a pre-treatment period, test the pre-trend.</li>
+<li>Check the robustness by using each \(z_{k0}\) as \(K\) instruments, rather than summarizing to \(B_{lt}\).</li>
+</ul>
+
+</article></slide><slide class="segue dark nobackground level1"><hgroup class = 'auto-fadein'><h2>Shock-view of Shift-Share Design</h2></hgroup><article  id="shock-view-of-shift-share-design">
+
+</article></slide><slide class=""><hgroup><h2>What is different?</h2></hgroup><article  id="what-is-different">
+
+<ul>
+<li>In the share-view, the exogeneity condition was for all \(k\) where \(g_k \neq 0\): \[
+\mathbb{E}[\epsilon_{lt} z_{lk0}| W_{lt}] = 0.
+\]</li>
+<li>This is sufficient but not necessary.</li>
+<li>We just need for all \(t\): \[
+\mathbb{E}[\sum_{l = 1}^L \epsilon_{lt} B_{lt}| W_{lt}] = 0.
+\]</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>What is different?</h2></hgroup><article  id="what-is-different-1">
+
+<ul>
+<li>This can be written as: \[
+\begin{split}
+0 &amp;= \mathbb{E}[\sum_{l = 1}^L \epsilon_{lt} \sum_{k = 1}^K z_{kl0} g_{kt}]\\
+&amp;= \mathbb{E}[\sum_{k = 1}^K g_{kt} \sum_{l = 1}^L z_{kl0} \epsilon_{lt}]\\
+&amp;= \mathbb{E}[\sum_{k = 1}^K g_{kt} \overline{\epsilon}_{kt}].
+\end{split}
+\]</li>
+<li>It is satisfied as long as \(g_{kt}\) is uncorrelated with \(\overline{\epsilon}_{kt}\) even if \(z_{kl0}\) is correlated with \(\epsilon_{lt}\).</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Consistency</h2></hgroup><article  id="consistency-2">
+
+<ul>
+<li><strong>Assumption: Quasi-random shock assignment</strong>
+
+<ul>
+<li>For all \(k\) and \(t\): \[
+\mathbb{E}[g_{kt}| \overline{\epsilon}, z] = \mu.
+\]</li>
+</ul></li>
+<li>If this is the case: \[
+\begin{split}
+\mathbb{E}[\sum_{k = 1}^K g_{kt} \overline{\epsilon}_{kt}] 
+&amp;= \mu \mathbb{E}[\sum_{k = 1}^K \overline{\epsilon}_{kt}] = \mu \mathbb{E}[\sum_{l = 1}^L \epsilon_{lt} \sum_{k = 1}^K z_{kl0}]\\
+&amp;= \mu \mathbb{E}[\sum_{l = 1}^L \epsilon_{lt}] = 0.
+\end{split}
+\]</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Consistency</h2></hgroup><article  id="consistency-3">
+
+<ul>
+<li>In the shock-view, we use asymptotics of \(K \to \infty\).</li>
+<li><strong>Assumption: Many uncorrelated shocks</strong>
+
+<ul>
+<li>For all \(k \neq k&#39;\) and \(t\): \[
+\mathbb{E}[\sum_{k = 1}^K z_{kl0}^2] \to \infty.
+\] \[
+Cov[g_{kt}, g_{k&#39;t}| \overline{\epsilon}, z] = 0.
+\]</li>
+</ul></li>
+<li>The expected shock exposure is asymptotically completely disperesed.</li>
+<li>The shocks are mutually uncorrelated.</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Estimation and inference</h2></hgroup><article  id="estimation-and-inference">
+
+<ul>
+<li>The estimator is the same with the share-view of shift-share design.</li>
+<li>However, the inference is involved, because:
+
+<ul>
+<li>\(g_{kt}\) is regarded as random variable.</li>
+<li>This creates correlation across locations.</li>
+</ul></li>
+<li>Adao et al. (2019) propose a exposure-based clustering.</li>
+<li>Simpler way is to construct a shock-level main equation: \[
+\overline{y}_{kt} = \overline{x}_{kt}\beta_0 + \overline{W}_{kt}\rho + \overline{\epsilon}_{kt},
+\] where \(\overline{y}_{kt} = \sum_{l = 1}^L z_{kl0} y_{lt}\) and others are the same.</li>
+<li>Then, its heteroskedasticity-robust standard error yields asymptotically valid confidence interval.</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Example</h2></hgroup><article  id="example">
+
+<ul>
+<li>Hummels et al. (2014):
+
+<ul>
+<li>Estimate the wage effects of offshoring across Danish importin firm \(l\).</li>
+<li>The shock index \(n\) refers to a type of intermediate inputs and an origin country; titanium hinges from Japan.</li>
+</ul></li>
+<li>Peri et al. (2016):
+
+<ul>
+<li>Estimate the effecet of immigrant STEM workers on the labour market outcomes of natives across U.S. cities \(l\).</li>
+<li>The shock index \(n\) refers to a migration origin country.</li>
 </ul></li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>False Discovery Rate (FDR)</h2></hgroup><article  id="false-discovery-rate-fdr-1">
+</article></slide><slide class=""><hgroup><h2>Reference</h2></hgroup><article  id="reference">
 
 <ul>
-<li><strong>Definition</strong>: <em>False Discovery Rate</em>: The proportion of null hypotheses that are mistakenly rejected among rejected null hypotheses: \[
-FDR = \frac{\sum_{m = 1}^{M_0} 1\{H_0^m \text{   is rejected}\}}{\sum_{m = 1}^M 1\{H_0^m \text{   is rejected}\}},
-\] where \(m = 1, \cdots, M_0\) are true null hypotheses and \(M_0\) is the number of true null hypotheses.</li>
-<li>We consider a procedure that controls for the expected FDR: \(\mathbb{E}[FDR]\).</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>Benjamin-Hotchberg Correction</h2></hgroup><article  id="benjamin-hotchberg-correction">
-
-<ol>
-<li>Order the p-values: \(p^{(1)} \le p^{(2)} \le \cdots \le p^{(M)}\).</li>
-<li>For \(l = M, \cdots, 1\) (starting with the highest p-value):
-
-<ol>
-<li>If \(p^{(l)} \le \alpha l/M\), reject \(H_0^{(l)}, l, \cdots, 1\).</li>
-<li>If \(p^{(l)} &gt; \alpha l/M\), accept \(H_0^{(l)}\) and move to \(l - 1\).</li>
-</ol></li>
-</ol>
-
-</article></slide><slide class=""><hgroup><h2>Positive regression dependence</h2></hgroup><article  id="positive-regression-dependence">
-
-<ul>
-<li>If the test statistics are <em>independent</em>, then the Benjamin-Hotchberg correction controls for the FDR.</li>
-<li>If the test statistics are <em>dependent</em>, then the Benjamin-Hotchberg correction controls for the FDR under the <em>positive regression dependence</em> assumption.</li>
-<li><strong>Definition</strong>: _Increasing set__: A set \(D\) is said to be increasing if \(x \in D\) and \(y \ge x\) implies \(y \in D\).</li>
-<li><strong>Definition</strong>: <em>Positive regression dependence</em>: For test statistics \(X^m\), \(m = 1, \cdots, M\), for any increasing set \(D\), and for any \(\mathcal{M}_0 \subset \mathcal{M}\), \(\mathbb{p}\{\{X^m\} \in D| X^m = x\}\) is non-decreasing in \(x\).</li>
-<li>If the joint distribution of the test statistics satisfies positive regression dependence for the set of true null hypothesis \(\mathcal{M}_0 \subset \mathcal{M}\), then the Benjamin-Hotchberg correction controls for the FDR no greater than \(\alpha M_0/M\).</li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>General case</h2></hgroup><article  id="general-case">
-
-<ul>
-<li>In general, the Benjamin-Hotchberg correction may not control for the FDR.</li>
-<li>In this case, we can use either:
-
-<ul>
-<li>Use \(\alpha l/ (M \sum_{s=1}^M 1/ s)\) instead of \(\alpha l/M\) (Benjamini-Yekutieli, 2001).</li>
-<li>The bootstrap method to control for the FDR (Romano et al., 2008).</li>
-</ul></li>
-</ul>
-
-</article></slide><slide class=""><hgroup><h2>References</h2></hgroup><article  id="references">
-
-<ul>
-<li>Benjamini, Yoav, and Yosef Hochberg (1995). &ldquo;Controlling the false discovery rate: a practical and powerful approach to multiple testing.&rdquo; <em>Journal of the Royal Statistical Society. Series B (Methodological)</em>, 57(1), 289-300.</li>
-<li>Romano, J. P., and Wolf, M. (2010). &ldquo;Efficient computation of adjusted p-values for resampling-based stepdown multiple testing.&rdquo; <em>Statistics and Probability Letters</em>, 80(9-10), 915-920.</li>
-<li>Romano, J. P., Shaikh, A. M., and Wolf, M. (2008). &ldquo;Control of the false discovery rate under dependence using the bootstrap and subsampling.&rdquo; <em>Test</em>, 17(3), 417-442.</li>
+<li>Adao, Rodrigo, Michal Kolesár, and Eduardo Morales. 2019. &ldquo;Shift-Share Designs: Theory and Inference.&rdquo; The Quarterly Journal of Economics 134 (4): 1949–2010.</li>
+<li>Borusyak, Kirill, Peter Hull, and Xavier Jaravel. 2021. &ldquo;Quasi-Experimental Shift-Share Research Designs.&rdquo; The Review of Economic Studies, June. <a href='https://doi.org/10.1093/restud/rdab030' title=''>https://doi.org/10.1093/restud/rdab030</a>.</li>
+<li>Goldsmith-Pinkham, Paul, Isaac Sorkin, and Henry Swift. 2020. &ldquo;Bartik Instruments: What, When, Why, and How.&rdquo; The American Economic Review 110 (8): 2586–2624.</li>
+<li>Hummels, David, Rasmus Jørgensen, Jakob Munch, and Chong Xiang. 2014. &ldquo;The Wage Effects of Offshoring: Evidence from Danish Matched Worker-Firm Data.&rdquo; The American Economic Review 104 (6): 1597–1629.</li>
+<li>Peri, Giovanni, Kevin Shih, and Chad Sparber. 2015. &ldquo;STEM Workers, H-1B Visas, and Productivity in US Cities.&rdquo; Journal of Labor Economics 33 (S1): S225–55.</li>
 </ul></article></slide>
 
 

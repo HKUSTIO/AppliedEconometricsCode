@@ -116,34 +116,34 @@ We estimate the average treatment effect by imputing the potential outcomes by a
 result <-
   lm(
     data = outcome_observed,
-    formula = y ~ z + z:x 
+    formula = y ~ x * z 
   )
 result %>%
   modelsummary(fmt = 6)
 ```
 
 ```{r}
-result <-
-  c(
-    y ~ z + z:exp(x),
-    y ~ z + z:x^2,
-    y ~ z + z:(x + x^2)
+outcome_counterfactual <-
+  outcome_observed %>%
+  dplyr::mutate(
+    z = 1 - z,
+    z = z %>% as.logical()
   ) %>%
-  purrr::map(
-    .,
-    ~ lm(
-      data = outcome_observed,
-      formula = .
-      )
+  dplyr::mutate(
+    y = predict(result, newdata = .)
   )
+outcome <-
+  rbind(
+    outcome_observed,
+    outcome_counterfactual
+  )
+outcome <-
+  outcome %>%
+  dplyr::group_by(z) %>%
+  dplyr::summarize(y = mean(y)) %>%
+  dplyr::ungroup()
+outcome %>% dplyr::filter(z) - outcome %>%dplyr::filter(!z)
 ```
-
-
-```{r}
-result %>%
-  modelsummary(fmt = 6)
-```
-
 
 ## Using a weighing estimator
 

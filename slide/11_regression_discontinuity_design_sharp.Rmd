@@ -1,0 +1,791 @@
+---
+title: "Regression Discontinuity Design"
+subtitle: "Sharp Regression Discontinuity Design"
+author: "Kohei Kawaguchi, Hong Kong University of Science and Technology"
+output: 
+  ioslides_presentation:
+    widescreen: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
+library(magrittr)
+library(foreach)
+library(ggplot2)
+library(kableExtra)
+```
+
+
+
+<style type="text/css">
+div.footnotes {
+  position: absolute;
+  bottom: 0;
+  margin-bottom: 10px;
+  width: 80%;
+  font-size: 10px;
+}
+body, td {
+   font-size: 14px;
+}
+code.r{
+  font-size: 11px;
+}
+pre {
+  font-size: 11px
+}
+blockquote {
+  background: #f9f9f9;
+  border-left: 5px solid #ccc;
+  margin: 1.5em 10px;
+  padding: 0.5em 1.5em;
+}
+</style>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<script>
+$(document).ready(function() {
+  $('slide:not(.backdrop):not(.title-slide)').append('<div class=\"footnotes\">');
+
+  $('footnote').each(function(index) {
+    var text  = $(this).html();
+    var fnNum = (index+1).toString();
+    $(this).html(fnNum.sup());
+
+    var footnote   = fnNum + '. ' + text + '<br/>';
+    var oldContent = $(this).parents('slide').children('div.footnotes').html();
+    var newContent = oldContent + footnote;
+    $(this).parents('slide').children('div.footnotes').html(newContent);
+  });
+});
+</script>
+
+# Sharp Regression Discontinuity Design (RDD)
+
+## Elements of RDD
+
+- All units have a score, and a treatment is assigned to those units whose value of the score exceeds a known cutoff, and not assigned to those units whose value of the score is below the cutoff.
+- The score is also referred to as running variable, forcing variable, or index.
+
+## Sharp RDD
+
+- The score is continuously distributed and has only one dimension.
+- There is only one cutoff.
+- Compliance with treatment assignment is perfect.
+
+## Score, cuttoff, and treatment
+
+- There are $n$ units, indexed by $i = 1, \cdots, n$.
+- Each unit has a score $X_i$.
+- $c = 0$ is a known cutoff.
+- The treatment $Z_i$ follows $Z_i = 1\{X_i \ge 0\}$.
+- Assume that the compliance is perfect, i.e., the assignment of treatment is equal to the receipt of the treatment.
+
+## Treatment assignment {.fullslide} <footnote> Figure 1 of Cattaneo et al. (2020) </footnote>
+
+```{r, echo = FALSE}
+knitr::include_graphics("../figuretable/9_fig_1.png")
+```
+
+## Potential and observed outcomes
+
+- Each unit has potential outcomes $Y_i^\ast(1)$ and $Y_i^\ast(0)$.
+- The observed outcome is $Y_i = Z_i \cdot Y_i^\ast(1) + (1 - D_i) \cdot Y_i^\ast(0)$.
+- Assume that $\{Y_i^\ast(0), Y_i^\ast(1), X_i\}_{i = 1}^n$ is a random sample from a super population.
+
+## Estimand
+
+- We are interested in the _shartp RD treatment effect_:<footnote> Figure 2 of Cattaneo et al. (2020) </footnote>
+$$
+\tau_{srd} \equiv \mathbb{E}[Y_i^\ast(1) - Y_i^\ast(0) | X_i = 0].
+$$
+
+```{r, echo = FALSE, out.width = "40%"}
+knitr::include_graphics("../figuretable/9_fig_2.png")
+```
+
+
+## Continuity at the cuttoff
+
+- Assume that the regression functions $\mathbb{E}[Y_i^\ast(1) | X_i = x]$ and $\mathbb{E}[Y_i^\ast(0)| X_i = x]$ are continuous at $x = 0$.
+- Then, we have:
+$$
+\mathbb{E}[Y_i^\ast(1) | X_i = 0] = \lim_{x \downarrow 0} \mathbb{E}[Y_i^\ast(1) | X_i = x] = \lim_{x \downarrow 0} \mathbb{E}[Y_i | X_i = x],
+$$
+$$
+\mathbb{E}[Y_i^\ast(0) | X_i = 0] = \lim_{x \uparrow 0} \mathbb{E}[Y_i^\ast(0) | X_i = x] = \lim_{x \uparrow 0} \mathbb{E}[Y_i | X_i = x],
+$$
+and identify from data.
+
+## Local randomization
+
+- Let $U$ be some unobserved type regarding the potential outcomes.
+- __Definition__: _Local randomization_: $F(x|u)$, the conditional distribution of score on type is such that $0 < F(0|u) < 1$ and is continuously differentiable in $u$ at $u = 0$.
+- This implies
+$$
+f_{X|U}(0_+|u) = f_{X|U}(0_-|u).
+$$
+- The distribution of the score can depend on unobserved type $U$
+- However, the probability that the score is just above 0 and below 0 are the same for any individual.
+
+## Implications
+
+1. The score density is continuous at $X = 0$:
+$$
+f_X(0_+) = f_X(0_-)
+$$
+because $f_{X}(x) = \int f_{X|U}(x|u) g(u) du$. 
+2. The type distribution is continuous at $X = 0$:
+$$
+F_{U|X}(u|0_+) = F_{U|X}(u|X = 0_-)
+$$
+because 
+$$
+F_{U|X}(u|x) = \int_{s \le u} g_{U|X}(s|x) ds, g_{U|X}(u|x) = \frac{f_{X|U}(x|u) g_U(u)}{f_X(x)}.
+$$
+- The second condition implies the continuity of the conditional expectation at $X = 0$.
+
+# RD Plot
+
+## Islamic political representation and women's education
+
+- Meyersson (2014): Does the Islamic parties' control of local governments have effects on the educational attainment of young women?
+- $i$: municipality.
+- $X_i$: Vote margin obtained by the Islamic party in the 1994 Turkish mayoral elactions, measured as the vote percentage obtained by the Islamic party minus the vote percentage obtained by its strongest secular party opponent, `iwm94`
+- $Z_i$: Electoral victory of the Islamic party in 1994, equal to 1 if the Islamic party won the mayoral election and 0 otherwise, `i94`.
+- $Y_i$: Educational attainment of women, measured as the percentage of women aged 15 to 20 in 2000 who had completed high school by 2000 `hischshr1520f`.
+
+
+## Data
+
+```{r}
+df <-
+  haven::read_dta("../input/meyersson_2014/regdata0.dta")
+df <-
+  df %>%
+  dplyr::mutate(
+    y = 100 * hischshr1520f,
+    x = 100 * iwm94,
+    t = i94
+  )
+df %>%
+  dplyr::select(y, x, t) %>%
+  modelsummary::datasummary_skim()
+```
+
+## Sharp RD
+
+```{r}
+df %>% ggplot(aes(x = x, y = t)) + geom_point() + theme_classic()
+```
+
+
+## Raw scatterplot is not informative
+
+```{r, message = FALSE, warning = FALSE}
+df %>% ggplot(aes(x = x, y = y)) + geom_point() + geom_vline(xintercept = 0) + theme_classic() 
+```
+
+## Binned scatterplot
+
+- Choose disjoint bins of the score.
+- Calculate the mean of the outcome for the observations falling within each bin.
+- Plot the average outcome in each bin against the mid piont of the bin.
+- Then, we can remove the noise and focus on the regression function.
+- Bins: $\mathcal{B}_{1-}, \cdots, \mathcal{B}_{K-}$ for $x < 0$ and $\mathcal{B}_{1+}, \cdots, \mathcal{B}_{K+}$ for $x \ge 0$.
+- Average in each bin:
+$$
+\overline{Y}_{k-} \equiv \frac{1}{\#\{X_i \in \mathcal{B}_{k-}\}} \sum_{i: X_i \in \mathcal{B}_{k-}} Y_i, \overline{Y}_{k+} \equiv \frac{1}{\#\{X_i \in \mathcal{B}_{k+}\}} \sum_{i: X_i \in \mathcal{B}_{k+}} Y_i.
+$$
+
+## Options for binned scatterplot
+
+- Evenly-spaced or quantile-spaced.
+- How many bins to select, based on what criterion.
+
+
+## Evenly-spaced and quantile-based bins
+
+- Evenly-spaced bins:
+  - Non-overlapping intervals that partition the entire suppor of the score, all of the same length within each treatment assignment status.
+  - The number of observations in each bin can be different.
+- Quantile-spaced bins:
+  - Non-overlapping intervals that partition the entire support of the score, all containing the same number of obsevations within each treatment assignment status.
+  - The length of each bin can be different.
+  
+## Implementation by `rdrobust::rdplot`
+
+- Binned scatter plot with evenly-spaced bins: `binselect = "es"`.
+```{r, out.width = "60%"}
+p <- rdrobust::rdplot(y = df$y, x = df$x, c = 0, nbins = c(20, 20), binselect = "es", y.lim = c(0, 25))
+p
+```
+
+
+## Implementation by `rdrobust::rdplot`
+
+- Binned scatter plot with quantile-spaced bins: `binselect = "qs"`.
+```{r, out.width = "60%"}
+p <- rdrobust::rdplot(y = df$y, x = df$x, c = 0, nbins = c(20, 20), binselect = "qs", y.lim = c(0, 25))
+p
+```
+
+
+## Choosing the number of bins to minimize the Integrated Mean Squared Error (IMSE)
+
+- As we increase the number of bins, we have smaller bias, because the bins are smaller and the local constant fit better.
+- However, then the variance within the bin increases, because this leads to a fewer observations per bin.
+- One way to find the number of bins is to estimate the IMSE of the local mean estimator to the underyling regression function, and find the number of bins that minmizes the IMSE.
+
+## Implementation by `rdrobus:rdplot`
+
+- Use `binselect = "espr"` or `binselect = "es"` omitting `nbins` option:
+```{r, out.width = "60%"}
+rdrobust::rdplot(y = df$y, x = df$x, c = 0, binselect = "espr", y.lim = c(0, 25))
+```
+
+## Implementation by `rdrobus:rdplot`
+
+- Use `binselect = "qspr"` or `binselect = "qs"` omitting `nbins` option:
+```{r, out.width = "60%"}
+rdrobust::rdplot(y = df$y, x = df$x, c = 0, binselect = "qspr", y.lim = c(0, 25))
+```
+
+# Point estimation of the sharp RD treatment effect
+
+## Estimator of the regression function
+
+- We need to decide how to estimate $\mathbb{E}[Y_i| X_i = x]$ for $X_i \ge 0$ and $X_i < 0$.
+- Modern RD empirical work often employs _local polynomial_ methods, which focus on approximating the regression functions only near the cutoff.
+- It is is robust and less sensitive to boundary and overfitting problem.
+- In contrast, a _global polynomial_ approximation should be avoided, because it has a poor approximation at boundary points.
+
+## Local polynomial point estimator
+
+- Choose a polynomial order $p$, a kernel function $K(\cdot)$, and a bandwidth $h$.
+- For observations above the cutoff, fit a weighted least squares regressions of the outcome $Y_i$ on a constant and $(X_i - 0)$, $(X_i - 0)^2, \cdots, (X_i - 0)^p$, with weight $K((X_i - 0)/h)$ for each observation.
+- The estimated intercept from the local weighted regression, $\hat{\mu}_+$, is the point estimator to $\mu_+ \equiv \mathbb{E}[Y_i^\ast(1)| X_i = 0]$.
+- For observations below the cutoff, fit a weighted least squares regressions of the outcome $Y_i$ on a constant and $(X_i - 0)$, $(X_i - 0)^2, \cdots, (X_i - 0)^p$, with weight $K((X_i - 0)/h)$ for each observation.
+- The estimated intercept from the local weighted regression, $\hat{\mu}_-$, is the point estimator to $\mu_- \equiv \mathbb{E}[Y_i^\ast(0)| X_i = 0]$.
+- Calculate the sharp RD estimator $\hat{\tau}_{srd} \equiv \hat{\mu}_+ - \hat{\mu}_-$.
+
+## Local polynomical point estimator <footnote> Figure 12 of Cattaneo et al. (2020) </footnote>
+
+```{r, echo = FALSE, out.width = "55%"}
+knitr::include_graphics("../figuretable/9_fig_3.png")
+```
+
+
+## Choice of the polynomical order
+
+- $p = 0$ is undesirable at the boundary.
+- For a given bandwidth, increasing $p$ generally reduces the bias but also increases the variability of the treatment effect estimator.
+- Higher-order polynomicals tend to produce overfitting of the data and lead to unreliable results at the boudary points.
+- Therefore, the local linear RD estimator, $p = 1$, is often used. 
+
+## Choice of the kernel function
+
+- There are many types of kernel function.
+- However, in generaql, the estimation and inference are not very sensitive to the choice of kernel functions.
+- Popular kernel functions are:
+  - Uniform: $K(u) = 1\{|u| \le 1\}$.
+  - Triangular: $K(u) = (1 - |u|) 1\{|u|\le 1 \}$.
+  - Epanechnikov: $K(u) = (1 - u^2) 1\{|u| \le 1\}$.
+
+
+## Kernel functions<footnote> Figure 13 of Cattaneo et al. (2020) </footnote>
+
+```{r, echo = FALSE, out.width = "55%"}
+knitr::include_graphics("../figuretable/9_fig_4.png")
+```
+
+## Choice of the bandwidth
+
+- The choice of $h$ is fundamental for the analysis and interpretation of RD designs.
+- $h$ directly affects the property of the local polynomial estimator and inference procedures.
+- Empirical findings are often sensitve to its particular value.
+- Choosing a smaller $h$ will reduce the misspecification error of the local polynomial approximations, but will increase the variance of the estimated coefficients.
+- Choosing a larger $h$ will result in more smoothing bias if the unknown function differs considerably from the polynomial model used for approximation.
+
+## Bias in local approximation<footnote> Figure 14 of Cattaneo et al. (2020) </footnote>
+
+```{r, echo = FALSE, out.width = "55%"}
+knitr::include_graphics("../figuretable/9_fig_5.png")
+```
+
+
+## Data-driven and automatic choice of $h$
+
+- Therefore, it is important to select $h$ in a data-driven, automatic way to avoid specification searching and ad hoc decisions.
+- The basis is the mean squared error of the sharp RD point estimator:
+$$
+MSE(\hat{\tau}_{srd}) \equiv Bias^2(\hat{\tau}_{srd}) + Variance(\hat{\tau}_{srd}).
+$$
+- We can show that the bias and variance have the form:
+$$
+Bias^2(\hat{\tau}_{srd}) = h^{2(p + 1)}\mathcal{B}^2, Variance(\hat{\tau}_{srd}) = \frac{1}{nh} \mathcal{V},
+$$
+where $\mathcal{B}$ and $\mathcal{V}$ are leading bias and variance not including $n$ and $h$.
+- We estimate $MSE(\hat{\tau}_{srd})$ by estimating $\mathcal{B}$ and $\mathcal{V}$.
+- Then, choose $h$ that minimizes the approximated mean squared error.
+
+## The leading bias term
+
+- The leading bias term comprises the bias in the left and the right of the cutoff:
+$$
+\mathcal{B} = \mathcal{B}_+ - \mathcal{B}_-, \mathcal{B}_+ \approx \mu_+^{(p + 1)} B_+, \mathcal{B}_+ \approx \mu_-^{(p + 1)} B_-.
+$$
+- They depend on the $p + 1$th derivative of the regression function:
+$$
+\mu_+^{(p + 1)} \equiv \lim_{x \downarrow 0} \frac{d^{p + 1}}{d x^{p + 1}} \mathbb{E}[Y_i^\ast(1) | X_i = x], \mu_-^{(p + 1)} \equiv \lim_{x \uparrow 0} \frac{d^{p + 1}}{d x^{p + 1}} \mathbb{E}[Y_i^\ast(0) | X_i = x].
+$$
+- We re-estimate the regression function with $p + 1$-order local polynomials and estimate $\mu_+^{(p + 1)}$ and $\mu_-^{(p + 1)}$.
+
+## The leading variance term
+
+- The leading variance term comprises the variance in the left and the right of the cutoff:
+$$
+\mathcal{V} = \mathcal{V}_+ - \mathcal{V}_-, \mathcal{V}_+ \approx \frac{\sigma_-^2}{f} V_-, \mathcal{V}_+ \approx \frac{\sigma_+^2}{f} V_+,
+$$
+where $f$ is the density at $x = 0$.
+- If the density is low, i.e., if the observations are few around the cutoff, the variance is larger.
+- They depend on the variance of the potential outcome:
+$$
+\begin{split}
+\sigma_+^2 &\equiv \lim_{x \downarrow 0} \mathbb{V}[Y_i^\ast(1) | X_i = x],\\
+\sigma_-^2 &\equiv \lim_{x \uparrow 0} \mathbb{V}[Y_i^\ast(0) | X_i = x]
+\end{split}
+$$
+- We can estimate them with the data.
+
+
+## Optimal bandwidth choice
+
+- Based on the estimated bias an variance, compute:
+$$
+\min_{h > 0} h^{2(p + 1)} \mathcal{B}^2 + \frac{1}{nh} \mathcal{V},
+$$
+obtaining:
+$$
+h_{mse} = \Bigg(\frac{\mathcal{V}}{2(p + 1) \mathcal{B}^2} \Bigg)^{\frac{1}{2p + 3}} n^{- \frac{1}{2 p + 3}}.
+$$
+
+## Functions to use `modelsummary` for `rdrobust` results
+
+- Define the following functions: Taken from [here](https://gist.github.com/vincentarelbundock/5ee12d715d59266beb81ff654d2227d5)
+
+```{r}
+tidy.rdrobust <- function(object, ...){
+    ret <- data.frame(term = row.names(object$coef), 
+                      estimate = object$coef[, 1], 
+                      std.error = object$se[, 1], 
+                      statistic = object$z[, 1],
+                      p.value = object$pv[, 1], 
+                      conf.low = object$ci[,1],
+                      conf.high = object$ci[, 2])
+    row.names(ret) <- NULL
+    ret
+}
+```
+
+## Functions to use `modelsummary` for `rdrobust` results
+
+```{r}
+glance.rdrobust <- function(object, ...){
+    ret <- data.frame(nobs.left = object$N[1],
+                      nobs.right = object$N[2],
+                      nobs.effective.left = object$N_h[1],
+                      nobs.effective.right = object$N_h[2],
+                      cutoff = object$c,
+                      order.regression = object$q,
+                      order.bias = object$q,
+                      kernel = object$kernel,
+                      bwselect = object$bwselect)
+        ret
+}
+```
+
+
+## Implementing point estimation with `rdrobust`: $h = 20$, uniform kernel
+
+```{r}
+result <- rdrobust::rdrobust(y = df$y, x = df$x, c = 0, kernel = "uniform", p = 1, h = 20)
+result %>% modelsummary::modelsummary()
+```
+
+
+<!-- ## Manually implementing the same point estimation -->
+
+
+<!-- ```{r} -->
+<!-- result <- df %>% dplyr::filter(abs(x) <= 20) %>% lm(data = ., formula = y ~ 1 + t + as.factor(t):x) -->
+<!-- result %>% modelsummary::modelsummary() -->
+<!-- ``` -->
+
+## Implementing point estimation with `rdrobust`: $h = 20$, triangular kernel
+
+```{r}
+result <- rdrobust::rdrobust(y = df$y, x = df$x, c = 0, kernel = "triangular", p = 1, h = 20)
+result %>% modelsummary::modelsummary()
+```
+
+<!-- ## Manually implementing the same point estimation -->
+
+
+<!-- ```{r} -->
+<!-- result <- df %>% dplyr::filter(abs(x) <= 20) %>% dplyr::mutate(weight = 1 - abs(x)/20) %>% -->
+<!--   lm(data = ., formula = y ~ 1 + t + as.factor(t):x, weights = weight) -->
+<!-- ``` -->
+
+## Chooce MSE-optimal bandwidth with `rdrobust::rdbwselect`
+
+```{r}
+bw <- rdrobust::rdbwselect(y = df$y, x = df$x, c = 0, kernel = "triangular", p = 1, bwselect = "mserd")
+bw$bws
+```
+- We use this `r bw$bws[1]` in `h (left)` and `h(right)` for the point estimation.
+- If we use `bwselect = "msetwo"`, we get different bandwidth for the left and right.
+- `b (left)` and `b(right)` are used later for a robust inference.
+
+## Implementing point estimation with `rdrobust`: MSE-optimal bandwidth, triangular kernel
+
+```{r}
+result <- rdrobust::rdrobust(y = df$y, x = df$x, c = 0, kernel = "triangular", p = 1, h = bw$bws[1])
+result %>% modelsummary::modelsummary()
+```
+
+
+## Implementing point estimation with `rdrobust`: MSE-optimal bandwidth, triangular kernel
+
+- We can implement it in one step, too:
+
+```{r}
+result <- rdrobust::rdrobust(y = df$y, x = df$x, c = 0, kernel = "triangular", p = 1, bwselect = "mserd")
+result %>% modelsummary::modelsummary()
+```
+
+
+# Inference of the sharp RD treatment effect
+
+## Conventional inference
+
+- The standard error in the `Conventional` row is the standard error for the least squares method.
+- This assumes that the local polynomials of order $p$ is the correct specification. 
+- However, we have assumed that the local polynomials of order $p$ was an approximation to the regression function, especially when we specified the problem of selecting the MSE optimal bandwidth.
+- Our inference must consider the approximation error.
+- Therefore, the inference should not be based on the conventional standard error.
+
+## Confidence interval of $\hat{\tau}_{srd}$
+
+- Becahse $h_{mse}$ leaves some asymptotic bias, the 95\% confidence interval is:
+$$
+CI = [(\hat{\tau}_{mse} - \mathcal{B}) \pm 1.96 \sqrt{\mathcal{V}}].
+$$
+- The _conventional_ confidential interval ignores the bias term:
+$$
+CI_{cv} = [\hat{\tau}_{mse} \pm 1.96 \sqrt{\mathcal{V}}],
+$$
+leading to invalid inferences.
+
+## Bias correction
+
+- One way to resolve the problem is to estimate $\mathcal{B}$ and subtract from the estimate to construct the _bias-corrected_ confidence interval:
+$$
+CI_{bc} = [(\hat{\tau}_{mse} - \widehat{\mathcal{B}}) \pm 1.96 \sqrt{\mathcal{V}}].
+$$
+- Because the estimation of bias requires to estimate the $p + 1$th older local polynomials, we use additional bandwidth $b$ for the bias estimation.
+- We need to ensure $\rho = h/b \to 0$ to ensure that the bias term is asymptotically zero.
+- The asymptotic variance is the same with the conventional inference.
+- This confidence interval has a poor finite-sample performance, becuase $h/b$ is not zero in the finite sample.
+- The `Bias-Corrected` row represent this result: the estimated is corrected, but the standard error is same with the conventional standard error.
+
+## Robust bias corection
+
+- The alternative approach alllows $h/b$ is aymptotically positive, and the bias term converges in distribution to a random variable.
+  - Therefore $b = h_{mse}$ or $b = b_{mse}$ is allowed.
+- The _robust bias-corrected_ confidence interval incorporates the contribution of the bias correction step to the asymptotic variance of the point estimator:
+$$
+CI_{rbc} = [(\hat{\tau}_{mse} - \widehat{\mathcal{B}}) \pm 1.96 \sqrt{\mathcal{V}_{bc}}].
+$$
+- In this approach, the estimate of $\mathcal{V}_{bc}$,$\widehat{\mathcal{V}_{bc}}$, is used to construct the confidence interval instead of $\widehat{\mathcal{V}}$.
+- The `Robust` row shows this result: the point estimate is same with bias-corrected, but the standard error is larger than the bias-corrected standard error.
+
+
+## Implementing point estimation with `rdrobust`: MSE-optimal bandwidth, triangular kernel
+
+- To ensure all the methods are implemented, we can set option `all = TRUE`:
+
+```{r}
+result <- rdrobust::rdrobust(y = df$y, x = df$x, c = 0, kernel = "triangular", p = 1, bwselect = "mserd", all = TRUE)
+result %>% modelsummary::modelsummary()
+```
+
+## Coverage error rate (CER) optimal bandwidth
+
+- The MSE optimal bandwidth only considers the mean squared error of the point estimation.
+- For confidence intervals, what matters is the coverage error rate.
+- As well as the MSE optimal bandwidth, we can define the coverage error and find the bandwidth that minimizes the estimated coverage error rate.
+- Refer to it as the CER optimal bandwidth $h_{cer}$.
+- In practice, the point estimate can be obtained with $h_{mse}$ and the confidence interval with $h_{cer}$.
+
+## Implementing point estimation with `rdrobust`: CER-optimal bandwidth, triangular kernel
+
+- We can hse $h_{cer}$ by setting `bwselect = "cerrd"`.
+
+```{r}
+result <- rdrobust::rdrobust(y = df$y, x = df$x, c = 0, kernel = "triangular", p = 1, bwselect = "cerrd", all = TRUE)
+result %>% modelsummary::modelsummary()
+```
+
+
+# Sharp RD with covariates
+
+## Adding covariates
+
+- Suppose that for each unit $i$ $d$-dimensional potential covariate vector $\mathbf{W}_i(0)$ and $\mathbf{W}_i(1)$.
+- We observe $\mathbf{W}_i = Z_i \cdot \mathbf{W}_i(1) + (1 - Z_i) \cdot \mathbf{W}_i(0)$.
+- We assume the potential covariates are the same at the cutoff:
+$$
+\mathbf{W}_i(1) = \mathbf{W}_i(0).
+$$
+- When predetermined variables are available, covariate adjustment may improve the efficiency.
+- Remember that this does not help the identification problem.
+
+## Possible covariate adjustments
+
+- Consider a local linear model with $c = 0$.
+- Without covariate adjustemnt, we estimate:
+$$
+\hat{\tau}: \hat{Y}_i =  \hat{\alpha} + Z_i \cdot \hat{\tau} + X_i \cdot \hat{\beta}_- +  Z_i \cdot X_i \cdot \hat{\beta}_+.
+$$
+- Potentially, we can consider:
+$$
+\tilde{\tau}: \tilde{Y}_i =  \tilde{\alpha} + Z_i \cdot \tilde{\tau} + X_i \cdot \tilde{\beta}_- +  Z_i \cdot X_i \cdot \tilde{\beta}_+ + \mathbf{W}_i^{obs'} \tilde{\gamma}.
+$$
+
+$$
+\begin{split}
+\check{\tau}: \check{Y}_i &=  \check{\alpha} + Z_i \cdot \check{\tau} + X_i \cdot \check{\beta}_- +  Z_i \cdot X_i \cdot \check{\beta}_+\\
+&+ (1 - Z_i) \cdot \mathbf{W}_i^{obs'} \check{\gamma}_- + Z_i \cdot \mathbf{W}_i^{obs'} \check{\gamma}_+.
+\end{split}
+$$
+
+## The limit of the estimators
+
+- The estimators converge to:
+$$
+\tilde{\tau} \to \tau_{srd} - [\mu_{W+} - \mu_{W-}]' \gamma_Y,
+$$
+$$
+\check{\tau} \to \tau_{srd} - [\mu_{W+}' \gamma_{Y+} - \mu_{W-}' \gamma_{Y-}],
+$$
+where:
+$$
+\mu_{W+} \equiv \mathbb{E}[\mathbf{W}_i(1)|X_i = 0], \mu_{W-} \equiv \mathbb{E}[\mathbf{W}_i(0)|X_i = 0],
+$$
+and $\gamma_Y, \gamma_{Y+}$, and $\gamma_{Y-}$ are some vectors.
+
+## Consistency of the estimators
+
+- Therefore, $\tilde{\tau}$ is consistent for $\tau_{srd}$ if $\mu_{W+} = \mu_{W-}$, which is true.
+- On the contrary, the consistency of $\check{\tau}$ requires $\mu_{W+}' \gamma_{Y+} = \mu_{W-}' \gamma_{Y-}$.
+- This is the difference in the best linear approximations at each side of the cutoff.
+- However, this is hard to justify. Hence, we should force $\gamma_{Y+} = \gamma_{Y-}$ in the estimation, leading to $\tilde{\tau}$.
+
+## Optimal bandwidth choice and the inference
+
+- All the arguments about the optimal bandwidth choice and the inference should be revisited but in essentially the same framework.
+
+
+## Covariates for the Islamic party's effect
+
+- Consider:
+- `vshr_islam1994`: Islamic vote percentage in 1994.
+- `partycount`: the number of parties receiving votes in 1994.
+- `lpop1994`: the logarithm of the population in 1994.
+- `merkezi`: district center indicator.
+- `merkezp`: province center indicator.
+- `subbuyuk`: sub-metro centor indicator.
+- `buyuk`: metro centor indicator.
+
+## Implmentation with covariate adjustment in `rdrobust::rdrobust`
+
+```{r}
+z <- df %>% dplyr::select(vshr_islam1994, partycount, lpop1994, merkezi, merkezp, subbuyuk, buyuk)
+result <- rdrobust::rdrobust(y = df$y, x = df$x, c = 0, covs = z, kernel = "triangular", p = 1, bwselect = "mserd", all = TRUE)
+result %>% modelsummary::modelsummary()
+```
+
+## Clustering the standard error
+
+- We can employ cluster-robust standard errors to estimate $\mathcal{V}$ and $\mathcal{V}_{bc}$.
+- Because this estimate affects the choice of the bandwidth, which affects the point estimates, the point estimates also changes if cluster-robust standard errors are invoked.
+
+## Implmentation of clustering in `rdrobust::rdrobust`
+
+- Cluster at the province level: `province_post`.
+
+```{r}
+result <- rdrobust::rdrobust(y = df$y, x = df$x, c = 0, covs = z, kernel = "triangular", p = 1, bwselect = "mserd", all = TRUE, cluster = df$province_post)
+result %>% modelsummary::modelsummary()
+```
+
+# Validation and Falsification Tests
+
+## Various exerceises
+
+- The continuity assumptions that gurantee the validity of the RD design are about unobservable features and as such are inherently untestable.
+- Nevertheless, the RD designs offers an array of empirical methods that can provide useful side evidence about the plausibility of its assumptions.
+- The null treatment effect on predetermined covariates or placebo outcomes.
+- The continuity of the score density around the cuttoff.
+- The treatment effect at artificial cutoff values.
+- The exclusion of observations near the cutoff.
+- The sensitivity to bandwidth choices.
+
+## Predetemined covariates and placebo outcome
+
+- _Predetermined covariates_: variables that are determine before the treatment is assigned.
+  - Check the unconfoundedness.
+- _Placebo outcomes_: variables that are determined after the treatment is assigned but, according to substantive knowledge about the treatment's causal mechanism, could not possibly have been affected by the treatment.
+  - Check the exclusion restriction.
+  - Consider to examine the effect of clean water on the child mortality. The placebo variable may be the mortality due to other causes such as the car accidents.
+- The analysis should exactly mimic the analysis of the outcome of interest: the polynomial order, the choice of kernel, bandwidth, and so on.
+
+## Effect on a predetermined covariate
+
+```{r}
+rdrobust::rdplot(y = df$lpop1994, x = df$x, c = 0, binselect = "espr")
+```
+
+## Effect on a predetermined covariate
+
+```{r}
+result <- rdrobust::rdrobust(y = df$lpop1994, x = df$x, c = 0, kernel = "triangular", p = 1, bwselect = "mserd", all = TRUE)
+result %>% modelsummary::modelsummary()
+```
+
+## Permutation test of covariate continuity
+
+- Canay and Kamat (2017): Under the "sharp" null hypothesis that the distribution of covariates are continuous at the threshold, permuting observations around the threshold should keep the distribution of covariates approximately identical.
+- The permutation test:
+  1. Order observations by the score $X_i$.
+  2. Pick up $q$ nearest observations in the left and in the right of the cutoff, respectively.
+  3. Let $W_{q}^-, \cdots, W_{1}^-$ and $W_{q + 1}^+, \cdots, W_{2q}^+$ the corresponding covariates.
+  4. Let $\widehat{F}^-(w)$ and $\widehat{F}^+(w)$ be their empirical distributions.
+  5. Define a test statistics:
+  $$
+  \widehat{T} \equiv \frac{1}{2q} \sum_{j = 1}^{2q}[\widehat{F}^-(W_j^-) - \widehat{F}^+(W_{q + j}^+)]^2.
+  $$
+  
+## Permutation test of covariate continuity
+
+- The permutation test
+  6. Generate random permutations of $1, \cdots, 2q$ to $\pi^b(1), \cdots, \pi^b(2q)$ for $b = 1, \cdots, B$.
+  7. Let $W_{\pi^b(q)}^-, \cdots, W_{\pi^b(1)}^-$ and $W_{\pi^b(1)}^+, \cdots, W_{\pi^b(q)}^+$ the corresponding permuted covariates for $b = 1, \cdots, B$.
+  8. Let $\widehat{F}^{-b}(w)$ and $\widehat{F}^{+b}(w)$ be the corresponding empirical distributions for $b = 1, \cdots, B$.
+  9. Let $\widehat{T}^b$ be the corresponding test statistics for $b = 1, \cdots, B$.
+  10. Calculate the p-value by couting the number of permutations such that $\widehat{T}^b \ge \widehat{T}$.
+  
+  
+## Permutation test of covariate continuity
+
+```{r, eval = FALSE}
+df_sub <- df %>% dplyr::filter(!is.na(x), !is.na(lpop1994), !is.na(vshr_islam1994)) 
+result_permtest <- RATest::RDperm(W = c("lpop1994", "vshr_islam1994"), z = "x", data = df_sub)
+summary(result_permtest)
+```
+
+## 
+
+```{r, echo = FALSE}
+df_sub <- df %>% dplyr::filter(!is.na(x), !is.na(lpop1994), !is.na(vshr_islam1994)) 
+result_permtest <- RATest::RDperm(W = c("lpop1994", "vshr_islam1994"), z = "x", data = df_sub)
+summary(result_permtest)
+```
+
+
+
+## Histogram of the score
+
+- If units do not have the ability to precisely manipulate the value of the score that they receive, the number of treated observations just above the cutoff should be approximately similar to the number of control observations below it.<footnote> Figure 18 of Cattaneo et al. (2020) </footnote>
+
+```{r, echo = FALSE, out.width = "65%"}
+knitr::include_graphics("../figuretable/9_fig_6.png")
+```
+
+
+## Historgam of Islamic vote margin
+
+```{r}
+df %>% ggplot(aes(x = x)) + geom_histogram(breaks = seq(-100, 100, 5)) + theme_classic() + geom_vline(xintercept = 0)
+```
+
+## Binomial test
+
+- By choosing the bin widtdh, we can conduct a binomial test.
+- For example, if we consider $h = 2$, there are:
+```{r}
+n <- df %>% dplyr::filter(abs(x) <= 2) %>% dplyr::group_by((x >= 0)) %>% dplyr::count()
+n
+```
+
+## Binomial test
+
+- Is 54 out of 100 municipalities treated statistically significantly different from 1/2?
+```{r}
+binom.test(n$n[2], sum(n$n), 1/2)
+```
+
+## Density test with `rddensity::rddensity`
+
+- McCray (2008): We can also test the continuity of the density function of score at the cutoff.
+```{r}
+result <- rddensity::rddensity(df$x, c = 0)
+result$test$p_jk
+```
+
+## Density test
+
+- When there is a manipulation, the continuity of score density is neither necessary or sufficient for identification.
+- A student can participate in the summer school if the test score is above a cutoff.
+- First, suppose half of students are benefited and half are harmed by the summer school neare the cutoff: the average treatment effect is zero.
+  - A teacher gives slgihtly higher score to students who can be benefited by the summer school and slightly lower to students who can be harmed: the estimated average treatment effect is positive and the density of test score is continuous at the cutoff.
+- Second, suppose that a teacher randomly gives bonus points to students whose scores are slightly below the cutoff.
+  - In this case, we can identify the average treatment effect, but the density of test score is discontinuous at the cutoff.
+
+
+## Plcebo cutoffs
+
+- Check whether the estimable regrtession functions for control and treatment units are continuous at points other than the cutoff.
+
+```{r}
+result <- rdrobust::rdrobust(y = df$y, x = df$x, c = 1, kernel = "triangular", p = 1, bwselect = "mserd", all = TRUE)
+result %>% modelsummary::modelsummary()
+```
+
+
+## Sensitivity to observations near the cutoff
+
+- If systematic manipulation of score values has occured, then the units closest to the cutoff are those most likely to have engaged in manipulation.
+- Then, what if we exclude the closest units to the cutoff and repeate the estimation and inference?
+
+```{r}
+df_sub <- df %>% dplyr::filter(abs(x) >= 0.3)
+result <- rdrobust::rdrobust(y = df_sub$y, x = df_sub$x, c = 0, kernel = "triangular", p = 1, bwselect = "mserd", all = TRUE)
+result %>% modelsummary::modelsummary()
+```
+
+
+## Reference
+
+- Calonico, Sebastian, Matias D. Cattaneo, Max H. Farrell, and Rocío Titiunik. 2019. “Regression Discontinuity Designs Using Covariates.” The Review of Economics and Statistics 101 (3): 442–51.
+- Calonico, Sebastian, Matias D. Cattaneo, and Rocio Titiunik. 2014. “Robust Nonparametric Confidence Intervals for Regression-Discontinuity Designs.” Econometrica: Journal of the Econometric Society 82 (6): 2295–2326.
+- Canay, Ivan A., and Vishal Kamat. 2017. “Approximate Permutation Tests and Induced Order Statistics in the Regression Discontinuity Design.” The Review of Economic Studies 85 (3): 1577–1608.
+- Cattaneo, Matias D., Nicolás Idrobo, and Rocío Titiunik. 2020. A Practical Introduction to Regression Discontinuity Designs: Foundations. Cambridge University Press.
+
+
+## Reference 
+
+- McCrary, Justin. 2008. “Manipulation of the Running Variable in the Regression Discontinuity Design: A Density Test.” Journal of Econometrics 142 (2): 698–714.
+- Meyersson, Erik. 2014. “Islamic Rule and the Empowerment of the Poor and Pious.” Econometrica: Journal of the Econometric Society 82 (1): 229–69.

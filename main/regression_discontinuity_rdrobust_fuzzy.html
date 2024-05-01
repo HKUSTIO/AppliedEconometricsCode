@@ -11,7 +11,7 @@
 
 
 
-<title>Cluster-Robust Standard Errors</title>
+<title>Regression Discontinuity</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -2942,498 +2942,183 @@ border-radius: 0px;
 
 
 
-<h1 class="title toc-ignore">Cluster-Robust Standard Errors</h1>
-<h4 class="date">Last Update: 2024-02-26</h4>
+<h1 class="title toc-ignore">Regression Discontinuity</h1>
+<h3 class="subtitle">Fuzzy RD Design</h3>
+<h4 class="date">Last update: 2024-03-19</h4>
 
 </div>
 
 
-<p>We will introduce robust inference for cluster correlation using the
-<code>clubSandwich</code> package and the <code>fwildclusterboot</code>
-package.</p>
-<p>In addition to <code>set.seed()</code>, you need to fix
-<code>dqrng::dqset.seed()</code> in <code>fwildclusterboot</code>.</p>
-<p>The function <code>return_dgp_cluster</code> defined in
-<code>function_inference</code> generates <code>N</code> observations
-for <code>N_C</code> clusters, and generates <code>X</code> following
-the normal distribution <code>N(0,1)</code>, <code>e</code> following
-the normal distribution <code>N(0,0.1)</code>, and
-<code>Y = 0.5 + X * tau_C + e</code> by adding cluster-specific normal
-errors to <code>e</code>. Here, <code>tau_C</code> gives the value
-divided from <code>[-2,2]</code> to each cluster.</p>
-<p>Because the sample size is common for each cluster, the average
-treatment effect for the entire population is <code>0</code>.</p>
-<div id="the-case-of-quite-a-few-clusters" class="section level1" number="1">
-<h1><span class="header-section-number">1</span> The Case of Quite a Few
-Clusters</h1>
-<p>First, set <code>N_C</code> to <code>100</code>. Using
-<code>clubSandwich::vcov</code> and <code>clubSandwich::coef_test</code>
-for the linear regression output of <code>lm</code>, we can obtain the
-estimated statistics based on cluster-robust variance estimation.</p>
-<p>In this case, <code>vcov</code> can choose the degree of freedom
-correction for variance estimation. <code>CR0</code> is the one without
-correction, and <code>CR3</code> is the one by jackknife variance
-estimation.</p>
+<p>Here, we implement the estimation method for fuzzy regression
+discontinuity design using the <code>rdrobust</code> package. The
+functions called from <code>AppliedEconometricsCode</code> are defined in
+<code>R/functions_rdrobust.R</code>. Below, we generate samples based on
+Lee (2008), set options for the <code>rdrobust</code> package, and
+explain the interpretation of the results.</p>
+<div id="generating-simulation-data" class="section level1" number="1">
+<h1><span class="header-section-number">1</span> Generating Simulation
+Data</h1>
+<div id="setting-constants-and-parameters" class="section level2" number="1.1">
+<h2><span class="header-section-number">1.1</span> Setting Constants and
+Parameters</h2>
+<p>First, fix the seed and set the number of individuals
+<code>N</code>.</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
-<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>dqrng<span class="sc">::</span><span class="fu">dqset.seed</span>(<span class="dv">1</span>)</span>
-<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>N <span class="ot">&lt;-</span> <span class="dv">50</span></span>
-<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>N_C <span class="ot">&lt;-</span> <span class="dv">100</span></span>
-<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>N_M <span class="ot">&lt;-</span> <span class="dv">5000</span></span>
-<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a>N_B <span class="ot">&lt;-</span> <span class="dv">9999</span></span></code></pre></div>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>data <span class="ot">&lt;-</span> </span>
-<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>  AppliedEconometricsCode<span class="sc">::</span><span class="fu">return_dgp_cluster</span>(</span>
-<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>    <span class="at">N =</span> N,</span>
-<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>    <span class="at">N_C =</span> N_C</span>
-<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>  )</span></code></pre></div>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>lm_fit <span class="ot">&lt;-</span> </span>
-<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>  <span class="fu">lm</span>(</span>
-<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>    Y <span class="sc">~</span> X,</span>
-<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>    <span class="at">data =</span> data</span>
-<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>  )</span></code></pre></div>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">cat</span>(</span>
-<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>  <span class="st">&quot;Heteroskedasticity-robust t-statistics&quot;</span>, </span>
-<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  <span class="fu">summary</span>(lm_fit)<span class="sc">$</span>coefficients[<span class="dv">2</span>,<span class="dv">3</span>], </span>
-<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>  <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span></span>
-<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>)</span></code></pre></div>
-<pre><code>## Heteroskedasticity-robust t-statistics 0.3206339</code></pre>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>vc_cr0 <span class="ot">&lt;-</span> </span>
-<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>  clubSandwich<span class="sc">::</span><span class="fu">vcovCR</span>(</span>
-<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>    lm_fit,</span>
-<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>    <span class="at">cluster =</span> data<span class="sc">$</span>C,</span>
-<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>    <span class="at">type =</span> <span class="st">&quot;CR0&quot;</span></span>
-<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>  )</span></code></pre></div>
-<pre><code>## Registered S3 method overwritten by &#39;clubSandwich&#39;:
-##   method    from    
-##   bread.mlm sandwich</code></pre>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>vc_cr3 <span class="ot">&lt;-</span> </span>
-<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>  clubSandwich<span class="sc">::</span><span class="fu">vcovCR</span>(</span>
-<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>    lm_fit,</span>
-<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>    <span class="at">cluster =</span> data<span class="sc">$</span>C,</span>
-<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>    <span class="at">type =</span> <span class="st">&quot;CR3&quot;</span></span>
-<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>  )</span>
-<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a></span>
-<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="fu">cat</span>(</span>
-<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a>  <span class="st">&quot;Cluster-robust t-statistics, CR0&quot;</span>, </span>
-<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a>  clubSandwich<span class="sc">::</span><span class="fu">coef_test</span>(</span>
-<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a>    lm_fit,</span>
-<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a>    vc_cr0,</span>
-<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a>    <span class="at">coefs =</span> <span class="st">&quot;X&quot;</span></span>
-<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a>  )<span class="sc">$</span>tstat, </span>
-<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a>  <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span></span>
-<span id="cb8-16"><a href="#cb8-16" tabindex="-1"></a>)</span></code></pre></div>
-<pre><code>## Cluster-robust t-statistics, CR0 0.2098906</code></pre>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">cat</span>(</span>
-<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>  <span class="st">&quot;Cluster-robust t-statistics, CR3&quot;</span>, </span>
-<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  clubSandwich<span class="sc">::</span><span class="fu">coef_test</span>(</span>
-<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>    lm_fit,</span>
-<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>    vc_cr3,</span>
-<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>    <span class="at">coefs =</span> <span class="st">&quot;X&quot;</span></span>
-<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a>  )<span class="sc">$</span>tstat, </span>
-<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a>  <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span></span>
-<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a>)</span></code></pre></div>
-<pre><code>## Cluster-robust t-statistics, CR3 0.2073183</code></pre>
-<p>The function <code>fwildclusterboot::boottest</code> gives the
-estimated statistics based on wild cluster-bootstrap.</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>p_val_w <span class="ot">&lt;-</span> </span>
-<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>  fwildclusterboot<span class="sc">::</span><span class="fu">boottest</span>(</span>
-<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>    <span class="at">object =</span> lm_fit,</span>
-<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>    <span class="at">clustid =</span> <span class="st">&quot;C&quot;</span>,</span>
-<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>    <span class="at">param =</span> <span class="st">&quot;X&quot;</span>,</span>
-<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>    <span class="at">B =</span> N_B,</span>
-<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a>    <span class="at">type =</span> <span class="st">&quot;webb&quot;</span></span>
-<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a>  )<span class="sc">$</span>p_val</span></code></pre></div>
-<pre><code>## Warning: Please note that the seeding behavior for random number generation for
-## `boottest()` has changed with `fwildclusterboot` version 0.13.
-## 
-## It will no longer be possible to exactly reproduce results produced by versions
-## lower than 0.13.
-## 
-## If your prior results were produced under sufficiently many bootstrap
-## iterations, none of your conclusions will change.  For more details about this
-## change, please read the notes in
-## [news.md](https://cran.r-project.org/web/packages/fwildclusterboot/news/news.html).
-## This warning is displayed once per session.</code></pre>
-<pre><code>## Too guarantee reproducibility, don&#39;t forget to set a global random seed
-## **both** via `set.seed()` and `dqrng::dqset.seed()`.
-## This message is displayed once every 8 hours.</code></pre>
-<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Wild cluster-bootstrap p-value&quot;</span>, p_val_w, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code></pre></div>
-<pre><code>## Wild cluster-bootstrap p-value 0.8324832</code></pre>
-<p>When <code>N_C</code> is <code>100</code>, the result of
-<code>5000</code> simulations is as follows.</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a>t_w <span class="ot">&lt;-</span> </span>
-<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a>  <span class="fu">rep</span>(</span>
-<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a>    <span class="cn">NA</span>,</span>
-<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a>    N_M</span>
-<span id="cb17-5"><a href="#cb17-5" tabindex="-1"></a>  )</span>
-<span id="cb17-6"><a href="#cb17-6" tabindex="-1"></a>t_cr0 <span class="ot">&lt;-</span> </span>
-<span id="cb17-7"><a href="#cb17-7" tabindex="-1"></a>  <span class="fu">rep</span>(</span>
-<span id="cb17-8"><a href="#cb17-8" tabindex="-1"></a>    <span class="cn">NA</span>,</span>
-<span id="cb17-9"><a href="#cb17-9" tabindex="-1"></a>    N_M</span>
-<span id="cb17-10"><a href="#cb17-10" tabindex="-1"></a>  )</span>
-<span id="cb17-11"><a href="#cb17-11" tabindex="-1"></a>t_cr3 <span class="ot">&lt;-</span> </span>
-<span id="cb17-12"><a href="#cb17-12" tabindex="-1"></a>  <span class="fu">rep</span>(</span>
-<span id="cb17-13"><a href="#cb17-13" tabindex="-1"></a>    <span class="cn">NA</span>,</span>
-<span id="cb17-14"><a href="#cb17-14" tabindex="-1"></a>    N_M</span>
-<span id="cb17-15"><a href="#cb17-15" tabindex="-1"></a>  )</span>
-<span id="cb17-16"><a href="#cb17-16" tabindex="-1"></a>p_cr_w <span class="ot">&lt;-</span> </span>
-<span id="cb17-17"><a href="#cb17-17" tabindex="-1"></a>  <span class="fu">rep</span>(</span>
-<span id="cb17-18"><a href="#cb17-18" tabindex="-1"></a>    <span class="cn">NA</span>,</span>
-<span id="cb17-19"><a href="#cb17-19" tabindex="-1"></a>    N_M</span>
-<span id="cb17-20"><a href="#cb17-20" tabindex="-1"></a>  )</span>
-<span id="cb17-21"><a href="#cb17-21" tabindex="-1"></a><span class="cf">for</span> (</span>
-<span id="cb17-22"><a href="#cb17-22" tabindex="-1"></a>  i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>N_M</span>
-<span id="cb17-23"><a href="#cb17-23" tabindex="-1"></a>) {</span>
-<span id="cb17-24"><a href="#cb17-24" tabindex="-1"></a>  data <span class="ot">&lt;-</span> </span>
-<span id="cb17-25"><a href="#cb17-25" tabindex="-1"></a>    AppliedEconometricsCode<span class="sc">::</span><span class="fu">return_dgp_cluster</span>(</span>
-<span id="cb17-26"><a href="#cb17-26" tabindex="-1"></a>      <span class="at">N =</span> N,</span>
-<span id="cb17-27"><a href="#cb17-27" tabindex="-1"></a>      <span class="at">N_C =</span> N_C</span>
-<span id="cb17-28"><a href="#cb17-28" tabindex="-1"></a>    )</span>
-<span id="cb17-29"><a href="#cb17-29" tabindex="-1"></a></span>
-<span id="cb17-30"><a href="#cb17-30" tabindex="-1"></a>  lm_fit <span class="ot">&lt;-</span> </span>
-<span id="cb17-31"><a href="#cb17-31" tabindex="-1"></a>    <span class="fu">lm</span>(</span>
-<span id="cb17-32"><a href="#cb17-32" tabindex="-1"></a>      Y <span class="sc">~</span> X,</span>
-<span id="cb17-33"><a href="#cb17-33" tabindex="-1"></a>      <span class="at">data =</span> data</span>
-<span id="cb17-34"><a href="#cb17-34" tabindex="-1"></a>    )</span>
-<span id="cb17-35"><a href="#cb17-35" tabindex="-1"></a>  </span>
-<span id="cb17-36"><a href="#cb17-36" tabindex="-1"></a>  t_w[i] <span class="ot">&lt;-</span> <span class="fu">summary</span>(lm_fit)<span class="sc">$</span>coefficients[<span class="dv">2</span>,<span class="dv">3</span>]</span>
-<span id="cb17-37"><a href="#cb17-37" tabindex="-1"></a></span>
-<span id="cb17-38"><a href="#cb17-38" tabindex="-1"></a>  vc_cr0 <span class="ot">&lt;-</span> </span>
-<span id="cb17-39"><a href="#cb17-39" tabindex="-1"></a>    clubSandwich<span class="sc">::</span><span class="fu">vcovCR</span>(</span>
-<span id="cb17-40"><a href="#cb17-40" tabindex="-1"></a>      lm_fit,</span>
-<span id="cb17-41"><a href="#cb17-41" tabindex="-1"></a>      <span class="at">cluster =</span> data<span class="sc">$</span>C,</span>
-<span id="cb17-42"><a href="#cb17-42" tabindex="-1"></a>      <span class="at">type =</span> <span class="st">&quot;CR0&quot;</span></span>
-<span id="cb17-43"><a href="#cb17-43" tabindex="-1"></a>    )</span>
-<span id="cb17-44"><a href="#cb17-44" tabindex="-1"></a>  </span>
-<span id="cb17-45"><a href="#cb17-45" tabindex="-1"></a>  vc_cr3 <span class="ot">&lt;-</span> </span>
-<span id="cb17-46"><a href="#cb17-46" tabindex="-1"></a>    clubSandwich<span class="sc">::</span><span class="fu">vcovCR</span>(</span>
-<span id="cb17-47"><a href="#cb17-47" tabindex="-1"></a>      lm_fit,</span>
-<span id="cb17-48"><a href="#cb17-48" tabindex="-1"></a>      <span class="at">cluster =</span> data<span class="sc">$</span>C,</span>
-<span id="cb17-49"><a href="#cb17-49" tabindex="-1"></a>      <span class="at">type =</span> <span class="st">&quot;CR3&quot;</span></span>
-<span id="cb17-50"><a href="#cb17-50" tabindex="-1"></a>    )</span>
-<span id="cb17-51"><a href="#cb17-51" tabindex="-1"></a></span>
-<span id="cb17-52"><a href="#cb17-52" tabindex="-1"></a>  t_cr0[i] <span class="ot">&lt;-</span> </span>
-<span id="cb17-53"><a href="#cb17-53" tabindex="-1"></a>    clubSandwich<span class="sc">::</span><span class="fu">coef_test</span>(</span>
-<span id="cb17-54"><a href="#cb17-54" tabindex="-1"></a>      lm_fit,</span>
-<span id="cb17-55"><a href="#cb17-55" tabindex="-1"></a>      vc_cr0,</span>
-<span id="cb17-56"><a href="#cb17-56" tabindex="-1"></a>      <span class="at">coefs =</span> <span class="st">&quot;X&quot;</span></span>
-<span id="cb17-57"><a href="#cb17-57" tabindex="-1"></a>    )<span class="sc">$</span>tstat</span>
-<span id="cb17-58"><a href="#cb17-58" tabindex="-1"></a>  </span>
-<span id="cb17-59"><a href="#cb17-59" tabindex="-1"></a>  t_cr3[i] <span class="ot">&lt;-</span> </span>
-<span id="cb17-60"><a href="#cb17-60" tabindex="-1"></a>    clubSandwich<span class="sc">::</span><span class="fu">coef_test</span>(</span>
-<span id="cb17-61"><a href="#cb17-61" tabindex="-1"></a>      lm_fit,</span>
-<span id="cb17-62"><a href="#cb17-62" tabindex="-1"></a>      vc_cr3,</span>
-<span id="cb17-63"><a href="#cb17-63" tabindex="-1"></a>      <span class="at">coefs =</span> <span class="st">&quot;X&quot;</span></span>
-<span id="cb17-64"><a href="#cb17-64" tabindex="-1"></a>    )<span class="sc">$</span>tstat</span>
-<span id="cb17-65"><a href="#cb17-65" tabindex="-1"></a></span>
-<span id="cb17-66"><a href="#cb17-66" tabindex="-1"></a>  <span class="fu">invisible</span>(</span>
-<span id="cb17-67"><a href="#cb17-67" tabindex="-1"></a>    <span class="fu">capture.output</span>(</span>
-<span id="cb17-68"><a href="#cb17-68" tabindex="-1"></a>      boot_lm <span class="ot">&lt;-</span> </span>
-<span id="cb17-69"><a href="#cb17-69" tabindex="-1"></a>        fwildclusterboot<span class="sc">::</span><span class="fu">boottest</span>(</span>
-<span id="cb17-70"><a href="#cb17-70" tabindex="-1"></a>          <span class="at">object =</span> lm_fit,</span>
-<span id="cb17-71"><a href="#cb17-71" tabindex="-1"></a>          <span class="at">clustid =</span> <span class="st">&quot;C&quot;</span>,</span>
-<span id="cb17-72"><a href="#cb17-72" tabindex="-1"></a>          <span class="at">param =</span> <span class="st">&quot;X&quot;</span>,</span>
-<span id="cb17-73"><a href="#cb17-73" tabindex="-1"></a>          <span class="at">B =</span> N_B,</span>
-<span id="cb17-74"><a href="#cb17-74" tabindex="-1"></a>          <span class="at">type =</span> <span class="st">&quot;webb&quot;</span></span>
-<span id="cb17-75"><a href="#cb17-75" tabindex="-1"></a>        )</span>
-<span id="cb17-76"><a href="#cb17-76" tabindex="-1"></a>      )</span>
-<span id="cb17-77"><a href="#cb17-77" tabindex="-1"></a>    )</span>
-<span id="cb17-78"><a href="#cb17-78" tabindex="-1"></a>    </span>
-<span id="cb17-79"><a href="#cb17-79" tabindex="-1"></a>  <span class="fu">invisible</span>(</span>
-<span id="cb17-80"><a href="#cb17-80" tabindex="-1"></a>    <span class="fu">capture.output</span>(</span>
-<span id="cb17-81"><a href="#cb17-81" tabindex="-1"></a>      p_cr_w[i] <span class="ot">&lt;-</span> boot_lm<span class="sc">$</span>p_val</span>
-<span id="cb17-82"><a href="#cb17-82" tabindex="-1"></a>    )</span>
-<span id="cb17-83"><a href="#cb17-83" tabindex="-1"></a>  )</span>
-<span id="cb17-84"><a href="#cb17-84" tabindex="-1"></a>}</span></code></pre></div>
-<p>The (false) rejection probability based on heteroskedasticity-robust
-variance estimation:</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a><span class="fu">mean</span>(<span class="fu">abs</span>(t_w) <span class="sc">&gt;=</span> <span class="fl">1.965</span>)</span></code></pre></div>
-<pre><code>## [1] 0.0576</code></pre>
-<p>The (false) rejection probability based on cluster-robust variance
-estimation, CR0:</p>
-<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a><span class="fu">mean</span>(<span class="fu">abs</span>(t_cr0) <span class="sc">&gt;=</span> <span class="fl">1.965</span>)</span></code></pre></div>
-<pre><code>## [1] 0.002</code></pre>
-<p>The (false) rejection probability based on cluster-robust variance
-estimation, CR3:</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" tabindex="-1"></a><span class="fu">mean</span>(<span class="fu">abs</span>(t_cr3) <span class="sc">&gt;=</span> <span class="fl">1.965</span>)</span></code></pre></div>
-<pre><code>## [1] 0.002</code></pre>
-<p>The (false) rejection probability based on wild-cluster
-bootstrap:</p>
-<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" tabindex="-1"></a><span class="fu">mean</span>(p_cr_w <span class="sc">&lt;</span> <span class="fl">0.05</span>)</span></code></pre></div>
-<pre><code>## [1] 0.002</code></pre>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>N <span class="ot">&lt;-</span> <span class="dv">1000</span></span></code></pre></div>
 </div>
-<div id="the-case-of-quite-a-few-clusters-1" class="section level1" number="2">
-<h1><span class="header-section-number">2</span> The Case of Quite a Few
-Clusters</h1>
-<p>When <code>N_C</code> is <code>10</code>, it is difficult to say that
-the number of clusters is sufficient for cluster-robust estimation.</p>
-<p>In addition, the default <code>type=rademacher</code> of
-<code>boottest</code> gives a warning that there are limited values of
-the statistics when the number of clusters is around <code>10</code>. If
-you use <code>type=webb</code>, it gives weights of
-<code>-(1/2)^{1/2}</code>,<code>-(3/2)^{1/2}</code>,
-<code>(1/2)^{1/2}</code>, <code>(3/2)^{1/2}</code>, in addition to
-<code>-1</code> and <code>1</code>.</p>
-<p><a href="https://ideas.repec.org/p/qed/wpaper/1315.html">Webb, M. D.
-2014. Reworking wild bootstrap based inference for clustered errors.
-Queen’s University, Department of Economics, Working Paper
-No. 1315</a></p>
-<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
-<span id="cb26-2"><a href="#cb26-2" tabindex="-1"></a>dqrng<span class="sc">::</span><span class="fu">dqset.seed</span>(<span class="dv">1</span>)</span>
-<span id="cb26-3"><a href="#cb26-3" tabindex="-1"></a>N <span class="ot">&lt;-</span> <span class="dv">50</span></span>
-<span id="cb26-4"><a href="#cb26-4" tabindex="-1"></a>N_C <span class="ot">&lt;-</span> <span class="dv">10</span></span>
-<span id="cb26-5"><a href="#cb26-5" tabindex="-1"></a>N_M <span class="ot">&lt;-</span> <span class="dv">5000</span></span>
-<span id="cb26-6"><a href="#cb26-6" tabindex="-1"></a>N_B <span class="ot">&lt;-</span> <span class="dv">9999</span></span></code></pre></div>
-<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" tabindex="-1"></a>data <span class="ot">&lt;-</span> </span>
-<span id="cb27-2"><a href="#cb27-2" tabindex="-1"></a>  AppliedEconometricsCode<span class="sc">::</span><span class="fu">return_dgp_cluster</span>(</span>
-<span id="cb27-3"><a href="#cb27-3" tabindex="-1"></a>    <span class="at">N =</span> N,</span>
-<span id="cb27-4"><a href="#cb27-4" tabindex="-1"></a>    <span class="at">N_C =</span> N_C</span>
-<span id="cb27-5"><a href="#cb27-5" tabindex="-1"></a>  )</span></code></pre></div>
-<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" tabindex="-1"></a>lm_fit <span class="ot">&lt;-</span> </span>
-<span id="cb28-2"><a href="#cb28-2" tabindex="-1"></a>  <span class="fu">lm</span>(</span>
-<span id="cb28-3"><a href="#cb28-3" tabindex="-1"></a>    Y <span class="sc">~</span> X,</span>
-<span id="cb28-4"><a href="#cb28-4" tabindex="-1"></a>    <span class="at">data =</span> data</span>
-<span id="cb28-5"><a href="#cb28-5" tabindex="-1"></a>  )</span>
-<span id="cb28-6"><a href="#cb28-6" tabindex="-1"></a></span>
-<span id="cb28-7"><a href="#cb28-7" tabindex="-1"></a>boot_lm <span class="ot">&lt;-</span> </span>
-<span id="cb28-8"><a href="#cb28-8" tabindex="-1"></a>  fwildclusterboot<span class="sc">::</span><span class="fu">boottest</span>(</span>
-<span id="cb28-9"><a href="#cb28-9" tabindex="-1"></a>    <span class="at">object =</span> lm_fit, </span>
-<span id="cb28-10"><a href="#cb28-10" tabindex="-1"></a>    <span class="at">clustid =</span> <span class="st">&quot;C&quot;</span>,</span>
-<span id="cb28-11"><a href="#cb28-11" tabindex="-1"></a>    <span class="at">param =</span> <span class="st">&quot;X&quot;</span>,</span>
-<span id="cb28-12"><a href="#cb28-12" tabindex="-1"></a>    <span class="at">B =</span> N_B</span>
-<span id="cb28-13"><a href="#cb28-13" tabindex="-1"></a>  )</span></code></pre></div>
-<pre><code>## Warning: There are only 1024 unique draws from the rademacher distribution for 10
-## bootstrap clusters. Therefore, B = 1024 with full enumeration. Consider using
-## webb weights instead. Further, note that under full enumeration and with B =
-## 1024 bootstrap draws, only 2^(#clusters - 1) = 512 distinct t-statistics and
-## p-values can be computed. For a more thorough discussion, see Webb `Reworking
-## wild bootstrap based inference for clustered errors` (2013).</code></pre>
-<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" tabindex="-1"></a><span class="fu">summary</span>(boot_lm)<span class="sc">$</span>statistic</span></code></pre></div>
-<pre><code>## boottest.lm(object = lm_fit, param = &quot;X&quot;, B = N_B, clustid = &quot;C&quot;)
-##  
-##  Hypothesis: 1*X = 0
-##  Observations: 500
-##   Bootstr. Type: rademacher
-##  Clustering: 1-way
-##  Confidence Sets: 95%
-##  Number of Clusters: 10
-## </code></pre>
-<pre><code>## [1] 0.231</code></pre>
-<p>。 When <code>N_C</code> is <code>10</code>, the result of
-<code>5000</code> simulations is as follows.</p>
-<div class="sourceCode" id="cb33"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" tabindex="-1"></a>t_w <span class="ot">&lt;-</span> </span>
-<span id="cb33-2"><a href="#cb33-2" tabindex="-1"></a>  <span class="fu">rep</span>(</span>
-<span id="cb33-3"><a href="#cb33-3" tabindex="-1"></a>    <span class="cn">NA</span>,</span>
-<span id="cb33-4"><a href="#cb33-4" tabindex="-1"></a>    N_M</span>
-<span id="cb33-5"><a href="#cb33-5" tabindex="-1"></a>  )</span>
-<span id="cb33-6"><a href="#cb33-6" tabindex="-1"></a>t_cr0 <span class="ot">&lt;-</span> </span>
-<span id="cb33-7"><a href="#cb33-7" tabindex="-1"></a>  <span class="fu">rep</span>(</span>
-<span id="cb33-8"><a href="#cb33-8" tabindex="-1"></a>    <span class="cn">NA</span>,</span>
-<span id="cb33-9"><a href="#cb33-9" tabindex="-1"></a>    N_M</span>
-<span id="cb33-10"><a href="#cb33-10" tabindex="-1"></a>  )</span>
-<span id="cb33-11"><a href="#cb33-11" tabindex="-1"></a>t_cr3 <span class="ot">&lt;-</span> </span>
-<span id="cb33-12"><a href="#cb33-12" tabindex="-1"></a>  <span class="fu">rep</span>(</span>
-<span id="cb33-13"><a href="#cb33-13" tabindex="-1"></a>    <span class="cn">NA</span>,</span>
-<span id="cb33-14"><a href="#cb33-14" tabindex="-1"></a>    N_M</span>
-<span id="cb33-15"><a href="#cb33-15" tabindex="-1"></a>  )</span>
-<span id="cb33-16"><a href="#cb33-16" tabindex="-1"></a>p_cr_w <span class="ot">&lt;-</span> </span>
-<span id="cb33-17"><a href="#cb33-17" tabindex="-1"></a>  <span class="fu">rep</span>(</span>
-<span id="cb33-18"><a href="#cb33-18" tabindex="-1"></a>    <span class="cn">NA</span>,</span>
-<span id="cb33-19"><a href="#cb33-19" tabindex="-1"></a>    N_M</span>
-<span id="cb33-20"><a href="#cb33-20" tabindex="-1"></a>  )</span>
-<span id="cb33-21"><a href="#cb33-21" tabindex="-1"></a></span>
-<span id="cb33-22"><a href="#cb33-22" tabindex="-1"></a><span class="cf">for</span> (</span>
-<span id="cb33-23"><a href="#cb33-23" tabindex="-1"></a>  i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>N_M</span>
-<span id="cb33-24"><a href="#cb33-24" tabindex="-1"></a>  ) {</span>
-<span id="cb33-25"><a href="#cb33-25" tabindex="-1"></a></span>
-<span id="cb33-26"><a href="#cb33-26" tabindex="-1"></a>  data <span class="ot">&lt;-</span> </span>
-<span id="cb33-27"><a href="#cb33-27" tabindex="-1"></a>    AppliedEconometricsCode<span class="sc">::</span><span class="fu">return_dgp_cluster</span>(</span>
-<span id="cb33-28"><a href="#cb33-28" tabindex="-1"></a>      <span class="at">N =</span> N,</span>
-<span id="cb33-29"><a href="#cb33-29" tabindex="-1"></a>      <span class="at">N_C =</span> N_C</span>
-<span id="cb33-30"><a href="#cb33-30" tabindex="-1"></a>    )</span>
-<span id="cb33-31"><a href="#cb33-31" tabindex="-1"></a></span>
-<span id="cb33-32"><a href="#cb33-32" tabindex="-1"></a>  lm_fit <span class="ot">&lt;-</span> </span>
-<span id="cb33-33"><a href="#cb33-33" tabindex="-1"></a>    <span class="fu">lm</span>(</span>
-<span id="cb33-34"><a href="#cb33-34" tabindex="-1"></a>      Y <span class="sc">~</span> X,</span>
-<span id="cb33-35"><a href="#cb33-35" tabindex="-1"></a>      <span class="at">data =</span> data</span>
-<span id="cb33-36"><a href="#cb33-36" tabindex="-1"></a>    )</span>
-<span id="cb33-37"><a href="#cb33-37" tabindex="-1"></a></span>
-<span id="cb33-38"><a href="#cb33-38" tabindex="-1"></a>  t_w[i] <span class="ot">&lt;-</span> <span class="fu">summary</span>(lm_fit)<span class="sc">$</span>coefficients[<span class="dv">2</span>,<span class="dv">3</span>]</span>
-<span id="cb33-39"><a href="#cb33-39" tabindex="-1"></a></span>
-<span id="cb33-40"><a href="#cb33-40" tabindex="-1"></a>  vc_cr0 <span class="ot">&lt;-</span> </span>
-<span id="cb33-41"><a href="#cb33-41" tabindex="-1"></a>    clubSandwich<span class="sc">::</span><span class="fu">vcovCR</span>(</span>
-<span id="cb33-42"><a href="#cb33-42" tabindex="-1"></a>      lm_fit,</span>
-<span id="cb33-43"><a href="#cb33-43" tabindex="-1"></a>      <span class="at">cluster =</span> data<span class="sc">$</span>C,</span>
-<span id="cb33-44"><a href="#cb33-44" tabindex="-1"></a>      <span class="at">type =</span> <span class="st">&quot;CR0&quot;</span></span>
-<span id="cb33-45"><a href="#cb33-45" tabindex="-1"></a>    )</span>
-<span id="cb33-46"><a href="#cb33-46" tabindex="-1"></a></span>
-<span id="cb33-47"><a href="#cb33-47" tabindex="-1"></a>  vc_cr3 <span class="ot">&lt;-</span> </span>
-<span id="cb33-48"><a href="#cb33-48" tabindex="-1"></a>    clubSandwich<span class="sc">::</span><span class="fu">vcovCR</span>(</span>
-<span id="cb33-49"><a href="#cb33-49" tabindex="-1"></a>      lm_fit,</span>
-<span id="cb33-50"><a href="#cb33-50" tabindex="-1"></a>      <span class="at">cluster =</span> data<span class="sc">$</span>C,</span>
-<span id="cb33-51"><a href="#cb33-51" tabindex="-1"></a>      <span class="at">type =</span> <span class="st">&quot;CR3&quot;</span></span>
-<span id="cb33-52"><a href="#cb33-52" tabindex="-1"></a>    )</span>
-<span id="cb33-53"><a href="#cb33-53" tabindex="-1"></a></span>
-<span id="cb33-54"><a href="#cb33-54" tabindex="-1"></a>  t_cr0[i] <span class="ot">&lt;-</span> </span>
-<span id="cb33-55"><a href="#cb33-55" tabindex="-1"></a>    clubSandwich<span class="sc">::</span><span class="fu">coef_test</span>(</span>
-<span id="cb33-56"><a href="#cb33-56" tabindex="-1"></a>      lm_fit,</span>
-<span id="cb33-57"><a href="#cb33-57" tabindex="-1"></a>      vc_cr0,</span>
-<span id="cb33-58"><a href="#cb33-58" tabindex="-1"></a>      <span class="at">coefs =</span> <span class="st">&quot;X&quot;</span></span>
-<span id="cb33-59"><a href="#cb33-59" tabindex="-1"></a>    )<span class="sc">$</span>tstat</span>
-<span id="cb33-60"><a href="#cb33-60" tabindex="-1"></a></span>
-<span id="cb33-61"><a href="#cb33-61" tabindex="-1"></a>  t_cr3[i] <span class="ot">&lt;-</span> </span>
-<span id="cb33-62"><a href="#cb33-62" tabindex="-1"></a>    clubSandwich<span class="sc">::</span><span class="fu">coef_test</span>(</span>
-<span id="cb33-63"><a href="#cb33-63" tabindex="-1"></a>      lm_fit,</span>
-<span id="cb33-64"><a href="#cb33-64" tabindex="-1"></a>      vc_cr3,</span>
-<span id="cb33-65"><a href="#cb33-65" tabindex="-1"></a>      <span class="at">coefs =</span> <span class="st">&quot;X&quot;</span></span>
-<span id="cb33-66"><a href="#cb33-66" tabindex="-1"></a>    )<span class="sc">$</span>tstat</span>
-<span id="cb33-67"><a href="#cb33-67" tabindex="-1"></a></span>
-<span id="cb33-68"><a href="#cb33-68" tabindex="-1"></a>  <span class="fu">invisible</span>(</span>
-<span id="cb33-69"><a href="#cb33-69" tabindex="-1"></a>    <span class="fu">capture.output</span>(</span>
-<span id="cb33-70"><a href="#cb33-70" tabindex="-1"></a>      boot_lm <span class="ot">&lt;-</span> </span>
-<span id="cb33-71"><a href="#cb33-71" tabindex="-1"></a>        fwildclusterboot<span class="sc">::</span><span class="fu">boottest</span>(</span>
-<span id="cb33-72"><a href="#cb33-72" tabindex="-1"></a>          <span class="at">object =</span> lm_fit,</span>
-<span id="cb33-73"><a href="#cb33-73" tabindex="-1"></a>          <span class="at">clustid =</span> <span class="st">&quot;C&quot;</span>,</span>
-<span id="cb33-74"><a href="#cb33-74" tabindex="-1"></a>          <span class="at">param =</span> <span class="st">&quot;X&quot;</span>,</span>
-<span id="cb33-75"><a href="#cb33-75" tabindex="-1"></a>          <span class="at">B =</span> N_B,</span>
-<span id="cb33-76"><a href="#cb33-76" tabindex="-1"></a>          <span class="at">type =</span> <span class="st">&quot;webb&quot;</span></span>
-<span id="cb33-77"><a href="#cb33-77" tabindex="-1"></a>        )</span>
-<span id="cb33-78"><a href="#cb33-78" tabindex="-1"></a>      )</span>
-<span id="cb33-79"><a href="#cb33-79" tabindex="-1"></a>    )</span>
-<span id="cb33-80"><a href="#cb33-80" tabindex="-1"></a>  <span class="fu">invisible</span>(</span>
-<span id="cb33-81"><a href="#cb33-81" tabindex="-1"></a>    <span class="fu">capture.output</span>(</span>
-<span id="cb33-82"><a href="#cb33-82" tabindex="-1"></a>      p_cr_w[i] <span class="ot">&lt;-</span> boot_lm<span class="sc">$</span>p_val</span>
-<span id="cb33-83"><a href="#cb33-83" tabindex="-1"></a>    )</span>
-<span id="cb33-84"><a href="#cb33-84" tabindex="-1"></a>  )</span>
-<span id="cb33-85"><a href="#cb33-85" tabindex="-1"></a>}</span></code></pre></div>
-<p>The (false) rejection probability based on heteroskedasticity-robust
-variance estimation:</p>
-<div class="sourceCode" id="cb34"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" tabindex="-1"></a><span class="fu">mean</span>(<span class="fu">abs</span>(t_w) <span class="sc">&gt;=</span> <span class="fl">1.965</span>)</span></code></pre></div>
-<pre><code>## [1] 0.0614</code></pre>
-<p>The (false) rejection probability based on cluster-robust variance
-estimation, CR0:</p>
-<div class="sourceCode" id="cb36"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" tabindex="-1"></a><span class="fu">mean</span>(<span class="fu">abs</span>(t_cr0) <span class="sc">&gt;=</span> <span class="fl">1.965</span>)</span></code></pre></div>
-<pre><code>## [1] 0.0062</code></pre>
-<p>The (false) rejection probability based on cluster-robust variance
-estimation, CR3:</p>
-<div class="sourceCode" id="cb38"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" tabindex="-1"></a><span class="fu">mean</span>(<span class="fu">abs</span>(t_cr3) <span class="sc">&gt;=</span> <span class="fl">1.965</span>)</span></code></pre></div>
-<pre><code>## [1] 0.0022</code></pre>
-<p>The (false) rejection probability based on wild-cluster
-bootstrap:</p>
-<div class="sourceCode" id="cb40"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" tabindex="-1"></a><span class="fu">mean</span>(p_cr_w <span class="sc">&lt;</span> <span class="fl">0.05</span>)</span></code></pre></div>
-<pre><code>## [1] 0.0018</code></pre>
+<div id="generating-data" class="section level2" number="1.2">
+<h2><span class="header-section-number">1.2</span> Generating Data</h2>
+<p>Next, we generate samples for the fuzzy RD design. The conditional
+expectation function used for data generation is the same as the one
+used in the <code>rdrobust</code> simulations, similar to Lee (2008).
+There are two differences from the sharp design:</p>
+<ul>
+<li>The potential outcome function is defined based on the treatment
+variable <code>d</code> with noncompliance, not the instrumental
+variable <code>z</code>.</li>
+<li>The effect size is increased to detect effects even with
+noncompliance.</li>
+</ul>
+<p>The increased effect size of the induced model, i.e., ITT, is
+<code>0.24</code>, and since the compliance rate is <code>0.6</code>,
+the LATE is <code>0.4</code>. Here, the treatment variable is assumed to
+follow a probit model.</p>
+<span class="math display">\[\begin{align*}
+d =&amp; 1\{\Psi^{-1}(0.3(1 + 0.5 s) + 0.4z) \leq \epsilon_i\},
+\epsilon_i \sim N(0,1)\\
+z =&amp; 1\{s \geq 0\}, \Psi(x) = P(\epsilon_i \leq x),\\
+y =&amp; y^*(1)d + y^*(0)(1 - d)
+\end{align*}\]</span>
+<p>Generate Lee data and name it <code>dgp_lee</code>.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>dgp_lee <span class="ot">&lt;-</span> </span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>  <span class="fu">generate_dgp_lee_fuzzy</span>(</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>    <span class="at">N =</span> N</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>  )</span></code></pre></div>
 </div>
-<div id="the-case-of-extremely-few-clusters" class="section level1" number="3">
-<h1><span class="header-section-number">3</span> The Case of Extremely
-Few Clusters</h1>
-<p>When <code>N_C</code> is <code>5</code>, the result of
-<code>5000</code> simulations is as follows.</p>
-<div class="sourceCode" id="cb42"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
-<span id="cb42-2"><a href="#cb42-2" tabindex="-1"></a>dqrng<span class="sc">::</span><span class="fu">dqset.seed</span>(<span class="dv">1</span>)</span>
-<span id="cb42-3"><a href="#cb42-3" tabindex="-1"></a>N <span class="ot">&lt;-</span> <span class="dv">100</span></span>
-<span id="cb42-4"><a href="#cb42-4" tabindex="-1"></a>N_C <span class="ot">&lt;-</span> <span class="dv">5</span></span>
-<span id="cb42-5"><a href="#cb42-5" tabindex="-1"></a>N_M <span class="ot">&lt;-</span> <span class="dv">5000</span></span>
-<span id="cb42-6"><a href="#cb42-6" tabindex="-1"></a>N_B <span class="ot">&lt;-</span> <span class="dv">9999</span></span></code></pre></div>
-<div class="sourceCode" id="cb43"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" tabindex="-1"></a>t_w <span class="ot">&lt;-</span> </span>
-<span id="cb43-2"><a href="#cb43-2" tabindex="-1"></a>  <span class="fu">rep</span>(</span>
-<span id="cb43-3"><a href="#cb43-3" tabindex="-1"></a>    <span class="cn">NA</span>,</span>
-<span id="cb43-4"><a href="#cb43-4" tabindex="-1"></a>    N_M</span>
-<span id="cb43-5"><a href="#cb43-5" tabindex="-1"></a>  )</span>
-<span id="cb43-6"><a href="#cb43-6" tabindex="-1"></a>t_cr0 <span class="ot">&lt;-</span> </span>
-<span id="cb43-7"><a href="#cb43-7" tabindex="-1"></a>  <span class="fu">rep</span>(</span>
-<span id="cb43-8"><a href="#cb43-8" tabindex="-1"></a>    <span class="cn">NA</span>,</span>
-<span id="cb43-9"><a href="#cb43-9" tabindex="-1"></a>    N_M</span>
-<span id="cb43-10"><a href="#cb43-10" tabindex="-1"></a>  )</span>
-<span id="cb43-11"><a href="#cb43-11" tabindex="-1"></a>t_cr3 <span class="ot">&lt;-</span> </span>
-<span id="cb43-12"><a href="#cb43-12" tabindex="-1"></a>  <span class="fu">rep</span>(</span>
-<span id="cb43-13"><a href="#cb43-13" tabindex="-1"></a>    <span class="cn">NA</span>,</span>
-<span id="cb43-14"><a href="#cb43-14" tabindex="-1"></a>    N_M</span>
-<span id="cb43-15"><a href="#cb43-15" tabindex="-1"></a>  )</span>
-<span id="cb43-16"><a href="#cb43-16" tabindex="-1"></a>p_cr_w <span class="ot">&lt;-</span></span>
-<span id="cb43-17"><a href="#cb43-17" tabindex="-1"></a>  <span class="fu">rep</span>(</span>
-<span id="cb43-18"><a href="#cb43-18" tabindex="-1"></a>    <span class="cn">NA</span>,</span>
-<span id="cb43-19"><a href="#cb43-19" tabindex="-1"></a>    N_M</span>
-<span id="cb43-20"><a href="#cb43-20" tabindex="-1"></a>  )</span>
-<span id="cb43-21"><a href="#cb43-21" tabindex="-1"></a></span>
-<span id="cb43-22"><a href="#cb43-22" tabindex="-1"></a><span class="cf">for</span> (</span>
-<span id="cb43-23"><a href="#cb43-23" tabindex="-1"></a>  i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>N_M</span>
-<span id="cb43-24"><a href="#cb43-24" tabindex="-1"></a>  ) {</span>
-<span id="cb43-25"><a href="#cb43-25" tabindex="-1"></a>  </span>
-<span id="cb43-26"><a href="#cb43-26" tabindex="-1"></a>  data <span class="ot">&lt;-</span> </span>
-<span id="cb43-27"><a href="#cb43-27" tabindex="-1"></a>    AppliedEconometricsCode<span class="sc">::</span><span class="fu">return_dgp_cluster</span>(</span>
-<span id="cb43-28"><a href="#cb43-28" tabindex="-1"></a>      <span class="at">N =</span> N,</span>
-<span id="cb43-29"><a href="#cb43-29" tabindex="-1"></a>      <span class="at">N_C =</span> N_C</span>
-<span id="cb43-30"><a href="#cb43-30" tabindex="-1"></a>    )</span>
-<span id="cb43-31"><a href="#cb43-31" tabindex="-1"></a></span>
-<span id="cb43-32"><a href="#cb43-32" tabindex="-1"></a>  lm_fit <span class="ot">&lt;-</span> </span>
-<span id="cb43-33"><a href="#cb43-33" tabindex="-1"></a>    <span class="fu">lm</span>(</span>
-<span id="cb43-34"><a href="#cb43-34" tabindex="-1"></a>      Y <span class="sc">~</span> X,</span>
-<span id="cb43-35"><a href="#cb43-35" tabindex="-1"></a>      <span class="at">data =</span> data</span>
-<span id="cb43-36"><a href="#cb43-36" tabindex="-1"></a>    )</span>
-<span id="cb43-37"><a href="#cb43-37" tabindex="-1"></a></span>
-<span id="cb43-38"><a href="#cb43-38" tabindex="-1"></a>  t_w[i] <span class="ot">&lt;-</span> <span class="fu">summary</span>(lm_fit)<span class="sc">$</span>coefficients[<span class="dv">2</span>,<span class="dv">3</span>]</span>
-<span id="cb43-39"><a href="#cb43-39" tabindex="-1"></a></span>
-<span id="cb43-40"><a href="#cb43-40" tabindex="-1"></a>  vc_cr0 <span class="ot">&lt;-</span> </span>
-<span id="cb43-41"><a href="#cb43-41" tabindex="-1"></a>    clubSandwich<span class="sc">::</span><span class="fu">vcovCR</span>(</span>
-<span id="cb43-42"><a href="#cb43-42" tabindex="-1"></a>      lm_fit,</span>
-<span id="cb43-43"><a href="#cb43-43" tabindex="-1"></a>      <span class="at">cluster =</span> data<span class="sc">$</span>C,</span>
-<span id="cb43-44"><a href="#cb43-44" tabindex="-1"></a>      <span class="at">type =</span> <span class="st">&quot;CR0&quot;</span></span>
-<span id="cb43-45"><a href="#cb43-45" tabindex="-1"></a>    )</span>
-<span id="cb43-46"><a href="#cb43-46" tabindex="-1"></a></span>
-<span id="cb43-47"><a href="#cb43-47" tabindex="-1"></a>  vc_cr3 <span class="ot">&lt;-</span> </span>
-<span id="cb43-48"><a href="#cb43-48" tabindex="-1"></a>    clubSandwich<span class="sc">::</span><span class="fu">vcovCR</span>(</span>
-<span id="cb43-49"><a href="#cb43-49" tabindex="-1"></a>      lm_fit,</span>
-<span id="cb43-50"><a href="#cb43-50" tabindex="-1"></a>      <span class="at">cluster =</span> data<span class="sc">$</span>C,</span>
-<span id="cb43-51"><a href="#cb43-51" tabindex="-1"></a>      <span class="at">type =</span> <span class="st">&quot;CR3&quot;</span></span>
-<span id="cb43-52"><a href="#cb43-52" tabindex="-1"></a>    )</span>
-<span id="cb43-53"><a href="#cb43-53" tabindex="-1"></a></span>
-<span id="cb43-54"><a href="#cb43-54" tabindex="-1"></a>  t_cr0[i] <span class="ot">&lt;-</span> </span>
-<span id="cb43-55"><a href="#cb43-55" tabindex="-1"></a>    clubSandwich<span class="sc">::</span><span class="fu">coef_test</span>(</span>
-<span id="cb43-56"><a href="#cb43-56" tabindex="-1"></a>      lm_fit,</span>
-<span id="cb43-57"><a href="#cb43-57" tabindex="-1"></a>      vc_cr0,</span>
-<span id="cb43-58"><a href="#cb43-58" tabindex="-1"></a>      <span class="at">coefs =</span> <span class="st">&quot;X&quot;</span></span>
-<span id="cb43-59"><a href="#cb43-59" tabindex="-1"></a>    )<span class="sc">$</span>tstat</span>
-<span id="cb43-60"><a href="#cb43-60" tabindex="-1"></a>  </span>
-<span id="cb43-61"><a href="#cb43-61" tabindex="-1"></a>  t_cr3[i] <span class="ot">&lt;-</span> </span>
-<span id="cb43-62"><a href="#cb43-62" tabindex="-1"></a>    clubSandwich<span class="sc">::</span><span class="fu">coef_test</span>(</span>
-<span id="cb43-63"><a href="#cb43-63" tabindex="-1"></a>      lm_fit,</span>
-<span id="cb43-64"><a href="#cb43-64" tabindex="-1"></a>      vc_cr3,</span>
-<span id="cb43-65"><a href="#cb43-65" tabindex="-1"></a>      <span class="at">coefs =</span> <span class="st">&quot;X&quot;</span></span>
-<span id="cb43-66"><a href="#cb43-66" tabindex="-1"></a>    )<span class="sc">$</span>tstat</span>
-<span id="cb43-67"><a href="#cb43-67" tabindex="-1"></a></span>
-<span id="cb43-68"><a href="#cb43-68" tabindex="-1"></a>  <span class="fu">invisible</span>(</span>
-<span id="cb43-69"><a href="#cb43-69" tabindex="-1"></a>    <span class="fu">capture.output</span>(</span>
-<span id="cb43-70"><a href="#cb43-70" tabindex="-1"></a>      boot_lm <span class="ot">&lt;-</span> </span>
-<span id="cb43-71"><a href="#cb43-71" tabindex="-1"></a>        fwildclusterboot<span class="sc">::</span><span class="fu">boottest</span>(</span>
-<span id="cb43-72"><a href="#cb43-72" tabindex="-1"></a>          <span class="at">object =</span> lm_fit,</span>
-<span id="cb43-73"><a href="#cb43-73" tabindex="-1"></a>          <span class="at">clustid =</span> <span class="st">&quot;C&quot;</span>,</span>
-<span id="cb43-74"><a href="#cb43-74" tabindex="-1"></a>          <span class="at">param =</span> <span class="st">&quot;X&quot;</span>,</span>
-<span id="cb43-75"><a href="#cb43-75" tabindex="-1"></a>          <span class="at">B =</span> N_B,</span>
-<span id="cb43-76"><a href="#cb43-76" tabindex="-1"></a>          <span class="at">type =</span> <span class="st">&quot;webb&quot;</span></span>
-<span id="cb43-77"><a href="#cb43-77" tabindex="-1"></a>        )</span>
-<span id="cb43-78"><a href="#cb43-78" tabindex="-1"></a>      )</span>
-<span id="cb43-79"><a href="#cb43-79" tabindex="-1"></a>    )</span>
-<span id="cb43-80"><a href="#cb43-80" tabindex="-1"></a>  <span class="fu">invisible</span>(</span>
-<span id="cb43-81"><a href="#cb43-81" tabindex="-1"></a>    <span class="fu">capture.output</span>(</span>
-<span id="cb43-82"><a href="#cb43-82" tabindex="-1"></a>      p_cr_w[i] <span class="ot">&lt;-</span> boot_lm<span class="sc">$</span>p_val</span>
-<span id="cb43-83"><a href="#cb43-83" tabindex="-1"></a>    )</span>
-<span id="cb43-84"><a href="#cb43-84" tabindex="-1"></a>  )</span>
-<span id="cb43-85"><a href="#cb43-85" tabindex="-1"></a>}</span></code></pre></div>
-<p>The (false) rejection probability based on heteroskedasticity-robust
-variance estimation:</p>
-<div class="sourceCode" id="cb44"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" tabindex="-1"></a><span class="fu">mean</span>(<span class="fu">abs</span>(t_w) <span class="sc">&gt;=</span> <span class="fl">1.965</span>)</span></code></pre></div>
-<pre><code>## [1] 0.0604</code></pre>
-<p>The (false) rejection probability based on cluster-robust variance
-estimation, CR0:</p>
-<div class="sourceCode" id="cb46"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" tabindex="-1"></a><span class="fu">mean</span>(<span class="fu">abs</span>(t_cr0) <span class="sc">&gt;=</span> <span class="fl">1.965</span>)</span></code></pre></div>
-<pre><code>## [1] 0.0012</code></pre>
-<p>The (false) rejection probability based on cluster-robust variance
-estimation, CR3:</p>
-<div class="sourceCode" id="cb48"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" tabindex="-1"></a><span class="fu">mean</span>(<span class="fu">abs</span>(t_cr3) <span class="sc">&gt;=</span> <span class="fl">1.965</span>)</span></code></pre></div>
-<pre><code>## [1] 2e-04</code></pre>
-<p>The (false) rejection probability based on wild-cluster
-bootstrap:</p>
-<div class="sourceCode" id="cb50"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" tabindex="-1"></a><span class="fu">mean</span>(p_cr_w <span class="sc">&lt;</span> <span class="fl">0.05</span>)</span></code></pre></div>
-<pre><code>## [1] 2e-04</code></pre>
+</div>
+<div id="analysis" class="section level1" number="2">
+<h1><span class="header-section-number">2</span> Analysis</h1>
+<div id="estimation-with-the-rdrobust-package" class="section level2" number="2.1">
+<h2><span class="header-section-number">2.1</span> Estimation with the
+<code>rdrobust</code> package</h2>
+<p>Similar to the sharp design, by specifying the outcome variable
+<code>y</code> and the score variable <code>x</code> to the
+<code>rdrobust</code> function, a list of results for the ITT effect can
+be obtained.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>result <span class="ot">&lt;-</span> </span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>  rdrobust<span class="sc">::</span><span class="fu">rdrobust</span>(</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>    <span class="at">y =</span> dgp_lee<span class="sc">$</span>y,</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>    <span class="at">x =</span> dgp_lee<span class="sc">$</span>s,</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>    <span class="at">all =</span> <span class="cn">TRUE</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>  )</span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="fu">summary</span>(result)</span></code></pre></div>
+<pre><code>## Sharp RD estimates using local polynomial regression.
+## 
+## Number of Obs.                 1000
+## BW type                       mserd
+## Kernel                   Triangular
+## VCE method                       NN
+## 
+## Number of Obs.                  804          196
+## Eff. Number of Obs.              84           79
+## Order est. (p)                    1            1
+## Order bias  (q)                   2            2
+## BW est. (h)                   0.126        0.126
+## BW bias (b)                   0.188        0.188
+## rho (h/b)                     0.672        0.672
+## Unique Obs.                     804          196
+## 
+## =============================================================================
+##         Method     Coef. Std. Err.         z     P&gt;|z|      [ 95% C.I. ]       
+## =============================================================================
+##   Conventional     0.157     0.042     3.770     0.000     [0.076 , 0.239]     
+## Bias-Corrected     0.171     0.042     4.106     0.000     [0.090 , 0.253]     
+##         Robust     0.171     0.048     3.581     0.000     [0.078 , 0.265]     
+## =============================================================================</code></pre>
+<p>Similarly, by using the treatment variable <code>d</code> with
+noncompliance instead of the outcome variable, the effect of the
+instrumental variable on the treatment can be obtained.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>result <span class="ot">&lt;-</span> </span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>  rdrobust<span class="sc">::</span><span class="fu">rdrobust</span>(</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>    <span class="at">y =</span> dgp_lee<span class="sc">$</span>d,</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>    <span class="at">x =</span> dgp_lee<span class="sc">$</span>s,</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>    <span class="at">all =</span> <span class="cn">TRUE</span></span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>  )</span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="fu">summary</span>(result)</span></code></pre></div>
+<pre><code>## Sharp RD estimates using local polynomial regression.
+## 
+## Number of Obs.                 1000
+## BW type                       mserd
+## Kernel                   Triangular
+## VCE method                       NN
+## 
+## Number of Obs.                  804          196
+## Eff. Number of Obs.             216          150
+## Order est. (p)                    1            1
+## Order bias  (q)                   2            2
+## BW est. (h)                   0.290        0.290
+## BW bias (b)                   0.430        0.430
+## rho (h/b)                     0.674        0.674
+## Unique Obs.                     804          196
+## 
+## =============================================================================
+##         Method     Coef. Std. Err.         z     P&gt;|z|      [ 95% C.I. ]       
+## =============================================================================
+##   Conventional     0.472     0.099     4.774     0.000     [0.278 , 0.666]     
+## Bias-Corrected     0.488     0.099     4.935     0.000     [0.294 , 0.682]     
+##         Robust     0.488     0.119     4.112     0.000     [0.255 , 0.721]     
+## =============================================================================</code></pre>
+<p>When specifying the treatment variable <code>d</code> with
+noncompliance in the <code>fuzzy</code> option, the output for the fuzzy
+RD design can be obtained.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>result <span class="ot">&lt;-</span> </span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>  rdrobust<span class="sc">::</span><span class="fu">rdrobust</span>(</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>    <span class="at">y =</span> dgp_lee<span class="sc">$</span>y,</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>    <span class="at">x =</span> dgp_lee<span class="sc">$</span>s, </span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>    <span class="at">fuzzy =</span> dgp_lee<span class="sc">$</span>d,</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>    <span class="at">all =</span> <span class="cn">TRUE</span></span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>  )</span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="fu">summary</span>(result)</span></code></pre></div>
+<pre><code>## Fuzzy RD estimates using local polynomial regression.
+## 
+## Number of Obs.                 1000
+## BW type                       mserd
+## Kernel                   Triangular
+## VCE method                       NN
+## 
+## Number of Obs.                  804          196
+## Eff. Number of Obs.             139          112
+## Order est. (p)                    1            1
+## Order bias  (q)                   2            2
+## BW est. (h)                   0.194        0.194
+## BW bias (b)                   0.286        0.286
+## rho (h/b)                     0.679        0.679
+## Unique Obs.                     804          196
+## 
+## First-stage estimates.
+## 
+## =============================================================================
+##         Method     Coef. Std. Err.         z     P&gt;|z|      [ 95% C.I. ]       
+## =============================================================================
+##   Conventional     0.484     0.118     4.095     0.000     [0.252 , 0.715]     
+## Bias-Corrected     0.497     0.118     4.209     0.000     [0.266 , 0.729]     
+##         Robust     0.497     0.139     3.566     0.000     [0.224 , 0.771]     
+## =============================================================================
+## 
+## Treatment effect estimates.
+## 
+## =============================================================================
+##         Method     Coef. Std. Err.         z     P&gt;|z|      [ 95% C.I. ]       
+## =============================================================================
+##   Conventional     0.293     0.078     3.750     0.000     [0.140 , 0.446]     
+## Bias-Corrected     0.305     0.078     3.897     0.000     [0.151 , 0.458]     
+##         Robust     0.305     0.093     3.279     0.001     [0.123 , 0.487]     
+## =============================================================================</code></pre>
+<p>The ITT was <code>0.24</code>, and the compliance rate was
+<code>0.6</code>, resulting in a LATE of <code>0.4</code>. Consequently,
+the results obtained were consistent with the data generation
+process.</p>
+</div>
 </div>
 
 
