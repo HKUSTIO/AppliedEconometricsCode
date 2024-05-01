@@ -24,7 +24,7 @@ Here, we implement difference-in-differences estimation using the `did` package.
 ```{r setup, include=FALSE}
 rm(list = ls())
 knitr::opts_chunk$set(cache = FALSE, echo = TRUE, fig.align = "center")
-library(AppliedEconometrics)
+library(AppliedEconometricsCode)
 library(foreach)
 library(magrittr)
 library(ggplot2)
