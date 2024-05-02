@@ -1,0 +1,189 @@
+---
+title: "Shift-Share Design"
+output: 
+  html_document:
+    css: style_do.css
+    number_sections: yes
+    toc: yes
+    toc_depth: '3'
+    toc_float: yes
+    theme: spacelab #"default", "bootstrap", "cerulean", "cosmo", "darkly", "flatly",
+                 # "journal", "lumen", "paper", "readable", "sandstone", "simplex",
+                 # "spacelab", "united", "yeti"
+    df_print: paged
+    code_folding: show
+#date: '2022-03-30'
+date: 'Last Update: `r Sys.Date()`'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(cache = FALSE, echo = TRUE, fig.align = "center")
+library(foreach)
+library(magrittr)
+library(ggplot2)
+library(kableExtra)
+library(modelsummary)
+color_main <- scales::viridis_pal(option = "C")(1)
+```
+
+# Generating data
+
+## set parameters
+
+```{r}
+set.seed(2)
+L <- 100
+T <- 2
+K <- 2
+beta <- 1
+sigma <-c(1, 1, 1)
+```
+
+## Draw shares and shocks
+
+```{r}
+z_lk0 <-
+  tidyr::expand_grid(
+    l = 1:L,
+    k = 1:K
+  ) %>%
+  dplyr::mutate(
+    z_lk0 = runif(length(l))
+  ) 
+g_kt <-
+  tidyr::expand_grid(
+    t = 1:T,
+    k = 1:K
+  ) %>%
+  dplyr::mutate(g_kt = rnorm(t))
+```
+
+```{r}
+df <- 
+  tidyr::expand_grid(
+    l = 1:L,
+    t = 1:T,
+    k = 1:K
+  ) %>%
+  dplyr::left_join(
+    z_lk0,
+    by = c("l", "k")
+  ) %>%
+  dplyr::left_join(
+    g_kt,
+    by = c("k", "t")
+  ) %>%
+  dplyr::mutate(
+    z_lkt = z_lk0 + sigma[1] * runif(length(l)),
+    g_lkt = g_kt + sigma[2] * rnorm(length(l))
+  ) 
+```
+
+```{r}
+df <-
+  df %>%
+  dplyr::group_by(
+    t, 
+    l
+  ) %>%
+  dplyr::mutate(
+    z_lk0 = z_lk0 / sum(z_lk0),
+    z_lkt = z_lkt / sum(z_lkt),
+    x_lt = sum(z_lkt * g_lkt)
+  ) 
+```
+
+## Draw output
+
+```{r}
+df_lt <-
+  df %>%
+  dplyr::mutate(
+    g_tilde_lkt = g_lkt - g_kt
+  ) %>%
+  dplyr::group_by(
+    l, 
+    t
+  ) %>%
+  dplyr::summarise(
+    dplyr::across(
+      c(
+        x_lt, 
+        g_tilde_lkt
+      ),
+      mean
+    ),
+    .groups = "drop"
+  ) %>%
+  dplyr::ungroup() %>%
+  dplyr::mutate(
+    y_lt = beta * x_lt + sigma[3] * g_tilde_lkt
+  )
+```
+
+## Simple OLS
+
+```{r}
+result_ols <-
+  df_lt %>%
+  lm(
+    formula = y_lt ~ x_lt
+  )
+modelsummary::modelsummary(result_ols)
+```
+
+
+## Construct Bartik instruments
+
+```{r}
+b_lt <-
+  df %>%
+  dplyr::group_by(
+    l, 
+    t
+  ) %>%
+  dplyr::summarise(
+    b_lt = sum(z_lk0 * g_kt)
+  ) %>%
+  dplyr::ungroup()
+```
+
+
+## TSLS estimator: First stage
+
+```{r}
+result_first_stage <-
+  df_lt %>%
+  dplyr::left_join(
+    b_lt, 
+    by = 
+      c(
+        "l", 
+        "t"
+      )
+  ) %>%
+  lm(
+    formula = x_lt ~ b_lt  
+  )
+modelsummary::modelsummary(result_first_stage)
+```
+
+## TSLS estimator
+
+```{r}
+result_tsls <-
+  df_lt %>%
+  dplyr::left_join(
+    b_lt, 
+    by = 
+      c(
+        "l", 
+        "t"
+      )
+  ) %>%
+  estimatr::iv_robust(
+    formula = y_lt ~ x_lt | b_lt
+  )
+modelsummary::modelsummary(result_tsls)
+```
+
