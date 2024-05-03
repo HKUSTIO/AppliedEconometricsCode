@@ -56,13 +56,13 @@ generate_dgp_lee <-
   ) {
     dgp_lee <-
       tibble::tibble(
-        s = 
-          2 * 
+        s =
+          2 *
           rbeta(
             n = N,
             shape1 = 2,
             shape2 = 4
-          ) - 
+          ) -
           1,
         y =
           AppliedEconometrics::specify_mu_lee(
@@ -164,11 +164,14 @@ specify_mu_ludwig_miller_modified <-
     return(vec_mu)
 }
 
+#'@export
 compute_y <-
   function(b, v, u) {
     y <- 2 * b + 1 * v + u
     return(y)
   }
+
+#'@export
 compute_b <-
   function(v) {
     b <- 2 * v - 1 * v * (v > 0)
