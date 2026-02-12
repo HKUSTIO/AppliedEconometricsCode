@@ -3254,7 +3254,7 @@ $(document).ready(function() {
 
 </article></slide><slide class="segue dark nobackground level1"><hgroup class = 'auto-fadein'><h2>Linear regression with no covariate</h2></hgroup><article  id="linear-regression-with-no-covariate">
 
-</article></slide><slide class=""><hgroup><h2>Definie a linear regression function</h2></hgroup><article  id="definie-a-linear-regression-function">
+</article></slide><slide class=""><hgroup><h2>Define a linear regression function</h2></hgroup><article  id="define-a-linear-regression-function">
 
 <ul>
 <li>Specify a linear regression function for the observed outcome \(Y_i\): \[
@@ -3303,7 +3303,7 @@ Y_i \equiv \alpha + \tau \cdot Z_i + \epsilon_i.
 
 <ul>
 <li>The random sampling allows viewing the potential outcome as random variables.</li>
-<li>Moreover, the randam assignment implies: \[
+<li>Moreover, the random assignment implies: \[
 \mathbb{P}[Z_i = 1|Y_i^\ast(0), Y_i^\ast(1)] = \mathbb{P}(Z_i = 1).
 \]</li>
 <li>Therefore: \[
@@ -3336,7 +3336,7 @@ s_0^2 \equiv \frac{1}{N_0 - 1} \sum_{i: Z_i = 0} (Y_i - \overline{Y})^2, s_1^2 \
 
 </article></slide><slide class="segue dark nobackground level1"><hgroup class = 'auto-fadein'><h2>Linear regression with additional covariates</h2></hgroup><article  id="linear-regression-with-additional-covariates">
 
-</article></slide><slide class=""><hgroup><h2>Define a linear regression function</h2></hgroup><article  id="define-a-linear-regression-function">
+</article></slide><slide class=""><hgroup><h2>Define a linear regression function</h2></hgroup><article  id="define-a-linear-regression-function-1">
 
 <ul>
 <li>We have \(W_i\) as additional covariates.</li>
@@ -3411,7 +3411,7 @@ Q(\tau, \alpha, \beta) &amp;= \mathbb{E}[(Y_i - \tilde{\alpha} - \tau \cdot Z_i)
 </article></slide><slide class=""><hgroup><h2>Independence and Conditionally Mean Zero</h2></hgroup><article  id="independence-and-conditionally-mean-zero">
 
 <ul>
-<li>The argument so far is robust to the misscpefification.</li>
+<li>The argument so far is robust to the misspecification.</li>
 <li>The independence of \(Z_i\) and \(W_i\) is the key.</li>
 <li>We often assume the conditionally mean zero in a regression analysis: \[
 \mathbb{E}\{\epsilon_i|Z_i, W_i\} = 0,
@@ -3461,16 +3461,16 @@ V \equiv \frac{\mathbb{E}[(Z_i - p)^2 \cdot (Y_i - \alpha^\ast - \tau_{sp} \cdot
 <ul>
 <li>The estimator of the sampling variance of \(\hat{\tau}_{ols}\) is: \[
 \scriptsize
-\widehat{\mathbb{V}}_{hetero} \equiv \frac{1}{N\cdot(N - \text{dim}(W_i) - 2)} \frac{\sum_{i = 1}^N (Z_i - \overline{Z})^2 \cdot (Y_i - \hat{\alpha}_{ols} - \hat{\tau}_{ols} \cdot Z_i - W_i \hat{\beta}_{Ols})^2}{[\overline{Z} \cdot (1 - \overline{Z})]^2}.
+\widehat{\mathbb{V}}_{hetero} \equiv \frac{1}{N\cdot(N - \text{dim}(W_i) - 2)} \frac{\sum_{i = 1}^N (Z_i - \overline{Z})^2 \cdot (Y_i - \hat{\alpha}_{ols} - \hat{\tau}_{ols} \cdot Z_i - W_i \hat{\beta}_{ols})^2}{[\overline{Z} \cdot (1 - \overline{Z})]^2}.
 \]</li>
-<li>Including \(W_i\) may reduce the sampling variance to the degree of correlated with the potential outcome.</li>
+<li>Including \(W_i\) may reduce the sampling variance to the degree it is correlated with the potential outcome.</li>
 <li>The price paid for this is to give up the finite-sample unbiasedness.</li>
 <li>The unbiasedness in the large sample is maintained.</li>
 </ul>
 
 </article></slide><slide class="segue dark nobackground level1"><hgroup class = 'auto-fadein'><h2>Linear regression with covariates and interactions</h2></hgroup><article  id="linear-regression-with-covariates-and-interactions">
 
-</article></slide><slide class=""><hgroup><h2>Define a linear regression function</h2></hgroup><article  id="define-a-linear-regression-function-1">
+</article></slide><slide class=""><hgroup><h2>Define a linear regression function</h2></hgroup><article  id="define-a-linear-regression-function-2">
 
 <ul>
 <li>We can further define a linear regression function with covariates and interactions: \[
@@ -3532,7 +3532,7 @@ V \equiv \frac{\mathbb{E}[(Z_i - p)^2 \cdot (Y_i - \alpha^\ast - \tau_{sp} \cdot
 \tiny
 \widehat{\mathbb{V}}_{hetero} \equiv \frac{1}{N\cdot(N - 2 \cdot \text{dim}(W_i)) - 2} \frac{\sum_{i = 1}^N (Z_i - \overline{Z})^2 \cdot [ Y_i - \hat{\alpha}_{ols} - \hat{\tau}_{ols} \cdot Z_i - W_i \hat{\beta}_{ols} - Z_i \cdot (W_i - \overline{W})\hat{\gamma}_{ols} ]^2}{[\overline{Z} \cdot (1 - \overline{Z})]^2}.
 \]</li>
-<li>Including \(W_i\) may reduce the sampling variance to the degree of correlated with the potential outcome.</li>
+<li>Including \(W_i\) may reduce the sampling variance to the degree it is correlated with the potential outcome.</li>
 <li>The price paid for this is to give up the finite-sample unbiasedness.</li>
 <li>The unbiasedness in the large sample is maintained.</li>
 </ul>
@@ -3547,7 +3547,7 @@ V \equiv \frac{\mathbb{E}[(Z_i - p)^2 \cdot (Y_i - \alpha^\ast - \tau_{sp} \cdot
 </article></slide><slide class=""><hgroup><h2>Chi-squared test statistics</h2></hgroup><article  id="chi-squared-test-statistics">
 
 <ul>
-<li>Consider a test statistics such that: \[
+<li>Consider a test statistic such that: \[
 Q \equiv \hat{\gamma}_{ols}&#39; \widehat{V}_\gamma^{-1} \hat{\gamma}_{ols},
 \] where \(\widehat{V}_\gamma\) is the sampling variance estimator for \(\hat{\gamma}_{ols}\).</li>
 <li><strong>Theorem</strong>:
@@ -3566,7 +3566,7 @@ Q \equiv \hat{\gamma}_{ols}&#39; \widehat{V}_\gamma^{-1} \hat{\gamma}_{ols},
 
 <ul>
 <li>Chapter 7, Guido W. Imbens and Donald B. Rubin, 2015, Causal Inference for Statistics, Social, and Biomedical Sciences, Cambridge University Press.</li>
-<li>Section 5, Athey, Susan, and Guido Imbens. 2016. &ldquo;The Econometrics of Randomized Experiments.&rdquo; arXiv [stat.ME]. arXiv. <a href='http://arxiv.org/abs/1607.00698' title=''>http://arxiv.org/abs/1607.00698</a>.</li>
+<li>Section 5, Athey, Susan, and Guido Imbens. 2016. “The Econometrics of Randomized Experiments.” arXiv [stat.ME]. arXiv. <a href='http://arxiv.org/abs/1607.00698' title=''>http://arxiv.org/abs/1607.00698</a>.</li>
 </ul></article></slide>
 
 

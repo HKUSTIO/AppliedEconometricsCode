@@ -1,0 +1,360 @@
+---
+title: "Difference in Difference"
+subtitle: "2 x 2 Design"
+output: 
+  html_document:
+    css: style_do.css
+    number_sections: yes
+    toc: yes
+    toc_depth: '3'
+    toc_float: yes
+    theme: spacelab #"default", "bootstrap", "cerulean", "cosmo", "darkly", "flatly",
+                 # "journal", "lumen", "paper", "readable", "sandstone", "simplex",
+                 # "spacelab", "united", "yeti"
+    df_print: paged
+    code_folding: show
+#date: '2022-03-30'
+date: 'Last Update: `r Sys.Date()`'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(cache = FALSE, echo = TRUE, fig.align = "center")
+library(foreach)
+library(magrittr)
+library(ggplot2)
+library(kableExtra)
+color_main <- scales::viridis_pal(option = "C")(1)
+```
+
+
+
+## Model
+
+- $t = 1, 2, 3$.
+- $r = 1 (= \infty), 2, 3$.
+- Each group has 100 units.
+- $Y_{it}(r) = Y_{it}(\infty) + \tau_t(r) + \epsilon_{it}(r), \epsilon_{it}(r) \sim N(0, 1)$.
+- Common trend holds in the finite sample: $Y_{it}(\infty) = 0$.
+- Common trend holds in the limit: $Y_{it}(\infty) = \epsilon_{it}(\infty), \epsilon_{it}(\infty) \sim N(0, 1)$.
+
+
+## Heterogenous treatment effect
+
+| $\tau_t(r)$ | $r = 1$ | $r = 2$ | $r = 3$ |
+|-------------|---------|---------|---------|
+| $t = 1$     | 1       | 2       | 3       |
+| $t = 2$     | 4       | __5__   | 6       |
+| $t = 3$     | 7       | __8__   | __9__   |
+
+
+## Set parameters
+
+- Common trend holds in the finite sample
+
+```{r}
+set.seed(1)
+N_g <- 100
+T <- 3
+G <- T
+N <- G * N_g
+tau <- 
+  tidyr::expand_grid(
+    t = 1:T,
+    g = 1:G
+  ) %>%
+  dplyr::mutate(
+    tau = 1:length(t)
+  )
+```
+
+## Make data
+
+
+```{r}
+df <-
+  tidyr::expand_grid(
+    t = 1:T,
+    i = 1:N
+  ) %>%
+  dplyr::mutate(
+    g = ceiling(i / 100)
+  ) %>%
+  dplyr::left_join(
+    tau,
+    by = c("g", "t")
+  )
+```
+
+## Make data
+
+```{r}
+df <-
+  df %>%
+  dplyr::mutate(
+    y_0 = 0,
+    y_1 = tau + rnorm(length(t))
+  ) %>%
+  dplyr::mutate(
+    d = (g > 1) * (t >= g),
+    y = y_1 * d + y_0 * (1 - d)
+  )
+```
+
+
+## Pooled OLS
+
+```{r}
+model_ols <- lm(
+    data = df,
+    formula = y ~ I((g == 2)&(t == 2)) + I((g == 2) & (t == 3)) + I((g == 3) & (t == 3)) + as.factor(g) + as.factor(t)
+  )
+modelsummary::modelsummary(model_ols, coef_omit = "as.factor")
+```
+
+## Two-way fixed effects
+
+```{r}
+model_twfe <- lfe::felm(
+    data = df,
+    formula = y ~ I((g == 2)&(t == 2)) + I((g == 2) & (t == 3)) + I((g == 3) & (t == 3)) | i + t 
+  )
+modelsummary::modelsummary(model_twfe)
+```
+
+
+## Separate DID for $\tau_2(2)$
+
+```{r}
+did_g2t2 <- 
+  df %>%
+  dplyr::filter(
+    (g == 1 & t <= 2) |
+      (g == 2 & t <= 2) 
+  ) %>%
+  lfe::felm(
+    data = .,
+    formula = y ~ d | g + t
+  )
+modelsummary::modelsummary(did_g2t2)
+```
+
+## Separate DID for $\tau_3(2)$
+
+```{r}
+did_g2t3 <- 
+  df %>%
+  dplyr::filter(
+    (g == 1 & (t == 1 | t == 3)) |
+      (g == 2 & (t == 1 | t == 3)) 
+  ) %>%
+  lfe::felm(
+    data = .,
+    formula = y ~ d | g + t
+  )
+modelsummary::modelsummary(did_g2t3)
+```
+
+## Separate DID for $\tau_3(3)$
+
+```{r}
+did_g3t3 <- 
+  df %>%
+  dplyr::filter(
+    (g == 1) |
+      (g == 3)
+  ) %>%
+  lfe::felm(
+    data = .,
+    formula = y ~ d | g + t
+  )
+modelsummary::modelsummary(did_g3t3)
+```
+
+
+## Set parameters
+
+- Common trend holds only in the limit.
+
+```{r}
+set.seed(1)
+N_g <- 100
+T <- 3
+G <- T
+N <- G * N_g
+tau <- 
+  tidyr::expand_grid(
+    t = 1:T,
+    g = 1:G
+  ) %>%
+  dplyr::mutate(
+    tau = 1:length(t)
+  )
+```
+
+## Make data
+
+```{r}
+df <-
+  tidyr::expand_grid(
+    t = 1:T,
+    i = 1:N
+  ) %>%
+  dplyr::mutate(
+    g = ceiling(i / 100)
+  ) %>%
+  dplyr::left_join(
+    tau,
+    by = c("g", "t")
+  ) 
+```
+
+## Make data
+
+```{r}
+df <-
+  df %>%
+  dplyr::mutate(
+    y_0 = rnorm(length(t)),
+    y_1 = tau + rnorm(length(t))
+  ) %>%
+  dplyr::mutate(
+    d = (g > 1) * (t >= g),
+    y = y_1 * d + y_0 * (1 - d)
+  )
+```
+
+
+## Pooled OLS
+
+```{r}
+model_ols <- lm(
+    data = df,
+    formula = y ~ I((g == 2)&(t == 2)) + I((g == 2) & (t == 3)) + I((g == 3) & (t == 3)) + as.factor(g) + as.factor(t)
+  )
+modelsummary::modelsummary(model_ols, coef_omit = "as.factor")
+```
+
+## Two-way fixed effects
+
+```{r}
+model_twfe <- lfe::felm(
+    data = df,
+    formula = y ~ I((g == 2)&(t == 2)) + I((g == 2) & (t == 3)) + I((g == 3) & (t == 3)) | i + t 
+  )
+modelsummary::modelsummary(model_twfe)
+```
+
+
+
+## Separate DID for $\tau_2(2)$
+
+```{r}
+did_g2t2 <- 
+  df %>%
+  dplyr::filter(
+    (g == 1 & t <= 2) |
+      (g == 2 & t <= 2) 
+  ) %>%
+  lfe::felm(
+    data = .,
+    formula = y ~ d | g + t
+  )
+modelsummary::modelsummary(did_g2t2)
+```
+
+## Separate DID for $\tau_3(2)$
+
+```{r}
+did_g2t3 <- 
+  df %>%
+  dplyr::filter(
+    (g == 1 & (t == 1 | t == 3)) |
+      (g == 2 & (t == 1 | t == 3)) 
+  ) %>%
+  lfe::felm(
+    data = .,
+    formula = y ~ d | g + t
+  )
+modelsummary::modelsummary(did_g2t3)
+```
+
+## Separate DID for $\tau_3(3)$
+
+```{r}
+did_g3t3 <- 
+  df %>%
+  dplyr::filter(
+    (g == 1 & (t == 1 | t == 3)) |
+      (g == 3 & (t == 1 | t == 3))
+  ) %>%
+  lfe::felm(
+    data = .,
+    formula = y ~ d | g + t
+  )
+modelsummary::modelsummary(did_g3t3)
+```
+
+## Separate DID for $\tau_2(2)$ (using other treated groups as control)
+
+```{r}
+did_g2t2 <- 
+  df %>%
+  dplyr::filter(
+    (g == 1 & t <= 2) |
+      (g == 2 & t <= 2) |
+      (g == 3 & t <= 2)
+  ) %>%
+  lfe::felm(
+    data = .,
+    formula = y ~ d | g + t
+  )
+modelsummary::modelsummary(did_g2t2)
+```
+
+## Separate DID for $\tau_3(2)$ (using other treated groups as control)
+
+```{r}
+did_g2t3 <- 
+  df %>%
+  dplyr::filter(
+    (g == 1 & t <= 3) |
+      (g == 2 & (t == 1 | t == 3)) |
+      (g == 3 & (t <= 2))
+  ) %>%
+  lfe::felm(
+    data = .,
+    formula = y ~ d | g + t
+  )
+modelsummary::modelsummary(did_g2t3)
+```
+
+## Separate DID for $\tau_3(3)$ (using other treated groups as control)
+
+```{r}
+did_g3t3 <- 
+  df %>%
+  dplyr::filter(
+    (g == 1 & t <= 3) |
+      (g == 2 & t == 1) |
+      (g == 3)
+  ) %>%
+  lfe::felm(
+    data = .,
+    formula = y ~ d | g + t
+  )
+modelsummary::modelsummary(did_g3t3)
+```
+
+## Testing pre-trend
+
+```{r}
+model_full <- lm(data = df, formula = y ~ -1 + as.factor(g):as.factor(t))
+modelsummary::modelplot(model_full)
+```
+
+## Testing pre-trend
+
+```{r}
+anova(model_ols, model_full)
+```
+

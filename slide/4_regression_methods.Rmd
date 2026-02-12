@@ -98,10 +98,10 @@ which is the expected value of the unit-level treatment effects under the distri
 
 - For each covariate value $w$;
 $$
-\mu_0(w) \equiv \mathbb{E}[Y_i^\ast(0)|W_i = w], \mu_1 \equiv \mathbb{E}[Y_i^\ast(1) | W_i = w],
+\mu_0(w) \equiv \mathbb{E}[Y_i^\ast(0)|W_i = w], \mu_1(w) \equiv \mathbb{E}[Y_i^\ast(1) | W_i = w],
 $$
 $$
-\sigma_0^2(w) \equiv \mathbb{V}_0[Y_i^\ast(0)|W_i = w], \sigma_1^2 \equiv \mathbb{V}[Y_i^\ast(1)|W_i = w],
+\sigma_0^2(w) \equiv \mathbb{V}_0[Y_i^\ast(0)|W_i = w], \sigma_1^2(w) \equiv \mathbb{V}[Y_i^\ast(1)|W_i = w],
 $$
 $$
 \tau(w) \equiv \mathbb{E}[Y_i^\ast(1) - Y_i^\ast(0)| W_i = w], \sigma_{10}^2(w) \equiv \mathbb{V}[Y_i^\ast(1) - Y_i^\ast(0)| W_i = w].
@@ -127,7 +127,7 @@ $$
 
 # Linear regression with no covariate
 
-## Definie a linear regression function
+## Define a linear regression function
 
 - Specify a linear regression function for the observed outcome $Y_i$:
 $$
@@ -177,7 +177,7 @@ $$
 ## Showing conditional mean zero
 
 - The random sampling allows viewing the potential outcome as random variables.
-- Moreover, the randam assignment implies:
+- Moreover, the random assignment implies:
 $$
 \mathbb{P}[Z_i = 1|Y_i^\ast(0), Y_i^\ast(1)] = \mathbb{P}(Z_i = 1).
 $$
@@ -210,7 +210,7 @@ $$
 $$
 where:
 $$
-s_0^2 \equiv \frac{1}{N_0 - 1} \sum_{i: Z_i = 0} (Y_i - \overline{Y})^2, s_1^2 \equiv \frac{1}{N_1 - 1} \sum_{i: Z_i = 1} (Y_i - \overline{Y})^2.
+s_0^2 \equiv \frac{1}{N_0 - 1} \sum_{i: Z_i = 0} (Y_i - \overline{Y}_0)^2, s_1^2 \equiv \frac{1}{N_1 - 1} \sum_{i: Z_i = 1} (Y_i - \overline{Y}_1)^2.
 $$
 - Whereas $\widehat{\mathbb{V}}_{Neyman}$ for $\hat{\tau}_{fs}$ is justified as a conservative estimator for the variance of $\hat{\tau}_{fs}$ due to random assignment, $\widehat{\mathbb{V}}_{hetero}$ is justified as a consistent estimator to the variance of $\hat{\tau}_{ols}$ under random sampling.
 
@@ -291,7 +291,7 @@ if $W_i$ and $Z_i$ are independent.
 
 ## Independence and Conditionally Mean Zero
 
-- The argument so far is robust to the misscpefification.
+- The argument so far is robust to the misspecification.
 - The independence of $Z_i$ and $W_i$ is the key.
 - We often assume the conditionally mean zero in a regression analysis:
 $$
@@ -341,9 +341,9 @@ $$
 - The estimator of the sampling variance of $\hat{\tau}_{ols}$ is:
 $$
 \scriptsize
-\widehat{\mathbb{V}}_{hetero} \equiv \frac{1}{N\cdot(N - \text{dim}(W_i) - 2)} \frac{\sum_{i = 1}^N (Z_i - \overline{Z})^2 \cdot (Y_i - \hat{\alpha}_{ols} - \hat{\tau}_{ols} \cdot Z_i - W_i \hat{\beta}_{Ols})^2}{[\overline{Z} \cdot (1 - \overline{Z})]^2}.
+\widehat{\mathbb{V}}_{hetero} \equiv \frac{1}{N\cdot(N - \text{dim}(W_i) - 2)} \frac{\sum_{i = 1}^N (Z_i - \overline{Z})^2 \cdot (Y_i - \hat{\alpha}_{ols} - \hat{\tau}_{ols} \cdot Z_i - W_i \hat{\beta}_{ols})^2}{[\overline{Z} \cdot (1 - \overline{Z})]^2}.
 $$
-- Including $W_i$ may reduce the sampling variance to the degree of correlated with the potential outcome.
+- Including $W_i$ may reduce the sampling variance to the degree it is correlated with the potential outcome.
 - The price paid for this is to give up the finite-sample unbiasedness.
 - The unbiasedness in the large sample is maintained.
   
@@ -401,7 +401,7 @@ $$
 \tiny
 \widehat{\mathbb{V}}_{hetero} \equiv \frac{1}{N\cdot(N - 2 \cdot \text{dim}(W_i)) - 2} \frac{\sum_{i = 1}^N (Z_i - \overline{Z})^2 \cdot [ Y_i - \hat{\alpha}_{ols} - \hat{\tau}_{ols} \cdot Z_i - W_i \hat{\beta}_{ols} - Z_i \cdot (W_i - \overline{W})\hat{\gamma}_{ols} ]^2}{[\overline{Z} \cdot (1 - \overline{Z})]^2}.
 $$
-- Including $W_i$ may reduce the sampling variance to the degree of correlated with the potential outcome.
+- Including $W_i$ may reduce the sampling variance to the degree it is correlated with the potential outcome.
 - The price paid for this is to give up the finite-sample unbiasedness.
 - The unbiasedness in the large sample is maintained.
 
@@ -413,7 +413,7 @@ $$
 
 
 ## Chi-squared test statistics
-- Consider a test statistics such that:
+- Consider a test statistic such that:
 $$
 Q \equiv \hat{\gamma}_{ols}' \widehat{V}_\gamma^{-1} \hat{\gamma}_{ols},
 $$

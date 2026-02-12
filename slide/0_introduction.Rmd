@@ -16,7 +16,7 @@ knitr::opts_chunk$set(echo = FALSE)
 ## Instructor
 
 - Kohei Kawaguchi
-- Empirical IO and quantiative marketing.
+- Empirical IO and quantitative marketing.
 
 ## Prerequisite
 
@@ -89,13 +89,13 @@ knitr::opts_chunk$set(echo = FALSE)
   - We do not use C/C++ functions in this class.
 - In the following, you can start the project by double-clicking the `ECON612-T.Rproj` file in the project folder.
   - By default, the working directory is set at the project folder.
-  - Every path written inside the project folder should be relative to the projeft foler to make the project portable.
+  - Every path written inside the project folder should be relative to the project folder to make the project portable.
 
 ## Reporting by Rmarkdown
 
 - Make a folder `assignment` in the project folder.
 - Make a HTML Rmarkdown file from `File > R Markdown > HTML`.
-- Save it to `assignment` folder as `0_intrtoduction.Rmd`.
+- Save it to `assignment` folder as `0_introduction.Rmd`.
 - Make the title "Assignment 0".
 - Then, you can "knit" the Rmarkdown file to generate an HTML report by pressing `Ctrl + Shift + K`.
 - If you successfully knit the Rmd file, you should find `0_introduction.html` in the `assignment` folder.
@@ -107,9 +107,9 @@ knitr::opts_chunk$set(echo = FALSE)
 - `-` makes an itemized list.
 - Please refer to the [cheatsheets](https://rmarkdown.rstudio.com/lesson-15.HTML).
 - Moreover, inside the Rmd file, you can make _R chunks_.
-- Put the cursol in a line you want to create the R chunk and press `Ctrl + Alt + I` to insert the chunk.
+- Put the cursor in a line you want to create the R chunk and press `Ctrl + Alt + I` to insert the chunk.
 - Inside the R chunk, you can write and run R code.
-- The outputs are shown to the report.
+- The outputs are shown in the report.
 
 ## How to write R code?
 

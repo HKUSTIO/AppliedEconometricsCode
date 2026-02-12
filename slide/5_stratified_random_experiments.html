@@ -3212,7 +3212,7 @@ N_{tg}
 <li>However, if the stratification is based on characteristics that are associated with the outcomes of interest, stratified random experiments can be more informative than completely randomized experiments.</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Finite-sample average treatment effet in each strata</h2></hgroup><article  id="finite-sample-average-treatment-effet-in-each-strata">
+</article></slide><slide class=""><hgroup><h2>Finite-sample average treatment effect in each stratum</h2></hgroup><article  id="finite-sample-average-treatment-effect-in-each-stratum">
 
 <ul>
 <li>Define the finite-sample average treatment effect in strata \(g\) as: \[
@@ -3288,7 +3288,7 @@ T_{\lambda} \equiv \Bigg|\sum_{g = 1}^G \lambda_g [\overline{Y}_{tg}^{obs} - \ov
 </article></slide><slide class=""><hgroup><h2>Super-population average treatment effect</h2></hgroup><article  id="super-population-average-treatment-effect">
 
 <ul>
-<li>Suppose out estimand is the super-population average treatment effect: \[
+<li>Suppose our estimand is the super-population average treatment effect: \[
 \tau_{sp} \equiv \mathbb{E}[Y_i^\ast(1) - Y_i^\ast(0)].
 \]</li>
 <li>Also let: \[
@@ -3309,13 +3309,13 @@ Y_i^{obs} \equiv \sum_{g = 1}^G \alpha_g \cdot G_{ig} + \sum_{g = 1}^G \tau_g \c
 <li>Because \(\tau_{sp} \equiv \sum_{g = 1}^G q_g \cdot \tau_{spg}\), \(\hat{\tau}_{sp} \equiv \sum_{g = 1}^G q_g \cdot \hat{\tau}_{olsg}\) is a consistent estimator.</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Transforming the linear regression funciton</h2></hgroup><article  id="transforming-the-linear-regression-funciton">
+</article></slide><slide class=""><hgroup><h2>Transforming the linear regression function</h2></hgroup><article  id="transforming-the-linear-regression-function">
 
 <ul>
 <li>Inserting \(\tau_G = (\tau - \sum_{g = 1}^{G - 1} q_g \cdot \tau_g)/q_G\) to the linear regression function, we have: \[
 Y_i^{obs} = \tau \cdot Z_i \cdot \frac{G_{iG}}{q_G} + \sum_{g = 1}^G \alpha_g \cdot G_{ig} + \sum_{g = 1}^{G - 1} \tau_g \cdot Z_i \cdot [G_{ig} - G_{iG} \cdot \frac{q_g}{q_G}] + \epsilon_i.
 \]</li>
-<li>By estimating this linear regression function by the ols method, we can directly estiamte \(\tau_{sp}\).</li>
+<li>By estimating this linear regression function by the ols method, we can directly estimate \(\tau_{sp}\).</li>
 </ul>
 
 </article></slide><slide class=""><hgroup><h2>Asymptotic normality</h2></hgroup><article  id="asymptotic-normality">
@@ -3348,7 +3348,7 @@ Y_i^{obs} = \tau \cdot Z_i + \sum_{g = 1}^G \beta_g \cdot G_{ig} + \epsilon_i,
 
 <ul>
 <li>Chapter 7, Guido W. Imbens and Donald B. Rubin, 2015, Causal Inference for Statistics, Social, and Biomedical Sciences, Cambridge University Press.</li>
-<li>Section 5, Athey, Susan, and Guido Imbens. 2016. &ldquo;The Econometrics of Randomized Experiments.&rdquo; arXiv [stat.ME]. arXiv. <a href='http://arxiv.org/abs/1607.00698' title=''>http://arxiv.org/abs/1607.00698</a>.</li>
+<li>Section 5, Athey, Susan, and Guido Imbens. 2016. “The Econometrics of Randomized Experiments.” arXiv [stat.ME]. arXiv. <a href='http://arxiv.org/abs/1607.00698' title=''>http://arxiv.org/abs/1607.00698</a>.</li>
 </ul></article></slide>
 
 

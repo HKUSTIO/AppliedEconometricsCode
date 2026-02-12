@@ -1,5 +1,5 @@
 ---
-title: "Clusterd randomized experiments"
+title: "Clustered randomized experiments"
 author: "Kohei Kawaguchi, Hong Kong University of Science and Technology"
 output: 
   ioslides_presentation:
@@ -76,7 +76,7 @@ G \\
 G_t
 \end{pmatrix}^{-1},
 $$
-if $\forall g, \overline{Z}_g = \{0, 1\}, \sum_{g = 1}^G \overline{Z}_g = G_t$ and $0$ otherwise.
+if $\forall g, \overline{Z}_g \in \{0, 1\}, \sum_{g = 1}^G \overline{Z}_g = G_t$ and $0$ otherwise.
 
 ## Motivations for clustered randomized experiments
 
@@ -117,12 +117,12 @@ $$
 $$
 where
 $$
-s_{Ct}^2 \equiv \frac{1}{G_t - 1} \sum_{g: \overline{Z}_g = 1}(\overline{Y}_g^{obs} - \frac{1}{G_t} \sum_{g': \overline{Z}_{g'} = 1} \overline{Y}_{g'}^{obs}).
+s_{Ct}^2 \equiv \frac{1}{G_t - 1} \sum_{g: \overline{Z}_g = 1}\left(\overline{Y}_g^{obs} - \frac{1}{G_t} \sum_{g': \overline{Z}_{g'} = 1} \overline{Y}_{g'}^{obs}\right)^2.
 $$
 
 ## Estimate $\tau_C$ by a linear regression
 
-- We obtain the same estimate by using the ordinary least squared method for a linear regression function:
+- We obtain the same estimate by using the ordinary least squares method for a linear regression function:
 $$
 \overline{Y}_g^{obs} = \alpha + \tau \cdot \overline{Z}_g + \eta_g.
 $$
@@ -130,12 +130,12 @@ $$
 $$
 Y_i^{obs} = \alpha + \tau \cdot Z_i + \epsilon_i,
 $$
-we obtain an estimator identical to $\hat{\tau}_C$ if we run a weighted-least squared method where unit $i$ is weighted by $1/N_{g(i)}$.
+we obtain an estimator identical to $\hat{\tau}_C$ if we run a weighted least squares method where unit $i$ is weighted by $1/N_{g(i)}$.
 
 
 ## Estimate $\tau_{fs}$ by a linear regression
 
-- We can estimate $\tau_{fs}$ by running an (unweighted) ordinary least squared method for the unit-level linear regression function:
+- We can estimate $\tau_{fs}$ by running an (unweighted) ordinary least squares method for the unit-level linear regression function:
 $$
 Y_i^{obs} = \alpha + \tau \cdot Z_i + \epsilon_i.
 $$
@@ -150,7 +150,7 @@ $$
 \sum_{i = 1}^N
 \begin{pmatrix}
 1 & Z_i \\
-Z_i & Z_i
+Z_i & Z_i^2
 \end{pmatrix}
 \Bigg)^{-1}
 \\
@@ -174,7 +174,7 @@ Z_i \cdot \hat{\epsilon}_i
 \sum_{i = 1}^N
 \begin{pmatrix}
 1 & Z_i \\
-Z_i & Z_i
+Z_i & Z_i^2
 \end{pmatrix}
 \Bigg)^{-1}.
 \end{split}

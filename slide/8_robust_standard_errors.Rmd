@@ -42,7 +42,7 @@ because $\sum_{i = 1}^N X_i \hat{u}_i = 0$ by construction of an OLS estimator.
 $$
 \widehat{\mathbb{V}}_{homo}[\hat{\beta}] = \sigma^2 (\sum_{i = 1}^N X_i X_i')^{-1}.
 $$
-- Heteroskedasticity: $\mathbb{E}[u_i u_j] = 0$ if $i \neq j.
+- Heteroskedasticity: $\mathbb{E}[u_i u_j] = 0$ if $i \neq j$.
 $$
 \widehat{\mathbb{V}}_{hetero}[\hat{\beta}] = (\sum_{i = 1}^N X_i X_i')^{-1} \sum_{i = 1}^N X_i \hat{u}_i \hat{u}_i X_i' (\sum_{i = 1}^N X_i X_i')^{-1}.
 $$
@@ -70,10 +70,10 @@ $$
 1 + \rho_k \rho_u (\overline{N}_g - 1),
 $$
 where $\rho_k$ and $\rho_u$ are within-cluster correlation of $k$-th $X_i$ and $u_i$ and $\overline{N}_g$ is the average units per cluster.
-- When $\rho_k$ and $\rho_u$ have the same sign, the downward bias of the homoskedastic standard error is greater then:
+- When $\rho_k$ and $\rho_u$ have the same sign, the downward bias of the homoskedastic standard error is greater when:
     - The within-cluster correlation of the regressor is higher;
     - The within-cluster correlation of the error is higher;
-    - The average units per cluster.
+    - The average number of units per cluster is larger.
     
     
 ## Cluster randomized experiments
@@ -101,7 +101,7 @@ when $G \to \infty$.
 - Repeat the following steps for $b = 1, \cdots, B$:
     1. Form $G$ clusters by resampling with replacement from original $G$ clusters to obtain $\{(Y_1^b, X_1^b), \cdots, (Y_G^b, X_G^b)\}$.
     1. Compute the OLS estimator with the sample to obtain $\hat{\beta}^b$.
-- Use the empirical distribution of $\{\hat{\beta}^b\}_{b = 1}^B$ conduct an inference.
+- Use the empirical distribution of $\{\hat{\beta}^b\}_{b = 1}^B$ to conduct inference.
 - For example, the bootstrap cluster-robust standard error is:
 $$
 \widehat{V}_{cluster, bootstrap}[\hat{\beta}] = \frac{1}{B - 1} \sum_{b = 1}^B (\hat{\beta}^b - \overline{\hat{\beta}}) (\hat{\beta}^b - \overline{\hat{\beta}})'.
@@ -109,22 +109,22 @@ $$
 
 ## Wild cluster bootstrap
 
-- Impose the null hypothesis $H_0$ and estimate $\beta$ to obtain the constrained OLS estimator$\hat{\beta}_{H_0}$. 
+- Impose the null hypothesis $H_0$ and estimate $\beta$ to obtain the constrained OLS estimator $\hat{\beta}_{H_0}$. 
 - Calculate $\tilde{u}_i = Y_i - X_i'\hat{\beta}_{H_0}$.
 - Repeat the following steps for $b = 1, \cdots, B$:
     1. Randomly assign cluster $g$ the weight $d_g = - 1$ w/p 0.5 and $+1$ w/p 0.5.
     1. Generate a pseudo-residual $u_i^b = d_g \tilde{u}_i$ and new pseudo-outcome variable $Y_i^b = X_i'\hat{\beta}_{H_0} + u_i^b$.
     1. Compute the OLS estimator $\hat{\beta}^b$ and its cluster-robust standard error $s_{\hat{\beta}^b}$ with this sample.
-    1. Calculate the Wald test statics $w^b = (\hat{\beta}^b - \hat{\beta})/s_{\hat{\beta}^b}$.
+    1. Calculate the Wald test statistic $w^b = (\hat{\beta}^b - \hat{\beta})/s_{\hat{\beta}^b}$.
 
 ## Wild cluster bootstrap
 
-- Reject the null hypothesis $H_0$ if the Wald statics $w = |\hat{\beta} - \beta_0|/s_{\hat{\beta}}$ is greater than $(1 -\alpha/2)$-percentile of $\{w^b\}_{b = 1}^B$.
-- This procedure is specific to a single null hypotheses.
+- Reject the null hypothesis $H_0$ if the Wald statistic $w = |\hat{\beta} - \beta_0|/s_{\hat{\beta}}$ is greater than $(1 -\alpha/2)$-percentile of $\{w^b\}_{b = 1}^B$.
+- This procedure is specific to a single null hypothesis.
 - Because $(1-\alpha)$-confidence interval is the set of null hypotheses $H_0: \beta = \beta_0$ that are not rejected at the significance level of $\alpha$, to construct the $(1 - \alpha)$-confidence interval with the wild cluster bootstrap, we need to repeat the procedure by changing the values of $\beta_0$.
 
 
-## Two-way cluster-robust stanadard error
+## Two-way cluster-robust standard error
 
 - The cluster-robust standard error assumed that $\mathbb{E}[u_i u_j]$ can be non-zero if $i$ and $j$ belong to the same cluster. 
 - Suppose that there are two dimensions of clusters, say, states and years. Then, we can consider two-way clusters; state-clusters and year-clusters. 

@@ -65,7 +65,7 @@ $(document).ready(function() {
 $$
 \tau_{fs} \equiv \frac{1}{N} \sum_{i = 1}^N [Y_i^\ast(1) - Y_i^\ast(0)] \equiv \overline{Y}^\ast(1) - \overline{Y}^\ast(0),
 $$
-where $fs$ represents being the finite-sample parameter.
+where the subscript $fs$ denotes the finite-sample parameter.
 - Assignment-based uncertainty: The sample and the potential outcome are fixed, while the treatment assignment is random.
 
 ## Estimator for the finite-sample average treatment effect
@@ -88,7 +88,7 @@ where
 $$
 D_i = Z_i - \frac{N_1}{N}.
 $$
-- Because $\mathbb{E}(D_i) = 0$, by unconfoundedness, $\mathbb{E}(\hat{\tau}_{fs}) = \tau_{fs}$: unbiased.
+- Because $\mathbb{E}(D_i) = 0$ under a completely randomized assignment, $\mathbb{E}(\hat{\tau}_{fs}) = \tau_{fs}$: unbiased.
 
 ## Evaluating the standard error
 
@@ -115,10 +115,10 @@ $$
 
 - The first two terms can be estimated unbiasedly by:
 $$
-s_0^2 \equiv \frac{1}{N_0 - 1} \sum_{i: W_i = 0} (Y_i - \overline{Y}_0)^2,
+s_0^2 \equiv \frac{1}{N_0 - 1} \sum_{i: Z_i = 0} (Y_i - \overline{Y}_0)^2,
 $$
 $$
-s_1^2 \equiv \frac{1}{N_1 - 1} \sum_{i: W_i = 1} (Y_i - \overline{Y}_1)^2.
+s_1^2 \equiv \frac{1}{N_1 - 1} \sum_{i: Z_i = 1} (Y_i - \overline{Y}_1)^2.
 $$
 - However, the third term cannot be estimated because it involves the individual causal effect $Y_i^\ast(1) - Y_i^\ast(0)$.
 
@@ -152,7 +152,7 @@ $$
 
 ## Sampling and random assignment variance of $\hat{\tau}_{fs}$
 
-- If this is the estimand, the sampling variance of $\hat{\tau}_{fs}$ due to the randomness of $\mathbf{W}, \mathbf{Y}^\ast(1)$, and $\mathbf{Y}^\ast(0)$ is, after a lengthy algebra:
+- If this is the estimand, the sampling variance of $\hat{\tau}_{fs}$ due to the randomness of $\mathbf{W}, \mathbf{Y}^\ast(1)$, and $\mathbf{Y}^\ast(0)$ is, after lengthy algebra:
 $$
 \mathbb{V}(\hat{\tau}_{fs}) = \frac{\sigma_0^2}{N_0} + \frac{\sigma_1^2}{N_1},
 $$

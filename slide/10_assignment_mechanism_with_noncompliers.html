@@ -3068,18 +3068,21 @@ var loadDeck = function(event) {
   });
 };
 
-if (document.readyState !== "loading" &&
-    document.querySelector('slides') === null) { 
-  // if the document is done loading but our element hasn't yet appeared, defer
-  // loading of the deck
-  window.setTimeout(function() {
-    loadDeck(null);
-  }, 0);
-} else {
-  // still loading the DOM, so wait until it's finished
-  document.addEventListener("DOMContentLoaded", loadDeck);
-}
+if (!window.Shiny) {
+  // If Shiny is loaded, the slide deck is initialized in ioslides template
 
+  if (document.readyState !== "loading" &&
+      document.querySelector('slides') === null) {
+    // if the document is done loading but our element hasn't yet appeared, defer
+    // loading of the deck
+    window.setTimeout(function() {
+      loadDeck(null);
+    }, 0);
+  } else {
+    // still loading the DOM, so wait until it's finished
+    document.addEventListener("DOMContentLoaded", loadDeck);
+  }
+}
 
 
 </script>
@@ -3196,7 +3199,7 @@ $(document).ready(function() {
 <li>However, there are many cases in which a subject assigned to treatment does not receive the treatment.
 
 <ul>
-<li>Supplied supplements on infant mortality to a village but some of the villagers could not receive the supplements.</li>
+<li>Supplying supplements to a village to reduce infant mortality, but some of the villagers could not receive the supplements.</li>
 </ul></li>
 <li>Moreover, there may be cases where subjects not assigned to treatment may receive the treatment.
 
@@ -3376,7 +3379,7 @@ G_i \equiv
 N_{co} \equiv \sum_{i = 1}^N 1_{G_i = co}, N_{nc} \equiv \sum_{i = 1}^N 1_{G_i = nc}.
 \]</li>
 <li>The sample fractions of compliers and noncompliers \[
-\pi_{co} \equiv \frac{N_{co}}{N}, \pi_{nt} \equiv \frac{N_{nc}}{N} = 1 - \pi_{co}.
+\pi_{co} \equiv \frac{N_{co}}{N}, \pi_{nc} \equiv \frac{N_{nc}}{N} = 1 - \pi_{co}.
 \]</li>
 </ul>
 
@@ -3389,7 +3392,7 @@ ITT_D \equiv \frac{1}{N}\sum_{i = 1}^N[D_i^\ast(1) - D_i^\ast(0)],
 \widehat{ITT}_D \equiv \overline{D}_1 - \overline{D}_0 = \overline{D}_1.
 \]</li>
 <li>The standard error is also estimated by: \[
-\widehat{\mathbb{V}}(\widehat{ITT}_D) \equiv \frac{s_{W, 0}^2}{N_0} + \frac{s_{W, 1}^2}{N_1}.
+\widehat{\mathbb{V}}(\widehat{ITT}_D) \equiv \frac{s_{D, 0}^2}{N_0} + \frac{s_{D, 1}^2}{N_1}.
 \]</li>
 </ul>
 
@@ -3410,9 +3413,9 @@ ITT_Y \equiv \frac{1}{N}\sum_{i = 1}^N\{Y_i^\ast[1, D_i^\ast(1)] - Y_i^\ast[0, D
 
 <ul>
 <li>Using the ITT effect for the outcome by compliance status: \[
-ITT_{Y, co} \equiv \frac{1}{N_{co}} \sum_{i = 1: G_i = co}\{Y_i^\ast[1, D_i^\ast(1)] - Y_i^\ast[0, D_i^\ast(0)]\}, 
+ITT_{Y, co} \equiv \frac{1}{N_{co}} \sum_{i: G_i = co}\{Y_i^\ast[1, D_i^\ast(1)] - Y_i^\ast[0, D_i^\ast(0)]\}, 
 \] and: \[
-ITT_{Y, nc} \equiv \frac{1}{N_{nc}} \sum_{i = 1: G_i = nc}\{Y_i^\ast[1, D_i^\ast(1)] - Y_i^\ast[0, D_i^\ast(0)]\},
+ITT_{Y, nc} \equiv \frac{1}{N_{nc}} \sum_{i: G_i = nc}\{Y_i^\ast[1, D_i^\ast(1)] - Y_i^\ast[0, D_i^\ast(0)]\},
 \] we can decompose \(ITT_Y\) as: \[
 ITT_Y = ITT_{Y, co} \cdot ITT_D + ITT_{Y, nc} \cdot (1 - ITT_D).
 \]</li>
@@ -3421,8 +3424,8 @@ ITT_Y = ITT_{Y, co} \cdot ITT_D + ITT_{Y, nc} \cdot (1 - ITT_D).
 </article></slide><slide class=""><hgroup><h2>Unidentification of \(ITT_{Y, co}\) and \(ITT_{Y, nc}\)</h2></hgroup><article  id="unidentification-of-itt_y-co-and-itt_y-nc">
 
 <ul>
-<li>We cannot identify \(ITT_{Y, co}\) and \(ITT_{Y, nc}\) because we do not know the compliance status of each subject and hence we cannot condition the data on the compliance data.</li>
-<li>\(ITT_{Y, no}\) is not informative, because they never receive the treatment, irrespective of the assignment.</li>
+<li>We cannot identify \(ITT_{Y, co}\) and \(ITT_{Y, nc}\) because we do not know the compliance status of each subject and hence we cannot condition on compliance status.</li>
+<li>\(ITT_{Y, nc}\) is not informative, because they never receive the treatment, irrespective of the assignment.</li>
 <li>\(ITT_{Y, co}\) is informative, because this compares the outcome when the treatment is received and not.</li>
 <li>Then, under what kind of additional assumptions, can we identify \(ITT_{Y, co}\)?</li>
 </ul>
@@ -3466,7 +3469,7 @@ Y_i^\ast(0, 0) = Y_i^\ast(1, 0).
 
 <ul>
 <li>The exclusion restriction for noncompliers implies: \[
-ITT_{Y, nc} \equiv \frac{1}{N_{nc}} \sum_{i = 1: G_i = nc}\{Y_i^\ast[1, D_i^\ast(1)] - Y_i^\ast[0, D_i^\ast(0)]\} = 0.
+ITT_{Y, nc} \equiv \frac{1}{N_{nc}} \sum_{i: G_i = nc}\{Y_i^\ast[1, D_i^\ast(1)] - Y_i^\ast[0, D_i^\ast(0)]\} = 0.
 \]</li>
 <li>Therefore: \[
 ITT_Y = ITT_{Y, co} \cdot ITT_D + ITT_{Y, nc} \cdot (1 - ITT_D) = ITT_{Y, co} \cdot ITT_D,
@@ -3488,14 +3491,14 @@ Y_i^\ast(0, 0) = Y_i^\ast(1, 0), Y_i^\ast(0, 1) = Y_i^\ast(1, 1).
 \]</li>
 </ul></li>
 <li>If this assumption holds: \[
-ITT_{Y, co} = \frac{1}{N_{co}} \sum_{i = 1: G_i = co}\{Y_i^*(1) - Y_i^*(0)\},
+ITT_{Y, co} = \frac{1}{N_{co}} \sum_{i: G_i = co}\{Y_i^*(1) - Y_i^*(0)\},
 \] which we call the <strong>local average treatment effect (LATE)</strong> \(\tau_{late}\).</li>
 </ul>
 
 </article></slide><slide class=""><hgroup><h2>Moment-based estimator for \(\tau_{late}\)</h2></hgroup><article  id="moment-based-estimator-for-tau_late">
 
 <ul>
-<li>Because we have \(\widehat{ITT}_Y\) and \(\widehat{ITT}_D\), we can estiamte \(\tau_{late}\) by: \[
+<li>Because we have \(\widehat{ITT}_Y\) and \(\widehat{ITT}_D\), we can estimate \(\tau_{late}\) by: \[
 \widehat{ITT}_{late} \equiv \frac{\widehat{ITT}_Y}{\widehat{ITT}_D}.
 \]</li>
 <li>The sampling variance is: \[
@@ -3534,7 +3537,7 @@ Y_i = Y_i^\ast(D_i) = \alpha + \tau_{late} \cdot D_i + \epsilon_i + D_i \cdot \n
 <li>The OLS estimator does not consistently estimate \(\tau_{late}\), because \(\epsilon_i + D_i \cdot \nu_i\) is potentially correlated with \(D_i\).</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Conditionam mean zero</h2></hgroup><article  id="conditionam-mean-zero">
+</article></slide><slide class=""><hgroup><h2>Conditional mean zero</h2></hgroup><article  id="conditional-mean-zero">
 
 <ul>
 <li>Because of the random assignment of \(Z_i\), we have: \[
@@ -3545,7 +3548,7 @@ Y_i = Y_i^\ast(D_i) = \alpha + \tau_{late} \cdot D_i + \epsilon_i + D_i \cdot \n
 \]</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Conditional mean zero</h2></hgroup><article  id="conditional-mean-zero">
+</article></slide><slide class=""><hgroup><h2>Conditional mean zero</h2></hgroup><article  id="conditional-mean-zero-1">
 
 <ul>
 <li>Moreover, the one-sided noncompliers and the random assignment of \(Z_i\) implies: \[
@@ -3592,7 +3595,7 @@ Y_i = \alpha + \gamma \cdot Z_i + \eta_i, \gamma \equiv \pi_{co} \cdot \tau_{lat
 <li>We know: \[
 \hat{\gamma}_{ols} = \overline{Y}_1 - \overline{Y}_0 = \widehat{ITT}_Y.
 \]</li>
-<li>Therefore, the instrumental variable estimator for \(\tau_{late}\), which is \(\hat{\gamma}_{ols}/\hat{\pi}_{co}\), is numerically the same with \(\widehat{ITT}_{Y, co}\).</li>
+<li>Therefore, the instrumental variable estimator for \(\tau_{late}\), which is \(\hat{\gamma}_{ols}/\hat{\pi}_{co}\), is numerically the same as \(\widehat{ITT}_{Y, co}\).</li>
 </ul>
 
 </article></slide><slide class="segue dark nobackground level1"><hgroup class = 'auto-fadein'><h2>Two-sided noncompliers</h2></hgroup><article  id="two-sided-noncompliers">
@@ -3600,7 +3603,7 @@ Y_i = \alpha + \gamma \cdot Z_i + \eta_i, \gamma \equiv \pi_{co} \cdot \tau_{lat
 </article></slide><slide class=""><hgroup><h2>Generalize compliance behaviors</h2></hgroup><article  id="generalize-compliance-behaviors">
 
 <ul>
-<li>In experiments, we may be able to ensure that subjects who are not assigned treatmet do not receives treatment.</li>
+<li>In experiments, we may be able to ensure that subjects who are not assigned treatment do not receive treatment.</li>
 <li>However, especially in observational studies, subjects may voluntarily take treatment, even if assigned treatment.</li>
 <li>In such a situation, we need to generalize the compliance status.</li>
 </ul>
@@ -3608,7 +3611,7 @@ Y_i = \alpha + \gamma \cdot Z_i + \eta_i, \gamma \equiv \pi_{co} \cdot \tau_{lat
 </article></slide><slide class=""><hgroup><h2>Compliance status</h2></hgroup><article  id="compliance-status-1">
 
 <ul>
-<li>We consider 4 compliance status: Allways takers, never takers, compliers, and defiers. \[
+<li>We consider 4 compliance status: Always takers, never takers, compliers, and defiers. \[
 G_i =
 \begin{cases}
 nt &amp;\text{   if   } D_i^\ast(0) = 0, D_i^\ast(1) = 0,\\
@@ -3622,7 +3625,7 @@ at &amp;\text{   if   } D_i^\ast(0) = 1, D_i^\ast(1) = 1.
 </article></slide><slide class=""><hgroup><h2>Underlying compliance status</h2></hgroup><article  id="underlying-compliance-status">
 
 <ul>
-<li>The are two underlying compliance status for each pair of \(Z_i\) and \(D_i\):<footnote> Table 24.3 of Imbens and Rubin (2015) </footnote></li>
+<li>There are two underlying compliance status for each pair of \(Z_i\) and \(D_i\):<footnote> Table 24.3 of Imbens and Rubin (2015) </footnote></li>
 </ul>
 
 <table class = 'rmdtable'>
@@ -3646,7 +3649,7 @@ at &amp;\text{   if   } D_i^\ast(0) = 1, D_i^\ast(1) = 1.
 </article></slide><slide class=""><hgroup><h2>ITT effects</h2></hgroup><article  id="itt-effects">
 
 <ul>
-<li>The ITT analysis is unchanged with the two-sided compliers</li>
+<li>The ITT analysis is unchanged with the two-sided noncompliers.</li>
 </ul>
 
 </article></slide><slide class=""><hgroup><h2>Decomposing \(ITT_Y\)</h2></hgroup><article  id="decomposing-itt_y-1">
@@ -3713,7 +3716,7 @@ ITT_{Y, at} &amp; = \frac{1}{N_{at}} \sum_{i: G_i = at}\{Y_i^\ast[1, D_i^\ast(1)
 <li>Defiers: volunteers to the Vietnam war if not drafted, while does not go if drafted.</li>
 </ul></li>
 <li>Formally:</li>
-<li><strong>Asumption: Monotonicity</strong>
+<li><strong>Assumption: Monotonicity</strong>
 
 <ul>
 <li>For all subjects \(D_i^\ast(1) \ge D_i^\ast(0)\).</li>
@@ -3723,7 +3726,7 @@ ITT_{Y, at} &amp; = \frac{1}{N_{at}} \sum_{i: G_i = at}\{Y_i^\ast[1, D_i^\ast(1)
 </article></slide><slide class=""><hgroup><h2>Identification of \(ITT_{Y, co}\)</h2></hgroup><article  id="identification-of-itt_y-co">
 
 <ul>
-<li>Under the exclusion restriction for nevertakes, alwaystakers, and the monotonicity, we have: \[
+<li>Under the exclusion restriction for never takers, always takers, and the monotonicity, we have: \[
 ITT_Y = ITT_{Y, co} \cdot \pi_{co}.
 \]</li>
 <li>Moreover: \[
@@ -3791,7 +3794,7 @@ U_1 \equiv Y^\ast(1) - \mathbb{E}[\tilde{\mu}_1(X, \tilde{U}_1)|X].
 </article></slide><slide class=""><hgroup><h2>Assumptions</h2></hgroup><article  id="assumptions">
 
 <ol>
-<li>Instrument independence: \((U_1, U_0, V) \perp \!\!\! \perp Z | X\).</li>
+<li>Instrument independence: \((U_1, U_0, V)  \perp \!\!\! \perp Z | X\).</li>
 <li>Exclusion restriction: \(\mu_D(Z, X)\) has a non-degenerate distribution given \(X\).</li>
 <li>Scalar \(V\) is continuously distributed.</li>
 <li>\(\mathbb{E}[|Y^\ast(1)|]\) and \(\mathbb{E}[|Y^\ast(0)|]\) are finite.</li>
@@ -3919,6 +3922,11 @@ D =1\{e(Z, X) \ge U_D\}, U_D|X \sim U[0, 1].
        window.jQuery(document).on('slideenter', function(e) {
          window.jQuery(e.target).trigger('shown');
       });
+    }
+    if (window.Shiny) {
+      // Initialize slides when this script appears on the page, since it
+      // indicates that the <slides> markup has been fully loaded.
+      window.loadDeck();
     }
   })();
 </script>

@@ -1,0 +1,446 @@
+\documentclass[a4paper]{bxjsarticle}  
+\usepackage{zxjatype, natbib}
+\usepackage{amsmath}
+\usepackage{mathbbol}
+\usepackage[ipa]{zxjafont}
+
+\newtheorem{df}{定義}
+\newtheorem{theo}{定理}
+\newtheorem{prop}{命題}
+\newtheorem{coro}{系}
+\newtheorem{lem}{補題}
+\newtheorem{ex}{例}
+\newtheorem{ass}{仮定}
+
+\title{証明}
+
+\begin{document}
+\date{}
+\maketitle
+\tableofcontents
+
+\section{無作為化実験 Randomized Experiment}
+
+\begin{prop}
+\end{prop}
+
+%教科書、本文内でも定義されているが再掲
+平均処置効果は、
+\begin{equation}
+    \tau = \frac{1}{n}\sum_{i=1}^n \left[Y_i^\ast(1)-Y_i^\ast(0) \right]
+\end{equation}
+
+$\tau$の推定量は、
+
+\begin{equation}
+    \begin{split}
+    \hat{\tau} = \bar{Y_1} - \bar{Y_0} &= \frac{1}{n_1}\sum_{i=1}^n Z_i \cdot Y_i - \frac{1}{n_0}\sum_{i=1}^n (1-Z_i) \cdot Y_i \\\\
+    &= \frac{1}{n}\sum_{i=1}^n \left( \frac{Z_i \cdot Y_i^\ast(1)}{n_1/n}-\frac{(1-Z_i) \cdot Y_i^\ast(0)}{n_0/n} \right) \\\
+    &= \frac{1}{n} \sum_{i=1}^n \left(\frac{n}{n_1} \cdot Z_i \cdot Y_i^\ast(1) - \frac{n}{n_0} \cdot (1-Z_i) \cdot Y_i^\ast(0) \right).
+    \end{split}
+\end{equation}
+
+
+中心化した処置ベクトルを以下のように定義する。
+
+\begin{equation}
+ D_i = Z_i- \frac{n_1}{n}　=　
+  \begin{cases}
+   \frac{n_0}{n} & \text{if $Z_i = 1$ } \\
+   -\frac{n_1}{n} & \text{if $Z_i = 0$}
+  \end{cases}
+\end{equation}
+
+すると、
+\begin{equation}
+    \mathbb{E}\left[D_i\right] = 0
+\end{equation}
+
+\begin{equation}
+    \mathbb{V}\left[D_i\right] = \mathbb{E}\left[D_i^2\right] = \frac{n_0 n_1}{n^2},
+\end{equation}
+
+また$i \neq j$のとき
+
+\begin{equation}
+ \mathbb{P}\{D_i \cdot D_j = d\} =　
+  \begin{cases}
+   \frac{n_1\cdot(n_1 -1)}{n(n-1)} & \text{if $d = \frac{n_0^2}{n^2}$} \\
+   2 \cdot \frac{n_1\cdot n_0}{n(n-1)} & \text{if $d =- \frac{n_1n_0}{n^2}$} \\
+   \frac{n_0 \cdot (n_0-1)}{n \cdot (n-1)} & \text{if $d = \frac{n_1 ^2}{n^2}$} \\
+   0 & \text{otherwise}.
+  \end{cases}
+\end{equation}
+
+これらより以下が導ける
+%この期待値の導出（要確認）
+\begin{equation}
+\mathbb{E}\left[D_i \cdot D_j\right] =
+\begin{cases}
+ \frac{n_0 \cdot n_1}{n^2} & \text{if i = j} \\
+ - \frac{n_1 \cdot n_0}{n^2 \cdot (n-1)} & \text{if $i \neq j$}
+\end{cases}
+\end{equation}
+
+$\tau$の推定量は$D_i$を用いて以下のように書き直せる。
+
+\begin{equation}
+    \begin{split}
+        \bar{Y_1} - \bar{Y_0} &= \frac{1}{n} \sum_{i=1}^n \left(\frac{n}{n_1} \cdot \left(D_i + \frac{n_1}{n}\right) \cdot Y_i^\ast(1)- \frac{n}{n_0} \cdot \left(\frac{n_0}{n} - D_i \right) \cdot Y_i^\ast(0) \right) \\\
+        &=\frac{1}{n}\sum_{i=1}^n \left(Y_i^\ast(1) - Y_i^\ast(0) \right) + \frac{1}{n}\sum_{i=1}^n D_i \cdot \left(\frac{n}{n_1} \cdot Y_i^\ast(1) + \frac{n}{n_0} \cdot Y_i^\ast(0) \right) \\\
+        &=\tau + \frac{1}{n} \sum_{i=1}^n D_i \cdot \left(\frac{n}{n_1} \cdot Y_i^\ast(1) + \frac{n}{n_0} \cdot Y_i^\ast(0) \right)
+    \end{split}
+\end{equation}
+
+$Y_i^+ = \frac{n}{n_1}Y_i^\ast(1) + \frac{n}{n_0}Y_i^\ast(0)$と定義すると,
+
+\begin{equation}
+\mathbb{V}(\hat{\tau}) = \mathbb{V}\left(\frac{1}{n} \sum_{i = 1}^n D_i \cdot Y_i^+ \right) = \frac{1}{n^2} \cdot \mathbb{E} \left[ \left( \sum_{i=1}^n D_i \cdot Y_i^+ \right)^2  \right]. \label{eq:randomization_unbiased_var}  \end{equation}
+
+式\eqref{eq:randomization_unbiased_var}を展開すると,
+
+\begin{equation}
+\begin{split}
+\mathbb{V}(\tau) &= \mathbb{E} \left [\frac{1}{n^2} \sum_{i=1}^n \sum_{j=1}^n D_i D_j Y_i^+ Y_j^+ \right] \\
+&= \frac{1}{n^2}\sum_{i=1}^n (Y_i^+)^2 \cdot \mathbb{E} \left[ D_i^2 \right] + \frac{1}{n^2}\sum_{i=1}^n\sum_{j\neq{i}} \mathbb{E} \left[ D_i D_j \right] \cdot Y_i^+ \cdot Y_j^+ \\
+&= \frac{n_0 \cdot n_1}{n^4} \sum_{i=1}^n (Y_i^+)^2 - \frac{n_0 \cdot n_1}{n^4 \cdot (n-1)} \sum_{i=1}^n \sum_{j\neq i}Y_i^+ \cdot Y_j^+ \\
+&=\frac{n_0 \cdot n_1}{n^3 \cdot (n-1)} \sum_{i=1}^n (Y_i^+)^2 - \frac{n_0 \cdot n_1}{n^4 \cdot (n-1)} \sum_{i=1}^n \sum_{j = 1}^n Y_i^+ \cdot Y_j^+ \\
+&=\frac{n_0 \cdot n_1}{n^3 \cdot (n-1)}\sum_{i=1}^n Y_i^+(Y_i^+ - \overline{Y^+})\\
+&=\frac{n_0 \cdot n_1}{n^3 \cdot (n-1)}\sum_{i=1}^n (Y_i^+ - \overline{Y^+})^2 + \frac{n_0 \cdot n_1}{n^3 \cdot (n-1)}\sum_{i=1}^n \overline{Y^+}(Y_i^+ - \overline{Y^+})\\
+&=\frac{n_0 \cdot n_1}{n^3 \cdot (n-1)}\sum_{i=1}^n (Y_i^+ - \overline{Y^+})^2.
+\end{split}
+\end{equation}
+上の四式目の導出は、$\frac{n_0 \cdot n_1}{n^4 \cdot (n-1)} \sum_{i=1}^n (Y_i^+)^2$を一項目に足して二項目から引いている。ここで$Y_i^+$の定義を代入すると、
+\begin{equation}
+\begin{split}
+\mathbb{V}(\hat{\tau}) &=\frac{n_0 \cdot n_1}{n^3 \cdot (n-1)} \sum_{i=1}^n \left(\frac{n}{n_1}\cdot Y_i^\ast(1) + \frac{n}{n_0}\cdot Y_i^\ast(0) - \left(\frac{n}{n_1}\cdot \bar{Y}^\ast(1) + \frac{n}{n_0}\cdot \bar{Y}^\ast(0) \right) \right)^2 \\
+&=\frac{n_0\cdot n_1}{n^3 \cdot (n-1)} \sum_{i=1}^n \left(\frac{n}{n_1}\cdot Y_i^\ast(1) - \frac{n}{n_1} \cdot \bar{Y}^\ast(1) \right)^2 \\
+&+ \frac{n_0 \cdot n_1}{n^3 \cdot (n-1)}\sum_{i=1}^n \left(\frac{n}{n_0}\cdot Y_i^\ast(0) - \frac{n}{n_0}\cdot \bar{Y}_i^\ast(0) \right)^2 \\
+&+\frac{2\cdot n_0\cdot n_1}{n^3 \cdot (n-1)} \sum_{i=1}^n \left(\frac{n}{n_1}\cdot Y_i^\ast(1) - \frac{n}{n_1} \cdot \bar{Y}^\ast(1) \right) \cdot \left(\frac{n}{n_0}\cdot Y_i^\ast(0) - \frac{n}{n_0}\cdot \bar{Y}(0) \right) \\
+&= \frac{n_0}{n \cdot n_1 \cdot (n-1)} \sum_{i=1}^n \left(Y_i^\ast(1) - \bar{Y}_i^\ast(1)\right)^2 + \frac{n_1}{n \cdot n_0 \cdot (n-1)} \sum_{i=1}^n \left(Y_i^\ast(0) - \bar{Y}_i^\ast(0)\right)^2 \\
+&+ \frac{2}{n \cdot (n-1)} \sum_{i=1}^n \left(Y_i^\ast(1) - \bar{Y}_i^\ast(1)\right)  \cdot \left(Y_i^\ast(0) - \bar{Y}_i^\ast(0)\right).
+\end{split}
+\end{equation}
+
+$S_{01}^2$の定義を考えると
+\begin{equation}
+\begin{split}
+S_{01}^2 &=\frac{1}{n-1} \sum_{i=1}^n \left(Y_i^\ast(1)-\bar{Y}(1)-\left(Y_i^\ast(0) - \bar{Y}^\ast(0)\right) \right)^2 \\
+&=\frac{1}{n-1} \sum_{i=1}^n\left((Y_i^\ast(1)-\bar{Y}^\ast(1))\right)^2 + \frac{1}{n-1}\sum_{i=1}^n\left(Y_i^\ast(0) -\bar{Y}^\ast(0)\right)^2\\
+&-\frac{2}{n-1}\sum_{i=1}^n \left(Y_i^\ast(1)-\bar{Y}^\ast(1)\big) \cdot \big(Y_i^\ast(0)-\bar{Y}^\ast(0)\right) \\
+&=S_1^2 + S_0^2 - \frac{2}{n-1} \sum_{i=1}^n(Y_i^\ast(1)-\bar{Y}^\ast(1))\cdot \left(Y_i^\ast(0)-\bar{Y}^\ast(0)\right)
+\end{split}
+\end{equation}
+となり、分散が導出される。
+\begin{equation}
+\begin{split}
+\mathbb{V}(\hat{\tau}) &=
+\frac{n_0}{n \cdot n_1} \cdot S_1^2 + \frac{n_1}{n \cdot n_0}S_0^2 + \frac{1}{n} \left(S_1^2 + S_0^2-S_{01}^2 \right) \\
+&=\frac{S_{0}^2}{n_0} + \frac{S_{1}^2}{n_1} - \frac{S_{01}^2}{n}. 
+\end{split}
+\end{equation}
+
+\begin{prop}
+\end{prop}
+
+
+母集団のサイズを$n^\ast$、$\mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0)$を母集団の潜在結果ベクトルとする。$R_i$を、個体$i$が標本に含まれるときに1をとり、標本に含まれないときに0をとる変数とする。標本のサイズが$n$であれば、$\sum_{i = 1}^{n^\ast} R_i = n$となる。$R_i$は平均$\frac{n}{n^\ast}$、分散$\frac{n}{n^\ast} \dot (1 - \frac{n}{n^\ast})$のベルヌーイ分布であり、$i$と$j$が異なるときの$R_i$と$R_j$の間の共分散は、
+\begin{equation}
+\frac{n(n-1)}{n^\ast (n^\ast - 1)} - \frac{n^2}{n^{\ast2}}
+\end{equation}
+となる。
+
+以下のように母集団平均処置効果、標本平均処置効果などを定める。
+
+\begin{equation}
+\begin{split}
+\tau = \frac{1}{n^{\ast}} \sum_{i=1}^{n^{\ast}} (Y_i(1) - Y_i(0))
+\end{split}
+\end{equation} 
+
+\begin{equation}
+\begin{split}
+\sigma^2_{01} = \frac{1}{n^{\ast}} \sum_{i=1}^{n^{\ast}} (Y_i(1) - Y_i(0) - \tau)^2
+\end{split}
+\end{equation} 
+
+
+\begin{equation}
+\begin{split}
+\tau_{fs} = \frac{1}{n} \sum_{i=1}^{n^{\ast}} R_i \cdot (Y_i(1) - Y_i(0))
+\end{split}
+\end{equation} 
+
+母集団の潜在結果を固定して標本平均処置効果の無作為抽出による$R_i$に関する期待値を計算すると、以下の通り、母集団平均処置効果に一致する。
+
+\begin{equation}
+\begin{split}
+\mathbb{E} \left[\tau_{fs} | \mathbf{Y}^\ast(1),\mathbf{Y}^\ast(0) \right] &= \frac{1}{n^\ast} \sum_{i=1}^n \mathbb{E} [R_i] \cdot (Y_i(1) - Y_i(0)) \\\
+&=\frac{1}{n} \sum_{i=1}^{n^\ast} \frac{n}{n_{^\ast}} \cdot (Yi(1) - Y_i(0)) = \tau
+\end{split}
+\end{equation} 
+
+一方、母集団の潜在結果を固定して標本平均処置効果の無作為抽出による$R_i$に関する分散を計算すると、以下のようになる。
+
+\begin{equation}
+\begin{split}
+\mathbb{V}(\tau_{fs} | \mathbf{Y}^\ast(0), \mathbf{Y}^\ast(1)) &= \mathbb{E}\left[ \left(\frac{1}{n}\sum_{i=1}^{n^\ast} R_i \cdot \left(Y_i(1) - Y_i(0)\right) - \tau  \right)^2 \middle \vert \mathbf{Y}^\ast(0), \mathbf{Y}^\ast(1)  \right] \\\
+&= \mathbb{E}\left[ \left(\frac{1}{n}\sum_{i=1}^{n^{\ast}} \left(R_i - \frac{n}{n^\ast}\right) \cdot \left(Y_i(1) - Y_i(0) - \tau \right)  \right)^2 \middle\vert \mathbf{Y}^\ast(0), \mathbf{Y}^\ast(1)  \right] \\\
+&= \frac{1}{n^2} \sum_{i=1} ^{n^\ast} \sum_{j=1} ^{n^\ast} \mathbb{E}\left[ \left(R_{i} - \frac{n}{n^{\ast}} \right ) \cdot \left( R_j - \frac{n}{n^{\ast}} \right) \right. \\\
+&\left. \cdot \left( Y_i(1) - Y_i(0) - \tau \right) \cdot \left(Y_j(1) - Y_j(0) - \tau \right) \vert \mathbf{Y}^\ast(0), \mathbf{Y}^\ast(1) \vphantom{\left(R_{i} - \frac{n}{n_{sp}} \right )} \right] \\\
+&= \frac{1 - n/n^\ast}{n \cdot n^\ast} \sum_{i=1}^{n^\ast} \left(Y_i(1) - Y_i(0)- \tau \right)^2 \\\
+&- \frac{1}{n^2}\left(\frac{n(n-1)}{n^\ast (n^\ast - 1)} - \frac{n^2}{n^{\ast2}}\right) \sum_{i=1}^{n^\ast} \sum_{j\neq i} \left( Y_i(1) - Y_i(0) - \tau \right) \cdot \left(Y_j(1) - Y_j(0) - \tau \right) \\\
+&= \frac{\sigma_{01}^2}{n} - \frac{\sigma_{01}^2}{n^\ast} - \frac{1}{n^2}\left(\frac{n(n-1)}{n^\ast (n^\ast - 1)} - \frac{n^2}{n^{\ast2}}\right) \sum_{i=1}^{n^\ast} \sum_{j\neq i} \left(Y_i(1) - Y_i(0) - \tau \right) \cdot \left(Y_j(1) - Y_j(0) - \tau \right)
+\end{split}
+\end{equation} 
+
+ここで、$n^\ast \to \infty, \frac{n}{n^\ast} \to 0$のとき、
+
+\begin{equation}
+\begin{split}
+\mathbb{V}(\tau_{fs} | \mathbb{Y}(0) , Y (1))  \to \frac{\sigma^2_{01}}{n}
+\end{split}
+\end{equation}
+
+となる。すなわち、母集団のサイズが標本のサイズと比較して十分大きいとき、標本平均処置効果の無作為抽出による$R_i$に関する分散は$\sigma^2_{01}$になる。
+
+次に、平均の差推定量
+
+\begin{equation}
+\hat{\tau} = \bar{Y_1} - \bar{Y_0}
+\end{equation}
+
+を考える。無作為抽出$R_i$と無作為割当$Z_i$をもちいて表現すると、以下のようになる。
+
+\begin{equation}
+\begin{split}
+\hat{\tau} = \frac{1}{n_1} \sum_{i=1}^{n{^\ast}} R_i \cdot Z_i \cdot Y_i - \frac{1}{n_0} \sum_{i=1}^{n^\ast} R_i \cdot (1-Z_i) \cdot Y_i 
+\end{split}
+\end{equation}
+
+母集団における潜在結果および標本を固定して、無作為割当による$Z_i$に関する期待値を計算すると、
+
+\begin{equation}
+\begin{split}
+\mathbb{E} \left[ \hat{\tau} |R, \mathbf{ Y(1)^\ast,Y(0)^\ast} \right] &= \frac{1}{n_1} \sum_{i=1}^{n^\ast} R_i \cdot \mathbb{E}[Z_i] \cdot Y_i - \frac{1}{n_0} \sum_{i=1}^{n^\ast} R_i \cdot \mathbb{E} [1-Z_i] \cdot Y_i \\
+&= \frac{1}{n} \sum_{i=1}^{n^\ast} R_i \cdot (Y_i(1) - Y_i(0)) = \tau_{fs}
+\end{split}
+\end{equation}
+
+となり、標本平均処置効果に一致する。
+
+最後に、母集団における潜在結果を固定して、$R_i$、$Z_i$の両方に関する$\hat{\tau}$の期待値を計算すると
+、
+\begin{equation}
+\begin{split}
+\mathbb{E}\left[ \hat{\tau}|  \mathbf{Y^{\ast}}(1), \mathbf{Y^{\ast}}(0))  \right] &= \mathbb{E} \left[ \mathbb{E}_{\mathbb{w}} \left[ \hat{\tau} | R, \mathbf{Y^\ast(1),Y^\ast(0)} \right] | \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0) \right] \\\
+&= \mathbb{E} \left[ \hat{\tau} |  \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0) \right]  = \tau
+\end{split}
+\end{equation}
+
+となり、母集団平均処置効果に一致する。
+
+このときの$\hat{\tau}$の分散は、
+\begin{equation}
+\begin{split}
+\mathbb{V} &= \mathbb{V}(\hat{\tau} | \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0)) \\
+&= \mathbb{E}[\hat{\tau}^2 | \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0))] - \{\mathbb{E}[\hat{\tau} | \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0))]\}^2\\
+&= \mathbb{E}\left\{\mathbb{E}[\hat{\tau}^2| \mathbf{R}, \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0)] | \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0)\right\} - \left(\mathbb{E}\left\{ \mathbb{E}[\hat{\tau}| \mathbf{R}, \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0)] | \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0)\right\}\right)^2\\
+&= \mathbb{E}\left(\mathbb{E}[\hat{\tau}^2| \mathbf{R}, \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0)] - \{\mathbb{E}[\hat{\tau}| \mathbf{R}, \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0)]\}^2 | \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0)\right) \\
+&+\mathbb{E}\left(\{\mathbb{E}[\hat{\tau}| \mathbf{R}, \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0)]\}^2 | \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0)\right) - \left(\mathbb{E}\left\{ \mathbb{E}[\hat{\tau}| \mathbf{R}, \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0)] | \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0)\right\}\right)^2\\
+&= \mathbb{E}\{\mathbb{V}[\hat{\tau} | R, \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0)] | \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0)\} + \mathbb{V}\{\mathbb{E} \left[\hat{\tau}| R, \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0) | \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0) \right] \} \\\
+&= \mathbb{E} \left[\frac{s_0^2}{n_0} + \frac{s_1^2}{n_1} - \frac{s_{01}^2}{n} \middle\vert \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0) \right] + \mathbb{V}(\tau_{fs} | \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0)) \\\
+&= \frac{\sigma_0^2}{n_0} + \frac{\sigma_1^2}{n_1} - \frac{\sigma_{01}^2}{n} + \frac{\sigma_{01}^2}{n} -\frac{\sigma_{01}^2}{n^\ast} - \frac{1}{n^2}\left(\frac{n(n-1)}{n^\ast (n^\ast - 1)} - \frac{n^2}{n^{\ast2}}\right) \sum_{i=1} ^{n^\ast} \sum_{j \neq i} (Y_i(1) - Yi(0)- \tau)  \\\ 
+&\cdot (Y_j(1) - Y_j(0) - \tau)
+\end{split}
+\end{equation}
+となる。これは$n^\ast \to \infty, \frac{n}{n^\ast} \to 0$のとき、
+\begin{equation}
+\frac{\sigma_0^2}{n_0} + \frac{\sigma_1^2}{n_1}    
+\end{equation}
+に収束する。
+
+\section{回帰非連続デザイン Regression Discontinuity Designs}
+
+\begin{ass} \label{ass:rd_kernel}
+カーネル関数$K(\cdot)$は、ある$r > 0$について以下の条件を満たす
+\begin{itemize}
+    \item (非負) $0 \leq K(\cdot) < \infty$、
+    \item (対称) $K(-u) = K(u)$、
+    \item (積分して1) $\int_{\mathcal{K}} K(u) du = 1$、
+    \item (モーメントの存在) $\int_{\mathcal{K}} |u|^r K(u) du$。
+\end{itemize}
+\end{ass}
+
+\begin{ass} \label{ass:rd_smooth}
+$S$の密度関数を$f(s)$とする。このとき、$S$のサポート$\mathcal{S}$に含まれる区間$[0,b],b < \infty$, 上の点$\bar{s}$について、以下の条件を満たす：\\
+$f(\bar{s})>0$かつ、点$s=0$で$f(\cdot)$が一階連続微分可能、$m(\cdot)$が右側三階連続微分可能、$\mathbf{V}(\epsilon│S=\cdot)$が右側連続、かつ、$f(\cdot),f^{'} (\cdot),m(\cdot),m^{'} (\cdot),m^{''} (\cdot)$および $\mathbf{V}(\epsilon∣S= \cdot)$が$\mathcal{S}$上で有界。
+\end{ass}
+
+\begin{theo}[Hansen, 2020, Theorem 19.2, より]\label{thm:rd_kernel_est}
+仮定 \ref{ass:rd_kernel} および \ref{ass:rd_smooth} のもとで、$nh \rightarrow \infty$かつ$h \rightarrow 0$であるときに、カーネル推定量の分散は
+\[
+ \sigma_{NW}^2 (0_+) = \frac{(\mathbf{K}^2  \mathbf{V}(\epsilon ∣S=0_+ ))}{f(0)nh} + o_P (1/nh)
+\]
+である。ただし、$K^2 \equiv \int_{\mathcal{K}} K(u)^2 du$であり、$o_P(1/nh)$は$1/nh$で割っても（すなわち$nh$を掛けても)$0$に確率収束する項である。
+\end{theo}
+
+\begin{theo}[Hansen, 2020, Theorem 19.1, 19.5, より]\label{thm:rd_kernel_est}
+仮定 \ref{ass:rd_kernel} および \ref{ass:rd_smooth} のもとで、$nh \rightarrow \infty$かつ$h \rightarrow 0$であるときに、カーネル推定量のバイアスは
+\[
+ Bias^{MW}(0_+) = h ABias^{MW}_{boundary}(0_+) + h^2 ABias^{MW}_{interior}(0_+) + o_P(h^2) + O_p(\sqrt{h/n})
+\]
+である。ただし、
+\[
+ ABias^{MW}_{boundary}(0_+) \equiv 2 K_1 m'(0_+),
+\]
+かつ
+\[
+ ABias^{MW}_{interior}(0_+) \equiv 0.5 K_2 m''(0_+) + f(0)^{-1} K_2 f'(0_+) m'(0_+)
+\]
+である。ここで定数$K_1$および$K_2$は、
+$K_1 \equiv \int_{\mathcal{K}} K(u) u du$ および $K_2 \equiv \int_{\mathcal{K}} K(u) u^2 du$であり、$O_p(\sqrt{h/n})$は$\sqrt{h/n}$で割っても確率有界な項である。
+\end{theo}
+
+\begin{theo}[Hansen, 2020, Theorem 19.1, 19.5, より]\label{thm:rd_kernel_est}
+仮定 \ref{ass:rd_kernel} および \ref{ass:rd_smooth} のもとで、$nh \rightarrow \infty$かつ$h \rightarrow 0$であるときに、局所線形推定量のバイアスは
+\[
+ Bias^{LL}(0_+) = h^2 ABias^{LL}(0_+) + o_P(h^2) + O_p(\sqrt{h/n})
+\]
+であり、分散は
+\[
+ \sigma_{LL}^2(0_+) = \frac{K_{LL}^2 \mathbf{V}(\epsilon|S=0_+)}{f(0_+) nh} + o_P(1/nh)
+\]
+である。ただし、
+\[
+ ABias^{LL}(0_+) \equiv 0.5 m''(0_+) \frac{(K_2^2 - K_1 K_3)}{K_2 K_0 - K_1^2}
+\]
+である。ここで定数$K_0$および$K_3$はそれぞれ、
+$K_0 \equiv \int_{\mathcal{K}} K(u) du$ および $K_3 \equiv \int_{\mathcal{K}} K(u) u^3 du$である、$K_{LL}^2 \equiv \frac{\int (K_2 - uK_1)^2 K^2(u) du}{(K_2 K_0 - K_1^2)^2}$である。
+\end{theo}
+
+\begin{ass}\label{ass:rd_kernel_additional}
+ カーネル関数$K(\cdot)$は有界なサポートをもち、リプシッツ連続である。すなわち、ある定数$\bar{K}$が存在し、$K(\cdot)$のサポート上の任意の点$s,s'$について
+ \[
+  |K(s) - K(s')| \leq \bar{K}|s - s'|
+ \]
+ である。
+\end{ass}
+
+\begin{theo}[Cheng, Fan, and Marron, 1997, Theorem 2]
+仮定 \ref{ass:rd_kernel}, \ref{ass:rd_smooth}, \ref{ass:rd_kernel_additional} のもとで、局所線形推定による切片項推定量の漸近二乗誤差は
+\[
+ (2/5)^{-2/5} (1/5)^{-1/5} 2^{-2/5}\left[T(K) (m''(0_+)) \frac{\mathbf{V}(\epsilon|S=0_+)}{f(0_+)n}\right]^{2/5}
+\]
+で最小化される。このとき、
+\[
+ T(K) = \left|\frac{(K_2^2 - K_1 K_3)}{K_2 K_0 - K_1^2}\right|\left(K_{LL}^2\right)^2
+\]
+はカーネルのみに依存する項であり、仮定\ref{ass:rd_kernel}と\ref{ass:rd_kernel_additional}を満たす任意のカーネル関数の中で、$T(K)$を最小化するカーネルは三角カーネル$K(u) = (1-u)1\{u \in [0,1]\}$である。
+\end{theo}
+
+\section{回帰非連続デザインの発展的トピック}
+
+\begin{ass}[近傍単調性] \label{ass:rd_local_monotone}
+$t \in \{\text{反抗者,未決定者}\}$について、
+\[
+\lim_{\epsilon \downarrow 0} \mathbf{P}(T_{\epsilon} = t|S = \epsilon) = \lim_{\epsilon \downarrow 0} \mathbf{P}(T_{\epsilon} = t|S = -\epsilon) = 0
+\]
+\end{ass}
+
+\begin{ass}[近傍連続性] \label{ass:rd_local_continuity}
+$d \in \{0,1\}$と$t \in \{\text{常時参加者, 遵守者, 常時非参加者}\}$について、任意の潜在結果関数値のサポートの可測部分集合$B$を取れば、
+\[
+\lim_{\epsilon \downarrow 0} \mathbf{P}(Y^{\ast} (d;\epsilon) \in B, T_{\epsilon} = t|S = \epsilon) =\lim_{\epsilon \downarrow 0} \mathbf{P}(Y^{\ast} (d;\epsilon) \in B, T_{\epsilon} = t|S = -\epsilon)
+\]
+\end{ass}
+
+\begin{theo}[Arai et al 2022, Theorem 1.]
+(i)
+仮定 \ref{ass:rd_local_monotone}および\ref{ass:rd_local_continuity}が成り立つならば、任意の$y, y' \in \mathbf{R}$について、以下の不等式が成り立つ。
+\begin{equation}    
+ \lim_{\epsilon \downarrow 0} \mathbf{E}[1\{y \leq Y \leq y'\}D|S=\epsilon] - \lim_{\epsilon \uparrow 0} \mathbf{E}[1\{y \leq Y \leq y'\}D|S=\epsilon] \geq 0, \label{eq:rd_ineq1}
+\end{equation}
+\begin{equation}
+ \lim_{\epsilon \uparrow 0} \mathbf{E}[1\{y\leq Y \leq y'\}(1-D)|S=\epsilon] - \lim_{\epsilon \downarrow 0} \mathbf{E}[1\{y \leq Y \leq y'\}(1-D)|S=\epsilon] \geq 0. \label{eq:rd_ineq2}
+\end{equation} 
+
+(ii) ある観測$(Y,D,S)$の分布について、$(D,S)$で条件つけた$Y$の条件付き分布関数が、以下の条件を満たすとする：潜在結果関数値のサポート$\mathcal{Y}$上の測度$\mu$に支配される確率密度関数を持ち、$\mu$について可積分な包絡関数をもち、$S$に関する右極限、左極限が$S = 0$で$\mu$についてほとんど確実に(almost surely)存在する。
+
+このとき、\eqref{eq:rd_ineq1}と\eqref{eq:rd_ineq2}が成立するならば、仮定 \ref{ass:rd_local_monotone}と\ref{ass:rd_local_continuity}を満たすような$(\tilde{D}(\epsilon),\tilde{Y}^*(1;\epsilon),\tilde{Y}^*(0;\epsilon): \epsilon \in \mathcal{S})$の分布関数が存在し、$\tilde{Y} = \tilde{Y}^*(1;S) \tilde{D}(S) + \tilde{Y}^*(0;S) (1 - \tilde{D}(S))$と$\tilde{D} = \tilde{D}(S)$とすれば、任意の$\epsilon \in \mathcal{S}$について$S=\epsilon$で条件つけた$(\tilde{Y},\tilde{D})$の条件付き同時分布が$S$で条件つけた$(Y,D)$の条件付き同時分布と一致するようにできる。
+\end{theo}
+
+\section{差の差法 Difference-in-Differences}
+\begin{prop}[Abadie, Diamond, Hainmueller, 2010, Appendix B]
+潜在結果関数について、以下のモデルが成り立つとする：
+\[
+ Y^*_{it}(0) = \delta_t + \theta_t Z_i + \lambda_t \mu_i + \epsilon_{it}
+\]
+ただし、$\lambda_t = (\lambda_{t1},\ldots, \lambda_{tF})$は$(1\times F)$次元の共通ファクターベクトル、$\mu_i = (\mu_{i1},\ldots, \mu_{iF})'$は$(F \times 1)$次元のファクターローディングベクトルである。このとき、$\epsilon_{it}$が時間と個体についてiidであり、$\mathbf{E}[\epsilon_{it}|\{Z_i,\mu_i\}_{i=1}^J] = 0$であるとする。さらに、ある$\bar{\xi}$が存在し、任意の整数$M, 1 \leq M \leq T_0$について$M^{-1}\sum_{t=T_0-M+1}^{T_0} \lambda_t' \lambda_t$の最小固有値$\xi(M)$が$\xi(M) > 0$を満たし、ある定数$\bar{\lambda}$について$|\lambda_tf| \leq \bar{\lambda}$を満たすとする。さらに$\sum_{t=1}^{T_0} \lambda_t' \lambda_t$がnonsingularであるとする。
+
+このとき、 (2) at p 495を満たすような$w^*$が存在するならば、
+\[
+ Y_{0t}^*(0) - \sum_{i=1}^J w_i^* Y_{it}^*(0) = R_{1t} + R_{2t} + R_{3t}
+\]
+ただし、
+
+について、$\mathbf{E}[R_{2t}] = \mathbf{E}[R_{3t}] = 0$かつ
+\[
+E[|R_{1t}|] \leq 
+\]
+
+    
+\end{prop}
+
+\section{差の差法の発展的トピック}
+\begin{theo}[Goodman-Bacon, 2021, Theorem 1]
+ $N$人$T$期の観測について、観測期間を通じて処置$Z$を受け取らない統制群$U$と、$k = 1,\ldots, K$について、$k \in (1,T]$期に処置$Z$を受ける$K$種の処置群に分割できるとする。ここで、$t_i$を$i$が処置を受ける期とし、$i$が統制群$U$ならば$t_i=U$とする。さらに、
+ \[
+ \bar{y}^{POST(a)}_b = \frac{1}{T - (a-1)} \sum_{t=a}^T \left[\frac{\sum_{i} Y_{it}1\{t_i = b\}}{\sum_i 1\{t_i = b\}} \right],
+ \]
+ は$b$期に処置を受ける群の$a$期以後の顕在結果平均、
+ \[
+ \bar{y}^{PRE(a)}_b = \frac{1}{a-1} \sum_{t=1}^{a-1} \left[\frac{\sum_{i} Y_{it}1{t_i = b}}{\sum_i 1{t_i = b}} \right],
+ \]
+ は$b$期に処置を受ける群の$a$期より前の顕在結果平均、
+ \[
+ \bar{y}^{MID(a,b)}_b = \frac{1}{b-(a-1)} \sum_{t=a}^{b-1} \left[\frac{\sum_{i} Y_{it}1{t_i = b}}{\sum_i 1{t_i = b}} \right],
+ \]
+ は$b$期に処置を受ける群の$a$期から$b$期までの顕在結果平均、
+ \[
+  \bar{D}_k = T^{-1} \sum_{t=1}^T 1{t \geq k},
+ \]
+ $n_{k} = N^{-1}\sum_{i=1}^N 1{t_i = k}$, $n_{ab} = \frac{n_a}{n_a + n_b}$とする。
+ 
+ このとき、最小二乗法による以下のTWFE回帰
+ \[
+   Y_{it} = \alpha_{i\cdot} + \alpha_{\cdot t} + \beta Z_{it} + \epsilon_{it}
+ \]
+ における$\beta$の推定量$\hat{\beta}$について、
+ \[
+  \hat{\beta} = \sum_{k \neq U} s_{kU} \hat{beta}_{kU}^{2x2} + \sum_{k \neq U} \sum_{l > k} [s_{kl}^k \beta_{kl}^{2x2,k} + s_{kl}^l \hat{\beta}_{kl}^{2x2,l}]
+ \]
+ を得る。ただし、
+ \[
+  \hat{\beta}_{kU}^{2x2} = (\bar{y}_k^{POST}(k) - \bar{y}_k^{PRE}(k)) - (\bar{y}_{U}^{POST}(k) - \bar{y}_{U}^{PRE}(k)),
+ \]
+ \[
+  \hat{\beta}_{kl}^{2x2,k} = (\bar{y}_k^{MID}(k,l) - \bar{y}_k^{PRE}(k)) - (\bar{y}_{l}^{MID}(k,l) - \bar{y}_{l}^{PRE}(k)),
+ \]
+ \[
+  \hat{\beta}_{kl}^{2x2,l} = (\bar{y}_l^{POST}(l) - \bar{y}_l^{MID}(k,l)) - (\bar{y}_{k}^{POST}(l) - \bar{y}_{k}^{MID}(k,l))
+ \]
+ であり、
+ \[
+  s_{kU} = \frac{(n_k + n_U)^2 n_{kU}(1 - n_{kU})\bar{D}_k (1 - \bar{D}_k)}{\hat{V}^D},
+ \]
+ \[
+  s_{kl}^k = \frac{((n_k + n_l) (1 - \bar{D}_l^2) n_{kl} (1 - n_{kl}) \frac{\bar{D}_k - \bar{D}_l}{1 - \bar{D}_l}frac{1 - \bar{D}_k}{1 - \bar{D}_l}}{\hat{V}^D},
+ \]
+ \[
+  s_{kl}^l = \frac{((n_k + n_l) \bar{D}_k)^2 n_{kl} (1 - n_{kl}) \frac{\bar{D}_l}{\bar{D}_k} \frac{\bar{D}_k - \bar{D}_l}{\bar{D}_k}}{\hat{V}^D}
+ \]
+ である。 このとき、$\sum_{k \neq U} s_{kU} + \sum_{k \neq U} \sum_{l > k} [s_{kl}^k + s_{kl}^l] = 1$を満たす。 
+\end{theo}
+
+\end{document}

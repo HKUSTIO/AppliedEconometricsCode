@@ -10,7 +10,6 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
-library(AppliedEconometricsCode)
 library(magrittr)
 library(foreach)
 library(ggplot2)
@@ -54,7 +53,7 @@ glance.rdrobust <- function(object, ...){
                       nobs.effective.left = object$N_h[1],
                       nobs.effective.right = object$N_h[2],
                       cutoff = object$c,
-                      order.regression = object$q,
+                      order.regression = object$p,
                       order.bias = object$q,
                       kernel = object$kernel,
                       bwselect = object$bwselect)
@@ -64,7 +63,7 @@ glance.rdrobust <- function(object, ...){
 
 # Fuzzy Regression Discontinuity Design 
 
-## Treatment assignment and recipt
+## Treatment assignment and receipt
 
 - The treatment assignment is still determined by:
 $$
@@ -100,7 +99,7 @@ knitr::include_graphics("../figuretable/10_fig_1.png")
 
 ## Intent-to-treat effect
 
-- The sharp RD estimator of the effect of treatment assignment $Z_i$ on the outcome $Y_i$ now estimate:
+- The sharp RD estimator of the effect of treatment assignment $Z_i$ on the outcome $Y_i$ now estimates:
 $$
 \begin{split}
 &\lim_{x \downarrow 0} \mathbb{E}[Y_i|X_i = x] - \lim_{x \uparrow 0} \mathbb{E}[Y_i|X_i = x]\\
@@ -123,8 +122,8 @@ $$
 &= \mathbb{E}[D_i^\ast(1) | X_i = 0] - \mathbb{E}[D_i^\ast(0) | X_i = 0].
 \end{split}
 $$
-- We call this _first-stage effect_ and denote by $\tau_{fs}$.
-- $\tau_{itt}$ and $\tau_{fs}$ are both sharp RD parameters and inherit the properties we have discussed so far.
+- We call this _first-stage effect_ and denote by $\tau_{1st}$.
+- $\tau_{itt}$ and $\tau_{1st}$ are both sharp RD parameters and inherit the properties we have discussed so far.
 
 ## LATE
 
@@ -146,18 +145,18 @@ $$
 \tau_{frd} 
 &\equiv \mathbb{E}[Y_i^\ast(1) - Y_i^\ast(0)| X_i = 0, D_i^\ast(1) > D_i^\ast(0)] \\
 &= \frac{\lim_{x \downarrow 0} \mathbb{E}[Y_i|X_i = x] - \lim_{x \uparrow 0} \mathbb{E}[Y_i|X_i = x]}{\lim_{x \downarrow 0} \mathbb{E}[D_i | X_i = x] - \lim_{x \uparrow 0} \mathbb{E}[D_i | X_i = x]}\\
-&= \frac{\tau_{itt}}{\tau_{fs}}.
+&= \frac{\tau_{itt}}{\tau_{1st}}.
 \end{split}
 $$
 
 ## Biac-correction and robust standard error
 
-- We first estimate $\tau_{itt}$ and $\tau_{fs}$ with a band width $h$ to obtain $\hat{\tau}_{itt}(h)$ and $\hat{\tau}_{fs}(h)$.
-- Then, we can estimate $\tau_{frd}$ by $\hat{\tau}_{frd}(h) \equiv \hat{\tau}_{itt}(h) / \hat{\tau}_{fs}(h)$.
+- We first estimate $\tau_{itt}$ and $\tau_{1st}$ with a band width $h$ to obtain $\hat{\tau}_{itt}(h)$ and $\hat{\tau}_{1st}(h)$.
+- Then, we can estimate $\tau_{frd}$ by $\hat{\tau}_{frd}(h) \equiv \hat{\tau}_{itt}(h) / \hat{\tau}_{1st}(h)$.
 - How do we choose the bandwidth? How to correct the bias? How to construct a robust standard error?
 - The fuzzy RD estimator is a linear combination of two sharp RD estimators plus a higher-order reminder term:
 $$
-\hat{\tau}_{frd}(h) - \tau_{frd} = \frac{\hat{\tau}_{itt}(h) - \tau_{itt}}{\tau_{fs}} - \tau_{itt} \cdot \frac{\hat{\tau}_{fs}(h) - \tau_{fs}}{\tau_{fs}^2} + R.
+\hat{\tau}_{frd}(h) - \tau_{frd} = \frac{\hat{\tau}_{itt}(h) - \tau_{itt}}{\tau_{1st}} - \tau_{itt} \cdot \frac{\hat{\tau}_{1st}(h) - \tau_{1st}}{\tau_{1st}^2} + R.
 $$
 - Therefore, the ideas are essentially the same.
 

@@ -1,0 +1,25 @@
+---
+title: "Applied Econometrics Slides"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+- [Potential outcome model](1_potential_outcome_model.html)
+- [Fisher's p-value](2_fisher_pvalue.html)
+- [Neyman's inference](3_neyman_inference.html)
+- [Regression methods](4_regression_methods.html)
+- [Stratified randomized experiments](5_stratified_random_experiments.html)
+- [Clustered randomized experiments](6_clustered_random_experiments.html)
+- [Regular assignment mechanism](7_regular_assignment_mechanism.html)
+- [Noncompliers](10_assignment_mechanism_with_noncompliers.html)
+- [Sharp regression discontinuity design](11_regression_discontinuity_design_sharp.html)
+- [Advanced regression discontinuity design](12_regression_discontinuity_design_advanced.html)
+- [2 x 2 difference in differences](13_difference_in_difference_2by2.html)
+- [Multiperiods difference in differences](14_difference_in_difference_multiperiod.html)
+- [Synthetic control method](15_synthetic_control_method.html)
+- [Shift-share design](16_shift_share_design.html)
+- [Applied papers reading list](99_reading.html)

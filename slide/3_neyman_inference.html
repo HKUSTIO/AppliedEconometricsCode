@@ -3069,18 +3069,21 @@ var loadDeck = function(event) {
   });
 };
 
-if (document.readyState !== "loading" &&
-    document.querySelector('slides') === null) { 
-  // if the document is done loading but our element hasn't yet appeared, defer
-  // loading of the deck
-  window.setTimeout(function() {
-    loadDeck(null);
-  }, 0);
-} else {
-  // still loading the DOM, so wait until it's finished
-  document.addEventListener("DOMContentLoaded", loadDeck);
-}
+if (!window.Shiny) {
+  // If Shiny is loaded, the slide deck is initialized in ioslides template
 
+  if (document.readyState !== "loading" &&
+      document.querySelector('slides') === null) {
+    // if the document is done loading but our element hasn't yet appeared, defer
+    // loading of the deck
+    window.setTimeout(function() {
+      loadDeck(null);
+    }, 0);
+  } else {
+    // still loading the DOM, so wait until it's finished
+    document.addEventListener("DOMContentLoaded", loadDeck);
+  }
+}
 
 
 </script>
@@ -3189,7 +3192,7 @@ $(document).ready(function() {
 <ul>
 <li>Consider a finite-sample average treatment effect as an estimand: \[
 \tau_{fs} \equiv \frac{1}{N} \sum_{i = 1}^N [Y_i^\ast(1) - Y_i^\ast(0)] \equiv \overline{Y}^\ast(1) - \overline{Y}^\ast(0),
-\] where \(fs\) represents being the finite-sample parameter.</li>
+\] where the subscript \(fs\) denotes the finite-sample parameter.</li>
 <li>Assignment-based uncertainty: The sample and the potential outcome are fixed, while the treatment assignment is random.</li>
 </ul>
 
@@ -3283,7 +3286,7 @@ s_1^2 \equiv \frac{1}{N_1 - 1} \sum_{i: W_i = 1} (Y_i - \overline{Y}_1)^2.
 </article></slide><slide class=""><hgroup><h2>Sampling and random assignment variance of \(\hat{\tau}_{fs}\)</h2></hgroup><article  id="sampling-and-random-assignment-variance-of-hattau_fs">
 
 <ul>
-<li>If this is the estimand, the sampling variance of \(\hat{\tau}_{fs}\) due to the randomness of \(\mathbf{W}, \mathbf{Y}^\ast(1)\), and \(\mathbf{Y}^\ast(0)\) is, after a lengthy algebra: \[
+<li>If this is the estimand, the sampling variance of \(\hat{\tau}_{fs}\) due to the randomness of \(\mathbf{W}, \mathbf{Y}^\ast(1)\), and \(\mathbf{Y}^\ast(0)\) is, after lengthy algebra: \[
 \mathbb{V}(\hat{\tau}_{fs}) = \frac{\sigma_0^2}{N_0} + \frac{\sigma_1^2}{N_1},
 \] where: \[
 \sigma_0^2 \equiv \mathbb{V}[Y_i^\ast(0)], \sigma_1^2 \equiv \mathbb{V}[Y_i^\ast(1)].
@@ -3294,7 +3297,7 @@ s_1^2 \equiv \frac{1}{N_1 - 1} \sum_{i: W_i = 1} (Y_i - \overline{Y}_1)^2.
 
 <ul>
 <li>Chapter 6, Guido W. Imbens and Donald B. Rubin, 2015, Causal Inference for Statistics, Social, and Biomedical Sciences, Cambridge University Press.</li>
-<li>Section 4.2, Athey, Susan, and Guido Imbens. 2016. &ldquo;The Econometrics of Randomized Experiments.&rdquo; arXiv [stat.ME]. arXiv. <a href='http://arxiv.org/abs/1607.00698' title=''>http://arxiv.org/abs/1607.00698</a>.</li>
+<li>Section 4.2, Athey, Susan, and Guido Imbens. 2016. “The Econometrics of Randomized Experiments.” arXiv [stat.ME]. arXiv. <a href='http://arxiv.org/abs/1607.00698' title=''>http://arxiv.org/abs/1607.00698</a>.</li>
 </ul></article></slide>
 
 
@@ -3322,6 +3325,11 @@ s_1^2 \equiv \frac{1}{N_1 - 1} \sum_{i: W_i = 1} (Y_i - \overline{Y}_1)^2.
        window.jQuery(document).on('slideenter', function(e) {
          window.jQuery(e.target).trigger('shown');
       });
+    }
+    if (window.Shiny) {
+      // Initialize slides when this script appears on the page, since it
+      // indicates that the <slides> markup has been fully loaded.
+      window.loadDeck();
     }
   })();
 </script>

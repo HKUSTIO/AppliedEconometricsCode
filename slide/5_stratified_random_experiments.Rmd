@@ -82,7 +82,7 @@ $$
 - If the stratification is random, no gain will be obtained.
 - However, if the stratification is based on characteristics that are associated with the outcomes of interest, stratified random experiments can be more informative than completely randomized experiments.
 
-## Finite-sample average treatment effet in each strata
+## Finite-sample average treatment effect in each stratum
 
 - Define the finite-sample average treatment effect in strata $g$ as:
 $$
@@ -141,7 +141,7 @@ where $fs$ represents being the finite-sample parameter.
 
 - We can estimate the difference in means for each stratum:
 $$
-\hat{\tau}_{fsg} \equiv \overline{Y}_{tg}^{obs} - \overline{Y}_{cg}^{obs} \equiv \frac{1}{N_{tg}} \sum_{i: G_{ig} = 1} Z_i \cdot Y_i^{obs} - \frac{1}{N_{cg}} \sum_{i: G_{ig} = 0} (1 - Z_i) \cdot Y_i^{obs}.
+\hat{\tau}_{fsg} \equiv \overline{Y}_{tg}^{obs} - \overline{Y}_{cg}^{obs} \equiv \frac{1}{N_{tg}} \sum_{i: G_{ig} = 1} Z_i \cdot Y_i^{obs} - \frac{1}{N_{cg}} \sum_{i: G_{ig} = 1} (1 - Z_i) \cdot Y_i^{obs}.
 $$
 - Then, we can take the weighted average:
 $$
@@ -163,7 +163,7 @@ $$
 
 ## Super-population average treatment effect
 
-- Suppose out estimand is the super-population average treatment effect:
+- Suppose our estimand is the super-population average treatment effect:
 $$
 \tau_{sp} \equiv \mathbb{E}[Y_i^\ast(1) - Y_i^\ast(0)].
 $$
@@ -186,13 +186,13 @@ $$
 which is a consistent estimator for $\tau_{spg}$.
 - Because $\tau_{sp} \equiv \sum_{g = 1}^G q_g \cdot \tau_{spg}$, $\hat{\tau}_{sp} \equiv \sum_{g = 1}^G q_g \cdot \hat{\tau}_{olsg}$ is a consistent estimator.
 
-## Transforming the linear regression funciton
+## Transforming the linear regression function
 
 - Inserting $\tau_G = (\tau - \sum_{g = 1}^{G - 1} q_g \cdot \tau_g)/q_G$ to the linear regression function, we have:
 $$
 Y_i^{obs} = \tau \cdot Z_i \cdot \frac{G_{iG}}{q_G} + \sum_{g = 1}^G \alpha_g \cdot G_{ig} + \sum_{g = 1}^{G - 1} \tau_g \cdot Z_i \cdot [G_{ig} - G_{iG} \cdot \frac{q_g}{q_G}] + \epsilon_i.
 $$
-- By estimating this linear regression function by the ols method, we can directly estiamte $\tau_{sp}$.
+- By estimating this linear regression function by the ols method, we can directly estimate $\tau_{sp}$.
 
 ## Asymptotic normality
 

@@ -75,7 +75,7 @@ $(document).ready(function() {
 - $(Y_{it}, G_{it})$, $i = 1, \cdots, N$.
 - Period: $t \in \{1, \cdots, T\}$.
 - Group: $G_i \in \{0, 1\}$.
-- Treatment: $D_{it} = G_i \cdot 1\{t \ge q\}$, that is, teated in period $q$.
+- Treatment: $D_{it} = G_i \cdot 1\{t \ge q\}$, that is, treated in period $q$.
 - Potential outcomes: $Y_{it}^\ast(0), Y_{it}^\ast(1)$.
 - Observed outcome: $Y_{it} = D_{it} \cdot Y_{it}^\ast(1) + (1 - D_{it}) \cdot Y_{it}^\ast(0)$.
 - There are one control (never-treated) and one treatment timing (eventually treated) groups.
@@ -89,7 +89,7 @@ $(document).ready(function() {
 ## Taxonomy: $G \times T$ design
 
 - $(Y_{it}, G_{it})$, $i = 1, \cdots, N$.
-- Period: $t \in \{1, T\}$.
+- Period: $t \in \{1, \cdots, T\}$.
 - Group: $G_i \in \{q, \cdots, T, \infty\}$.
 - Treatment: $D_{it} = 1\{t \ge G_i\}$, that is, units in group $G_i$ is treated in period $G_i$.
 - Potential outcomes: $Y_{it}^\ast(r)$ the potential outcome in period $t$ if it received treatment in period $r$.
@@ -139,7 +139,7 @@ where $\hat{\tau}_{r}$ is the DID estimator between cohorts $r$ and $l$ and $s_{
 - $(Y_{it}, G_{it})$, $i = 1, \cdots, N$.
 - Period: $t \in \{1, \cdots, T\}$.
 - Group: $G_i \in \{0, 1\}$.
-- Treatment: $D_{it} = G_i \cdot 1\{t \ge q\}$, that is, teated in period $q$.
+- Treatment: $D_{it} = G_i \cdot 1\{t \ge q\}$, that is, treated in period $q$.
 - Potential outcomes: $Y_{it}^\ast(0), Y_{it}^\ast(1)$.
 - Observed outcome: $Y_{it} = D_{it} \cdot Y_{it}^\ast(1) + (1 - D_{it}) \cdot Y_{it}^\ast(0)$.
 
@@ -431,7 +431,7 @@ $$
 - Therefore, the confidence interval for each null hypothesis is not appropriate.
 - The $(1 - \alpha)$-uniform confidence interval $CI_t(r)$ for $r = q, \cdots, T, \infty$ and $t = 1, \cdots, T$
 $$
-\mathbb{P}[\tau_t(r) \in CI_t(r), r = q, \cdots, T, \infty, t = 1, \cdots, T] \le 1 - \alpha.
+\mathbb{P}[\tau_t(r) \in CI_t(r), r = q, \cdots, T, \infty, t = 1, \cdots, T] \ge 1 - \alpha.
 $$
 - Callaway and Sant'Anna (2021) proposed a bootstrap estimator $\widehat{CI}_t(r)$ such that
 $$

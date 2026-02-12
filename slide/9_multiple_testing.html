@@ -3161,7 +3161,7 @@ ul.task-list{list-style: none;}
 
 <ul>
 <li><p>Suppose that \(H^m, m = 1, \cdots, M_0\) are true null hypotheses and \(H^m, m = M_0 + 1, \cdots, M\) are false null hypotheses.</p></li>
-<li><p><strong>Definition</strong>: <em>Family-wise error rate</em>: The probability of rejecting at least one null hypotheses when all null hypotheses are true: \[
+<li><p><strong>Definition</strong>: <em>Family-wise error rate</em>: The probability of rejecting at least one null hypotheses that are true: \[
 \text{FWER} = \mathbb{P}\{\exists m = 1, \cdots, M_0, H_0^m \text{ is rejected}|\forall m = 1, \cdots, M_0, H_0^m\}.
 \]</p></li>
 </ul>
@@ -3170,7 +3170,7 @@ ul.task-list{list-style: none;}
 
 <ul>
 <li><strong>Bonferroni correction</strong>: The most conservative method to control FWER.</li>
-<li>Depends on the followig inequality: \[
+<li>Depends on the following inequality: \[
 \begin{split}
 &amp;\mathbb{P}\{\exists m = 1, \cdots, M_0, H_0^m \text{ is rejected}|\forall m = 1, \cdots, M_0, H_0^m\}\\
 &amp;\leq \sum_{m=1}^{M_0} \mathbb{P}\{H_0^m \text{ is rejected}|H_0^m\} = M_0 \alpha.
@@ -3178,17 +3178,25 @@ ul.task-list{list-style: none;}
 \]</li>
 <li>Therefore, for each hypothesis, if you consider a test with a significance level \(\alpha/M\), then the FWER is no greater than \(\alpha\).</li>
 <li>The above inequality holds regardless of the dependence structure among the tests.</li>
-<li>The Bonferrorni correction: Reject \(H_0^m\) if the piece-wise p-value for \(H_0^m\) is \(p^m \le \alpha/M\). Then, \(FEWR \le \alpha M_0/M \le \alpha\).</li>
+<li>The Bonferroni correction: Reject \(H_0^m\) if the piece-wise p-value for \(H_0^m\) is \(p^m \le \alpha/M\). Then, \(\text{FWER} \le \alpha M_0/M \le \alpha\).</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Bonferroni correction</h2></hgroup><article  id="bonferroni-correction-1">
+
+<ul>
+<li>Equivalently, we can adjust the p values as \[
+\tilde{p}^m = M p^m, m = 1, \cdots, M,
+\] and reject \(H_0^m\) if \(\tilde{p}^m \le \alpha\).</li>
 </ul>
 
 </article></slide><slide class=""><hgroup><h2>Why Bonferroni Correction is Conservative?</h2></hgroup><article  id="why-bonferroni-correction-is-conservative">
 
 <ul>
-<li>Bonferrorni correction controls for the false rejection when all null hypotheses are true.</li>
-<li>However, in reality, only \(m \le M\) null hypotheses may be true.</li>
+<li>Bonferroni correction controls for the false rejection when all null hypotheses are true.</li>
+<li>However, in reality, only some of the \(M\) null hypotheses may be true.</li>
 <li>Indeed, some p-values may be smaller than others.</li>
 <li>How about rejecting the null hypothesis with the smallest p-value first?</li>
-<li>Then, considering a multiple testing of smaller number of hypotheses?</li>
+<li>Then, consider multiple testing with a smaller number of hypotheses.</li>
 </ul>
 
 </article></slide><slide class=""><hgroup><h2>Bonferroni-Holm Correction</h2></hgroup><article  id="bonferroni-holm-correction">
@@ -3233,10 +3241,18 @@ ul.task-list{list-style: none;}
 \end{split}
 \]</p>
 
+</article></slide><slide class=""><hgroup><h2>Bonferroni-Holm Correction</h2></hgroup><article  id="bonferroni-holm-correction-3">
+
+<ul>
+<li>Equivalently, we can adjust the p values as \[
+\tilde{p}^{(m)} = \max_{l \le m} \min\{ \{ (M - l + 1)p^{(l)} \}, 1\},
+\] and reject \(H_0^{(m)}\) if \(\tilde{p}^{(m)} \le \alpha\).</li>
+</ul>
+
 </article></slide><slide class=""><hgroup><h2>Remarks</h2></hgroup><article  id="remarks">
 
 <ul>
-<li>Neither Bonferroni correction or Bonferroni-Holm correction exploit the correlation among test statistics.</li>
+<li>Neither Bonferroni correction nor Bonferroni-Holm correction exploits the correlation among test statistics.</li>
 <li>We can improve the power by exploiting the correlation using a bootstrap method (Romano and Wolf, 2010).</li>
 </ul>
 
@@ -3266,7 +3282,7 @@ FDR = \frac{\sum_{m = 1}^{M_0} 1\{H_0^m \text{   is rejected}\}}{\sum_{m = 1}^M 
 <li>We consider a procedure that controls for the expected FDR: \(\mathbb{E}[FDR]\).</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Benjamin-Hotchberg Correction</h2></hgroup><article  id="benjamin-hotchberg-correction">
+</article></slide><slide class=""><hgroup><h2>Benjamini-Hochberg Correction</h2></hgroup><article  id="benjamini-hochberg-correction">
 
 <ol>
 <li>Order the p-values: \(p^{(1)} \le p^{(2)} \le \cdots \le p^{(M)}\).</li>
@@ -3281,17 +3297,17 @@ FDR = \frac{\sum_{m = 1}^{M_0} 1\{H_0^m \text{   is rejected}\}}{\sum_{m = 1}^M 
 </article></slide><slide class=""><hgroup><h2>Positive regression dependence</h2></hgroup><article  id="positive-regression-dependence">
 
 <ul>
-<li>If the test statistics are <em>independent</em>, then the Benjamin-Hotchberg correction controls for the FDR.</li>
-<li>If the test statistics are <em>dependent</em>, then the Benjamin-Hotchberg correction controls for the FDR under the <em>positive regression dependence</em> assumption.</li>
+<li>If the test statistics are <em>independent</em>, then the Benjamini-Hochberg correction controls for the FDR.</li>
+<li>If the test statistics are <em>dependent</em>, then the Benjamini-Hochberg correction controls for the FDR under the <em>positive regression dependence</em> assumption.</li>
 <li><strong>Definition</strong>: _Increasing set__: A set \(D\) is said to be increasing if \(x \in D\) and \(y \ge x\) implies \(y \in D\).</li>
-<li><strong>Definition</strong>: <em>Positive regression dependence</em>: For test statistics \(X^m\), \(m = 1, \cdots, M\), for any increasing set \(D\), and for any \(\mathcal{M}_0 \subset \mathcal{M}\), \(\mathbb{p}\{\{X^m\} \in D| X^m = x\}\) is non-decreasing in \(x\).</li>
-<li>If the joint distribution of the test statistics satisfies positive regression dependence for the set of true null hypothesis \(\mathcal{M}_0 \subset \mathcal{M}\), then the Benjamin-Hotchberg correction controls for the FDR no greater than \(\alpha M_0/M\).</li>
+<li><strong>Definition</strong>: <em>Positive regression dependence</em>: For test statistics \(X^m\), \(m = 1, \cdots, M\), for any increasing set \(D\), and for any \(m \in \mathcal{M}_0 \subset \mathcal{M}\), \(\mathbb{P}\{\{X^m\}_{m \in \mathcal{M}_0} \in D| X^m = x\}\) is non-decreasing in \(x\).</li>
+<li>If the joint distribution of the test statistics satisfies positive regression dependence for the set of true null hypothesis \(\mathcal{M}_0 \subset \mathcal{M}\), then the Benjamini-Hochberg correction controls for the FDR no greater than \(\alpha M_0/M\).</li>
 </ul>
 
 </article></slide><slide class=""><hgroup><h2>General case</h2></hgroup><article  id="general-case">
 
 <ul>
-<li>In general, the Benjamin-Hotchberg correction may not control for the FDR.</li>
+<li>In general, the Benjamini-Hochberg correction may not control for the FDR.</li>
 <li>In this case, we can use either:
 
 <ul>

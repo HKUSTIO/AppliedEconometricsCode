@@ -1,4 +1,4 @@
-Package: AppliedEconometricsCode
+Package: AppliedEconometrics
 Type: Package
 Title: What the package does (short line)
 Version: 1.0
@@ -9,5 +9,3 @@ Description: More about what it does (maybe more than one line)
 License: What license is it under?
 Imports: Rcpp (>= 1.0.6)
 LinkingTo: Rcpp, RcppEigen
-Encoding: UTF-8
-RoxygenNote: 7.3.1

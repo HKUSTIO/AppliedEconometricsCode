@@ -237,7 +237,7 @@ compute_p_value_mixed_effect <-
   }
 
 #'@export
-compute_p_value_benjamini_hotchberg <-
+compute_p_value_benjamini_hochberg <-
   function(
     p_list_1,
     p_list_0,

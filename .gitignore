@@ -1,4 +1,12 @@
+.venv/
 .Rproj.user
 .Rhistory
 .RData
 .Ruserdata
+src/*.o
+src/*.so
+src/*.dll
+/input
+
+# Windows reserved device name (cannot be tracked by Git)
+/nul

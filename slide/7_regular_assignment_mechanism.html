@@ -3220,7 +3220,7 @@ Z_i \perp \!\!\! \perp Y_i^\ast(1), Y_i^\ast(0) | W_i.
 <ul>
 <li>In observational studies, the observed covariates can be substantially unbalanced between treated and control units.</li>
 <li>In the regular assignment mechanism, we can remove all biases in comparisons between treated and control units as long as we adjust for differences in observed covariates.</li>
-<li>Therefore, the main focus of the analysis using the regular assignment mechanism is how to adjust the covariance distributions.</li>
+<li>Therefore, the main focus of the analysis using the regular assignment mechanism is how to adjust the covariate distributions.</li>
 </ul>
 
 </article></slide><slide class=""><hgroup><h2>Balancing score</h2></hgroup><article  id="balancing-score">
@@ -3293,13 +3293,13 @@ Z_i \perp \!\!\! \perp Y_i^\ast(0), Y_i^\ast(1) | b(W_i).
 <li><strong>Lemma: Coarseness of balancing score</strong>
 
 <ul>
-<li>The propensity score is the coarsest balancing score. That is, the propensity score is a function of every balansing score.</li>
+<li>The propensity score is the coarsest balancing score. That is, the propensity score is a function of every balancing score.</li>
 </ul></li>
 <li>Suppose not. Then, there is a balancing score \(b(w)\) and values \(w, w&#39;\) such that \(b(w) = b(w&#39;)\) but \(e(w) \neq e(w&#39;)\).</li>
 <li>Then, we have: \[
 \mathbb{P}(Z_i = 1| W_i = w) = e(w) \neq e(w&#39;) = \mathbb{P}(Z_i = 1| W_i = w&#39;). 
 \]</li>
-<li>Then, \(Z_i\) and \(W_i\) are not independent on \(b(w) = b(w&#39;)\).</li>
+<li>Then, \(Z_i\) and \(W_i\) are not independent given \(b(w) = b(w&#39;)\).</li>
 </ul>
 
 </article></slide><slide class="segue dark nobackground level1"><hgroup class = 'auto-fadein'><h2>Estimation and inference</h2></hgroup><article  id="estimation-and-inference">
@@ -3307,7 +3307,7 @@ Z_i \perp \!\!\! \perp Y_i^\ast(0), Y_i^\ast(1) | b(W_i).
 </article></slide><slide class=""><hgroup><h2>Estimands</h2></hgroup><article  id="estimands">
 
 <ul>
-<li>The super-population average tretment effect: \[
+<li>The super-population average treatment effect: \[
 \tau_{sp} \equiv \mathbb{E}[Y_i^\ast(1) - Y_i^\ast(0)] = \mathbb{E}[\tau_{sp}(W_i)],
 \] where \(\tau_{sp}(w)\) is: \[
 \tau_{sp}(w) \equiv \mu_1(w) - \mu_0(w) = \mathbb{E}[Y_i^\ast(1) - Y_i^\ast(0) | W_i = w].
@@ -3366,7 +3366,7 @@ Z_i \perp \!\!\! \perp Y_i^\ast(0), Y_i^\ast(1) | b(W_i).
 \]</p></li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Mode-based imputation</h2></hgroup><article  id="mode-based-imputation">
+</article></slide><slide class=""><hgroup><h2>Model-based imputation</h2></hgroup><article  id="model-based-imputation-1">
 
 <ul>
 <li>Then, estimate the linear model: \[
@@ -3443,7 +3443,7 @@ Y_i^{obs} = Z_i \cdot W_i \beta_1 + (1 - Z_i) \cdot W_i \beta_0 + \epsilon_i,
 <li>A weighting estimator requires a correctly-specified model of the propensity score: \[
 \mathbb{E}\{Z_i|W_i = w\}.
 \]</li>
-<li>A doubly-robust estimator is consistent if either of them are correctly-specified.</li>
+<li>A doubly-robust estimator is consistent if either of them is correctly specified.</li>
 </ul>
 
 </article></slide><slide class=""><hgroup><h2>Doubly-robust estimator</h2></hgroup><article  id="doubly-robust-estimator-1">
@@ -3495,13 +3495,13 @@ Y_i^{obs} = Z_i \cdot W_i \beta_1 + (1 - Z_i) \cdot W_i \beta_0 + \epsilon_i,
 <li>The unconfoundedness assumption is not testable.</li>
 <li>Giving up testing it, we try to estimate <em>pseudo</em>-causal estimands with a priori known values, which are typically zero, under assumptions more restrictive than unconfoundedness.</li>
 <li>If these analyses suggest the null hypothesis does not hold, then the unconfoundedness assumption will be viewed less plausible.</li>
-<li>If the unconfoundedness assumption is less plausible, we should conclude that it is not possible to estimate credibly and precisly the causal effects of interest.</li>
+<li>If the unconfoundedness assumption is less plausible, we should conclude that it is not possible to estimate credibly and precisely the causal effects of interest.</li>
 </ul>
 
 </article></slide><slide class=""><hgroup><h2>Estimating effects on pseudo-outcomes</h2></hgroup><article  id="estimating-effects-on-pseudo-outcomes">
 
 <ul>
-<li>One approachs is to test the <strong>pseudo-outcome unconfoundedness</strong>: \[
+<li>One approach is to test the <strong>pseudo-outcome unconfoundedness</strong>: \[
 Z_i \perp \!\!\! \perp W_i^p | W_i^r,
 \] for a partition of the covariates \(W_i = (W_i^p, W_i^r)\).</li>
 <li>Testing this property makes sense if a stronger version of unconfoundedness, <strong>subset unconfoundedness</strong> , is supposed to hold \[

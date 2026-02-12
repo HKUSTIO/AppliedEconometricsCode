@@ -71,9 +71,9 @@ $(document).ready(function() {
 $$
 y_{lj} = \beta_0 + \beta \ln x_{lj} + \beta_2 X_l + \epsilon_{lj}.
 $$
-- However, $x_{lj}$ and $\epsilon_{lj}$ can be correlated due to a labor demand shock specitic to the skill group and the city.
+- However, $x_{lj}$ and $\epsilon_{lj}$ can be correlated due to a labor demand shock specific to the skill group and the city.
 
-## A cannonical example
+## A canonical example
 
 - Consider aggregate shocks,  $g_{kj}$, the number of people arriving in the United States from 1990 to 2000 from country group $k$ and skill group $j$.
 - Consider immigrant shares:
@@ -100,7 +100,7 @@ $$
 ## Share-shift design
 
 - What are identifying assumptions for this estimator? 
-- _Share-view_: assume the shares $z_{kl}$ are exogenous (Goldsmith-Pinkham et al. 2020).
+- _Share-view_: assume the shares $z_{lk}$ are exogenous (Goldsmith-Pinkham et al. 2020).
 - _Shock-view_: assume the shocks $g_{kj}$ are exogenous (Borusyak et al 2021).
 - They differ in the assumptions and valid inference.
 
@@ -186,7 +186,7 @@ $$
 - The first-stage regression:
 $$
 \begin{split}
-x_l & = \gamma_0 + \gamma_1 B_t + \eta_{lt}\\
+x_l & = \gamma_0 + \gamma_1 B_l + \eta_l\\
 &= \gamma_0 + \gamma_1 g_2 + \gamma (g_1 - g_2) z_{l1} + \eta_l\\
 &= \tilde{\gamma}_0 + \tilde{\gamma}_1 z_{l1} + \eta_l
 \end{split}

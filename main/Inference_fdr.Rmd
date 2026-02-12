@@ -24,7 +24,7 @@ In this section, we introduce an example of the multiple testing problem and the
 ```{r setup, include=FALSE}
 rm(list = ls())
 knitr::opts_chunk$set(cache = FALSE, echo = TRUE, fig.align = "center")
-library(AppliedEconometricsCode)
+library(AppliedEconometrics)
 library(foreach)
 library(magrittr)
 library(ggplot2)
@@ -324,35 +324,35 @@ p_list_sorted[i]
 The test statistics of the null hypotheses that are correctly rejected among the `r M - M_0` false null hypotheses are those with p-values less than the threshold.
 
 ```{r}
-p_list_rejected_benjamini_hotchberg_1 <-
+p_list_rejected_benjamini_hochberg_1 <-
   p_list_1[
     p_list_1 <= p_list_sorted[i]
   ]
-p_list_rejected_benjamini_hotchberg_1
+p_list_rejected_benjamini_hochberg_1
 ```
 
 The test statistics of the null hypotheses that are incorrectly rejected among the `r M_0` true null hypotheses are those with p-values less than the threshold.
 
 ```{r}
-p_list_rejected_benjamini_hotchberg_0 <-
+p_list_rejected_benjamini_hochberg_0 <-
   p_list_0[
     p_list_0 <= p_list_sorted[i]
   ]
-p_list_rejected_benjamini_hotchberg_0
+p_list_rejected_benjamini_hochberg_0
 ```
 
 Therefore, the FDR is as follows.
   
 ```{r}
-fdr_benjamini_hotchberg <-
-  p_list_rejected_benjamini_hotchberg_0 %>% length() / (
-    p_list_rejected_benjamini_hotchberg_1 %>% length() +
-    p_list_rejected_benjamini_hotchberg_0 %>% length()
+fdr_benjamini_hochberg <-
+  p_list_rejected_benjamini_hochberg_0 %>% length() / (
+    p_list_rejected_benjamini_hochberg_1 %>% length() +
+    p_list_rejected_benjamini_hochberg_0 %>% length()
   )
-fdr_benjamini_hotchberg
+fdr_benjamini_hochberg
 ```
 
-The FDR was `r fdr` earlier, but the FDR by the Benjamini-Hochberg method is `r fdr_benjamini_hotchberg`, which is slightly lower.
+The FDR was `r fdr` earlier, but the FDR by the Benjamini-Hochberg method is `r fdr_benjamini_hochberg`, which is slightly lower.
 
 To confirm this, we will write the function for the data generation process, perform `r L` simulations, and calculate the expected value of the FDR.
 
@@ -376,7 +376,7 @@ Moreover, we will write the function to calculate the p-value threshold by the B
 p_value_all <-
   p_list_all %>%
   purrr::map(
-    ~ compute_p_value_benjamini_hotchberg(
+    ~ compute_p_value_benjamini_hochberg(
         p_list_1 = .$p_list_1,
         p_list_0 = .$p_list_0,
         alpha = alpha

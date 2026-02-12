@@ -21,7 +21,7 @@ date: 'Last Update: `r Sys.Date()`'
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(cache = FALSE, echo = TRUE, fig.align = "center")
-library(AppliedEconometricsCode)
+library(AppliedEconometrics)
 library(foreach)
 library(magrittr)
 library(ggplot2)
@@ -30,7 +30,7 @@ library(modelsummary)
 color_main <- scales::viridis_pal(option = "C")(1)
 ```
 
-Here, we implement the estimation method for sharp regression discontinuity design using a discrete score with the `RDHonest` package. The functions called from `AppliedEconometricsCode` are defined in `R/functions_rdrobust.R` and `R/functions_rdhonest.R`.
+Here, we implement the estimation method for sharp regression discontinuity design using a discrete score with the `RDHonest` package. The functions called from `AppliedEconometrics` are defined in `R/functions_rdrobust.R` and `R/functions_rdhonest.R`.
 
 The `RDHonest` package needs to be installed from GitHub. To do this, run the following code.
 
@@ -77,7 +77,7 @@ Next, consider the case where scores are realized at discrete points with a 0.01
 ### Preparing Settings
 
 ```{r}
-list_specitications <- 
+list_specifications <- 
   list(
     "Continuous score variable",
     "Discrete score variable at 0.01 grids",
@@ -167,7 +167,7 @@ for (
   plot_to_display <- 
     plot + 
     ggtitle(
-      list_specitications[counter]
+      list_specifications[counter]
     )
   print(plot_to_display)
 }
@@ -201,7 +201,7 @@ list_results_OLS <-
     .f = return_OLS
   )
 
-list_specitications <- 
+list_specifications <- 
   list(
     "Continuous Score",
     "Discrete (0.01 increments)",
@@ -221,7 +221,7 @@ for (
       table = table,
       case = paste0(
               "Fourth-order OLS: Heteroskedasticity-robust Standard Error: ",
-              list_specitications[counter]
+              list_specifications[counter]
             ),
       result = result
     )
@@ -245,7 +245,7 @@ for (
       table = table,
       case = paste0(
               "Fourth-order OLS: Cluster-robust Standard Error: ",
-              list_specitications[counter]
+              list_specifications[counter]
             ),
       result = result_cluster
     )
@@ -260,7 +260,7 @@ table %>%
 
 The true effect size is `3.44`. Therefore, even if continuous score values are observed, it can be seen that confidence intervals deviate significantly from the true value. Furthermore, as score discretization progresses, the point estimate further deviates. Looking at the cluster-robust variance estimation, it may seem to function appropriately at first glance, but this is not guaranteed at all times, and the variance can be either large or small. In any case, confidence intervals consistently deviate significantly from the true value.
 
-### Cluster-robust Variance Estimation is Smaller Example
+### Cluster-robust Variance Estimation: Smaller Example
 
 In actual practice, we can create a situation where the cluster-robust variance estimation is smaller by arbitrarily selecting a variance structure. Therefore, the guarantee that cluster-robust variance estimation will yield a more "robust" estimate than the ordinary least squares (OLS) estimation is not available.
 
@@ -321,7 +321,7 @@ for (
       table = table,
       case = paste0(
             "rdrobust: ",
-            list_specitications[counter]
+            list_specifications[counter]
           ),
       result = result
     )
@@ -331,7 +331,7 @@ for (
       table = table_compare,
       case = paste0(
             "rdrobust: ",
-            list_specitications[counter]
+            list_specifications[counter]
           ),
       result = result
     )
@@ -354,7 +354,7 @@ for (
       table = table,
       case = paste0(
             "rdrobust: ",
-            list_specitications[counter+1],
+            list_specifications[counter+1],
             " (No discrete points correction)"
           ),
       result = result
@@ -383,7 +383,7 @@ try(
 
 ### Estimation based on `RDHonest`
 
-While the correction by the `masspoint` option in `rdrobust` is effective, it is advisable to consider this correction as applicable only to cases where random duplicate observations occur in continuous scores.
+While the correction by the `masspoints` option in `rdrobust` is effective, it is advisable to consider this correction as applicable only to cases where random duplicate observations occur in continuous scores.
 
 In `RDHonest` estimation, it is necessary to specify the worst value of the second derivative function, while also being able to obtain confidence intervals taking into account that the score variable is essentially discretely observed.
 
@@ -492,7 +492,7 @@ for (
       table = table_compare,
       case = paste0(
             "RDHonest: ",
-            list_specitications[counter],
+            list_specifications[counter],
             " (Uniform Kernel CI Minimization M=rule-of-thumb)"
           ),
       result = result

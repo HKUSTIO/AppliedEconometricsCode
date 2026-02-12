@@ -71,8 +71,8 @@ $(document).ready(function() {
 - Period: $T_i \in \{0, 1\}$.
 - Group: $G_i \in \{0, 1\}$.
 - Treatment: $D_i = T_i \cdot G_i$.
-- Potential outcomes: $Y_i^\ast(0), Y_i^\ast(1)$.
-- Observed outcome: $Y_i = D_i \cdot Y_i^\ast(1) + (1 - D_i) \cdot Y_i^\ast(0)$.
+- Potential outcomes: $Y_i^\ast(0, t)$ and $Y_i^\ast(1, t)$ for $t \in \{0, 1\}$.
+- Observed outcome: $Y_i = D_i \cdot Y_i^\ast(1, T_i) + (1 - D_i) \cdot Y_i^\ast(0, T_i)$.
 
 ## Implicit restrictions
 
@@ -85,7 +85,7 @@ $(document).ready(function() {
   - $G_i = 1: (0, 1)$
   - $G_i = 0: (0, 0)$.
 - Or, the potential outcomes are assumed to depend only on this period's treatment:
-  - $Y_i = Y_i^\ast(0)$ for $T_i = 0$ regardless of whether $G_i = 0$ or $1$.
+  - $Y_i = Y_i^\ast(0, 0)$ for $T_i = 0$ regardless of whether $G_i = 0$ or $1$.
 - The latter restriction is referred to as _no anticipation assumption_.
 
 ## Average Treatment Effect on Treated
@@ -93,7 +93,7 @@ $(document).ready(function() {
 - The treatment is given only for $G_i = 1$ and in $T_i = 1$.
 - The paremter of interest in this case is:
 $$
-\tau_{ATT} = \mathbb{E}(Y_i^\ast(1) - Y_i^\ast(0)| G_i = 1, T_i = 1).
+\tau_{ATT} = \mathbb{E}(Y_i^\ast(1, 1) - Y_i^\ast(0, 1)| G_i = 1, T_i = 1).
 $$
 and called _average treatment effect on treated (ATT)_.
 
@@ -128,12 +128,12 @@ $$
 \tau_{DID} 
 &= [\mathbb{E}(Y_i| G_i = 1, T_i = 1) - \mathbb{E}(Y_i| G_i = 1, T_i = 0)]\\
 &- [\mathbb{E}(Y_i| G_i = 0, T_i = 1) - \mathbb{E}(Y_i| G_i = 0, T_i = 0)]\\
-&= [\mathbb{E}(Y_i^\ast(1)| G_i = 1, T_i = 1) - \mathbb{E}(Y_i^\ast(0)| G_i = 1, T_i = 0)]\\
-&- [\mathbb{E}(Y_i^\ast(0)| G_i = 0, T_i = 1) - \mathbb{E}(Y_i^\ast(0)| G_i = 0, T_i = 0)]\\
-&+ [\mathbb{E}(Y_i^\ast(0)|G_i = 1, T_i = 1) - \mathbb{E}(Y_i^\ast(0)|G_i = 1, T_i = 1)]\\
+&= [\mathbb{E}(Y_i^\ast(1, 1)| G_i = 1, T_i = 1) - \mathbb{E}(Y_i^\ast(0, 0)| G_i = 1, T_i = 0)]\\
+&- [\mathbb{E}(Y_i^\ast(0, 1)| G_i = 0, T_i = 1) - \mathbb{E}(Y_i^\ast(0, 0)| G_i = 0, T_i = 0)]\\
+&+ [\mathbb{E}(Y_i^\ast(0, 1)|G_i = 1, T_i = 1) - \mathbb{E}(Y_i^\ast(0, 0)|G_i = 1, T_i = 0)]\\
 &= \tau_{ATT}\\
-&+ [\mathbb{E}(Y_i^\ast(0)|G_i = 1, T_i = 1) -  \mathbb{E}(Y_i^\ast(0)| G_i = 1, T_i = 0)]\\
-&- [\mathbb{E}(Y_i^\ast(0)| G_i = 0, T_i = 1) - \mathbb{E}(Y_i^\ast(0)| G_i = 0, T_i = 0)],
+&+ [\mathbb{E}(Y_i^\ast(0, 1)|G_i = 1, T_i = 1) -  \mathbb{E}(Y_i^\ast(0, 0)| G_i = 1, T_i = 0)]\\
+&- [\mathbb{E}(Y_i^\ast(0, 1)| G_i = 0, T_i = 1) - \mathbb{E}(Y_i^\ast(0, 0)| G_i = 0, T_i = 0)],
 \end{split}
 $$
 - $\tau_{DID}$ is $\tau_{ATT}$ plus the difference in the trends between two groups.
@@ -143,8 +143,8 @@ $$
 - Assume parallel trends between two groups:
 $$
 \begin{split}
-&\mathbb{E}(Y_i^\ast(0)|G_i = 1, T_i = 1) -  \mathbb{E}(Y_i^\ast(0)| G_i = 1, T_i = 0)]\\
-&= [\mathbb{E}(Y_i^\ast(0)| G_i = 0, T_i = 1) - \mathbb{E}(Y_i^\ast(0)| G_i = 0, T_i = 0)].
+&\mathbb{E}(Y_i^\ast(0, 1)|G_i = 1, T_i = 1) -  \mathbb{E}(Y_i^\ast(0, 0)| G_i = 1, T_i = 0)\\
+&= \mathbb{E}(Y_i^\ast(0, 1)| G_i = 0, T_i = 1) - \mathbb{E}(Y_i^\ast(0, 0)| G_i = 0, T_i = 0).
 \end{split}
 $$
 - Then, the DID parameter is the average treatment effect on treated:

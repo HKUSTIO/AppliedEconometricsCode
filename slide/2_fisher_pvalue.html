@@ -3069,18 +3069,21 @@ var loadDeck = function(event) {
   });
 };
 
-if (document.readyState !== "loading" &&
-    document.querySelector('slides') === null) { 
-  // if the document is done loading but our element hasn't yet appeared, defer
-  // loading of the deck
-  window.setTimeout(function() {
-    loadDeck(null);
-  }, 0);
-} else {
-  // still loading the DOM, so wait until it's finished
-  document.addEventListener("DOMContentLoaded", loadDeck);
-}
+if (!window.Shiny) {
+  // If Shiny is loaded, the slide deck is initialized in ioslides template
 
+  if (document.readyState !== "loading" &&
+      document.querySelector('slides') === null) {
+    // if the document is done loading but our element hasn't yet appeared, defer
+    // loading of the deck
+    window.setTimeout(function() {
+      loadDeck(null);
+    }, 0);
+  } else {
+    // still loading the DOM, so wait until it's finished
+    document.addEventListener("DOMContentLoaded", loadDeck);
+  }
+}
 
 
 </script>
@@ -3198,7 +3201,7 @@ H_0: Y_i^\ast(0) = Y_i^\ast(1), \forall i = 1, \cdots, N.
 </article></slide><slide class=""><hgroup><h2>The difference in the means by treatment status</h2></hgroup><article  id="the-difference-in-the-means-by-treatment-status">
 
 <ul>
-<li>Consider a statistics: \[
+<li>Consider a statistic: \[
 T^{ave}(\mathbf{Z}, \mathbf{Y}^{obs}, \mathbf{W}) \equiv \overline{Y}_t^{obs} - \overline{Y}_c^{ob} = \frac{1}{N_1} \sum_{i: Z_i = 1}Y_i^{obs} - \frac{1}{N_0} \sum_{i:Z_i = 0} Y_i^{obs}.
 \]</li>
 <li>The p-value of the observation \(\mathbf{Y}^{obs}, \mathbf{Z}^{obs}\), and \(\mathbf{W}\) (where \(\mathbf{Z}^{obs}\) is the realized treatment assignment) is: \[
@@ -3211,7 +3214,7 @@ p = \mathbb{P}[|T^{ave}(\mathbf{Z}, \mathbf{Y}^{obs}, \mathbf{W})| \ge |T^{ave}(
 
 <ul>
 <li>Chapter 5, Guido W. Imbens and Donald B. Rubin, 2015, Causal Inference for Statistics, Social, and Biomedical Sciences, Cambridge University Press.</li>
-<li>Section 4.1, Athey, Susan, and Guido Imbens. 2016. &ldquo;The Econometrics of Randomized Experiments.&rdquo; arXiv [stat.ME]. arXiv. <a href='http://arxiv.org/abs/1607.00698' title=''>http://arxiv.org/abs/1607.00698</a>.</li>
+<li>Section 4.1, Athey, Susan, and Guido Imbens. 2016. “The Econometrics of Randomized Experiments.” arXiv [stat.ME]. arXiv. <a href='http://arxiv.org/abs/1607.00698' title=''>http://arxiv.org/abs/1607.00698</a>.</li>
 </ul></article></slide>
 
 
@@ -3239,6 +3242,11 @@ p = \mathbb{P}[|T^{ave}(\mathbf{Z}, \mathbf{Y}^{obs}, \mathbf{W})| \ge |T^{ave}(
        window.jQuery(document).on('slideenter', function(e) {
          window.jQuery(e.target).trigger('shown');
       });
+    }
+    if (window.Shiny) {
+      // Initialize slides when this script appears on the page, since it
+      // indicates that the <slides> markup has been fully loaded.
+      window.loadDeck();
     }
   })();
 </script>

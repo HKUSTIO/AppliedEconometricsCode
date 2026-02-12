@@ -66,7 +66,7 @@ $(document).ready(function() {
 - So far, we have assumed that the _assignment_ of treatment implied the _receipt_ of treatment.
   - Prescribing drug means that the subject takes the drug.
 - However, there are many cases in which a subject assigned to treatment does not receive the treatment.
-  - Supplied supplements on infant mortality to a village but some of the villagers could not receive the supplements.
+  - Supplying supplements to a village to reduce infant mortality, but some of the villagers could not receive the supplements.
 - Moreover, there may be cases where subjects not assigned to treatment may receive the treatment.
   - Men who were not drafted to the Vietnam War volunteered.
 - Subjects whose treatment _receipt_ status differs from treatment _assignment_ status are called _noncompliers_.
@@ -224,7 +224,7 @@ N_{co} \equiv \sum_{i = 1}^N 1_{G_i = co}, N_{nc} \equiv \sum_{i = 1}^N 1_{G_i =
 $$
 - The sample fractions of compliers and noncompliers
 $$
-\pi_{co} \equiv \frac{N_{co}}{N}, \pi_{nt} \equiv \frac{N_{nc}}{N} = 1 - \pi_{co}.
+\pi_{co} \equiv \frac{N_{co}}{N}, \pi_{nc} \equiv \frac{N_{nc}}{N} = 1 - \pi_{co}.
 $$
 
 
@@ -240,7 +240,7 @@ $$
 $$
 - The standard error is also estimated by:
 $$
-\widehat{\mathbb{V}}(\widehat{ITT}_D) \equiv \frac{s_{W, 0}^2}{N_0} + \frac{s_{W, 1}^2}{N_1}.
+\widehat{\mathbb{V}}(\widehat{ITT}_D) \equiv \frac{s_{D, 0}^2}{N_0} + \frac{s_{D, 1}^2}{N_1}.
 $$
 
 ## Estimate ITT effect for the outcome
@@ -263,11 +263,11 @@ $$
 
 - Using the ITT effect for the outcome by compliance status:
 $$
-ITT_{Y, co} \equiv \frac{1}{N_{co}} \sum_{i = 1: G_i = co}\{Y_i^\ast[1, D_i^\ast(1)] - Y_i^\ast[0, D_i^\ast(0)]\}, 
+ITT_{Y, co} \equiv \frac{1}{N_{co}} \sum_{i: G_i = co}\{Y_i^\ast[1, D_i^\ast(1)] - Y_i^\ast[0, D_i^\ast(0)]\}, 
 $$
 and:
 $$
-ITT_{Y, nc} \equiv \frac{1}{N_{nc}} \sum_{i = 1: G_i = nc}\{Y_i^\ast[1, D_i^\ast(1)] - Y_i^\ast[0, D_i^\ast(0)]\},
+ITT_{Y, nc} \equiv \frac{1}{N_{nc}} \sum_{i: G_i = nc}\{Y_i^\ast[1, D_i^\ast(1)] - Y_i^\ast[0, D_i^\ast(0)]\},
 $$
 we can decompose $ITT_Y$ as:
 $$
@@ -277,8 +277,8 @@ $$
 
 ## Unidentification of $ITT_{Y, co}$ and $ITT_{Y, nc}$
 
-- We cannot identify $ITT_{Y, co}$ and $ITT_{Y, nc}$ because we do not know the compliance status of each subject and hence we cannot condition the data on the compliance data.
-- $ITT_{Y, no}$ is not informative, because they never receive the treatment, irrespective of the assignment.
+- We cannot identify $ITT_{Y, co}$ and $ITT_{Y, nc}$ because we do not know the compliance status of each subject and hence we cannot condition on compliance status.
+- $ITT_{Y, nc}$ is not informative, because they never receive the treatment, irrespective of the assignment.
 - $ITT_{Y, co}$ is informative, because this compares the outcome when the treatment is received and not.
 - Then, under what kind of additional assumptions, can we identify $ITT_{Y, co}$?
 
@@ -316,7 +316,7 @@ $$
 
 - The exclusion restriction for noncompliers implies:
 $$
-ITT_{Y, nc} \equiv \frac{1}{N_{nc}} \sum_{i = 1: G_i = nc}\{Y_i^\ast[1, D_i^\ast(1)] - Y_i^\ast[0, D_i^\ast(0)]\} = 0.
+ITT_{Y, nc} \equiv \frac{1}{N_{nc}} \sum_{i: G_i = nc}\{Y_i^\ast[1, D_i^\ast(1)] - Y_i^\ast[0, D_i^\ast(0)]\} = 0.
 $$
 - Therefore:
 $$
@@ -338,14 +338,14 @@ $$
   $$
 - If this assumption holds:
 $$
-ITT_{Y, co} = \frac{1}{N_{co}} \sum_{i = 1: G_i = co}\{Y_i^*(1) - Y_i^*(0)\},
+ITT_{Y, co} = \frac{1}{N_{co}} \sum_{i: G_i = co}\{Y_i^*(1) - Y_i^*(0)\},
 $$
 which we call the __local average treatment effect (LATE)__ $\tau_{late}$.
 
 
 ## Moment-based estimator for $\tau_{late}$
 
-- Because we have $\widehat{ITT}_Y$ and $\widehat{ITT}_D$, we can estiamte $\tau_{late}$ by:
+- Because we have $\widehat{ITT}_Y$ and $\widehat{ITT}_D$, we can estimate $\tau_{late}$ by:
 $$
 \widehat{ITT}_{late} \equiv \frac{\widehat{ITT}_Y}{\widehat{ITT}_D}.
 $$
@@ -388,7 +388,7 @@ $$
 - The OLS estimator does not consistently estimate $\tau_{late}$, because $\epsilon_i + D_i \cdot \nu_i$ is potentially correlated with $D_i$.
 
 
-## Conditionam mean zero
+## Conditional mean zero
 
 - Because of the random assignment of $Z_i$, we have:
 $$
@@ -451,20 +451,20 @@ $$
 $$
 \hat{\gamma}_{ols} = \overline{Y}_1 - \overline{Y}_0 = \widehat{ITT}_Y.
 $$
-- Therefore, the instrumental variable estimator for $\tau_{late}$, which is $\hat{\gamma}_{ols}/\hat{\pi}_{co}$, is numerically the same with $\widehat{ITT}_{Y, co}$.
+- Therefore, the instrumental variable estimator for $\tau_{late}$, which is $\hat{\gamma}_{ols}/\hat{\pi}_{co}$, is numerically the same as $\widehat{ITT}_{Y, co}$.
 
 # Two-sided noncompliers
 
 ## Generalize compliance behaviors
 
-- In experiments, we may be able to ensure that subjects who are not assigned treatmet do not receives treatment.
+- In experiments, we may be able to ensure that subjects who are not assigned treatment do not receive treatment.
 - However, especially in observational studies, subjects may voluntarily take treatment, even if assigned treatment.
 - In such a situation, we need to generalize the compliance status.
 
 
 ## Compliance status
 
-- We consider 4 compliance status: Allways takers, never takers, compliers, and defiers.
+- We consider 4 compliance status: Always takers, never takers, compliers, and defiers.
 $$
 G_i =
 \begin{cases}
@@ -477,7 +477,7 @@ $$
 
 ## Underlying compliance status
 
-- The are two underlying compliance status for each pair of $Z_i$ and $D_i$:<footnote> Table 24.3 of Imbens and Rubin (2015) </footnote>
+- There are two underlying compliance status for each pair of $Z_i$ and $D_i$:<footnote> Table 24.3 of Imbens and Rubin (2015) </footnote>
 
 | | $Z_i = 0$ | $Z_i = 1$ |
 |-|-----------|-----------|
@@ -486,7 +486,7 @@ $$
 
 ## ITT effects 
 
-- The ITT analysis is unchanged with the two-sided compliers
+- The ITT analysis is unchanged with the two-sided noncompliers.
 
 
 ## Decomposing $ITT_Y$
@@ -544,13 +544,13 @@ $$
   - Compliers: goes to the Vietnam war if drafted, while does not if not drafted.
   - Defiers: volunteers to the Vietnam war if not drafted, while does not go if drafted.
 - Formally:
-- __Asumption: Monotonicity__
+- __Assumption: Monotonicity__
   - For all subjects $D_i^\ast(1) \ge D_i^\ast(0)$.
 
 
 ## Identification of $ITT_{Y, co}$
 
-- Under the exclusion restriction for nevertakes, alwaystakers, and the monotonicity, we have:
+- Under the exclusion restriction for never takers, always takers, and the monotonicity, we have:
 $$
 ITT_Y = ITT_{Y, co} \cdot \pi_{co}.
 $$

@@ -1,0 +1,640 @@
+---
+title: "回帰非連続分析 Regression Discontinuity"
+subtitle: "シャープRD推定"
+output: 
+  html_document:
+    css: style_do.css
+    #以下設定追加
+    number_sections: yes
+    toc: yes
+    toc_depth: '3'
+    toc_float: yes
+    theme: "spacelab" #"default", "bootstrap", "cerulean", "cosmo", "darkly", "flatly",
+                 # "journal", "lumen", "paper", "readable", "sandstone", "simplex",
+                 # "spacelab", "united", "yeti"
+    highlight: "pygments" #"default", "tango", "pygments", "kate", "monochrome",
+                 # "espresso", "zenburn", "haddock", "textmate"
+    df_print: paged
+    code_folding: show
+#date: '2022-04-19'
+date: '最終更新: `r Sys.Date()`'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(cache = FALSE, echo = TRUE, fig.align = "center")
+library(foreach)
+library(magrittr)
+library(ggplot2)
+library(kableExtra)
+library(modelsummary)
+library(rdrobust)
+color_main <- scales::viridis_pal(option = "C")(1)
+```
+
+ここでは`rdrobust`パッケージを用いたシャープ回帰非連続デザインの推定手法を実装する。`AppliedEconometrics`から呼び出している関数は`R/functions_rdrobust.R`に定義されている。以下では、Lee (2008)に基づく標本を生成し、`rdrobust`パッケージのオプションの設定、結果の解釈を解説する。合わせて、近傍無作為化の検証過程である密度検定を`rddensity`パッケージに基づいて行う。
+
+# Lee (2008)
+
+# シミュレーションデータの生成
+
+## 定数とパラメータの設定
+
+はじめに、シードを固定して、個体数`N`を設定する。
+
+```{r}
+set.seed(1)
+N <- 500
+```
+
+## データの生成
+
+次に、Lee (2008) における潜在結果の条件付き期待値関数を近似したRDデザインの標本を生成する。CCT (2014)などに従い、スコア`s`は`2*Beta(2,4) - 1`に従うものとする。この分布は、以下に示すように処置側に裾が長くなっており、必然的に処置群よりも統制群の観測が多くなる。
+
+```{r}
+plot <- 
+  data.frame(
+    x = 
+      c(
+        -1, 
+        1
+      )) %>%
+  ggplot(
+    aes(
+      x = x
+      )
+    ) + 
+  stat_function(
+    fun = 
+      function(x) {
+        dbeta(
+          x = (x + 1)/2, 
+          shape1 = 2, 
+          shape2 = 4
+        )
+      }
+    ) + 
+  labs(
+    y = "Density"
+  ) +
+  theme_classic()
+plot
+```
+
+観測される結果変数は、specify_mu_lee.R関数に指定したような、スコアの５次関数に正規分布のノイズが追加されたものとする。これは、Lee (2008)の得票シェアを従属変数としたFigure 4 (a)に対応するデータを、得票率差が0.99以下かつ-0.99以上の標本に限った上で、５次関数によってフィットさせたものである。
+
+```{r}
+plot <- 
+  data.frame(
+    x = 
+      c(
+        -1, 
+        1
+      )
+  ) %>%
+  ggplot(
+    aes(
+      x = x
+    )
+  ) + 
+  stat_function(
+    fun = AppliedEconometrics::specify_mu_lee,
+    geom = "point"
+  ) + 
+  labs(
+    y = "Regression function",
+    x = "Score"
+  ) +
+  theme_classic()
+plot
+```
+
+Leeデータを生成し、`dgp_lee`とする。
+
+```{r}
+dgp_lee <- 
+  AppliedEconometrics::generate_dgp_lee(
+    N = N
+  )
+```
+
+以下の通り、処置群・制御群の単純平均差は`0.63 - 0.26 = 0.37`だが、スコア周りの左極限と→極限を比較した真の効果は`0.52 - 0.48 = 0.04`となっており、一致しない。単純平均の差はスコアの閾値周りの近傍での比較になっていないからである。
+
+```{r}
+mean_y <-
+  dgp_lee %>%
+    dplyr::group_by(d) %>%
+    dplyr::summarize(
+      mean_y = mean(y)
+    ) %>%
+  dplyr::pull(mean_y) 
+mean_y  %>%
+  kbl() %>%
+  kable_styling()
+
+lim_mean_y <-
+  data.frame(
+    d = c(
+      FALSE, 
+      TRUE
+    ),
+    mean_y = c(
+      AppliedEconometrics::specify_mu_lee(
+        s = -1.e-30
+      ),
+      AppliedEconometrics::specify_mu_lee(
+        s = 0
+      )
+    )
+  )
+lim_mean_y %>%
+  kbl() %>%
+  kable_styling()
+```
+
+# 分析
+
+## rdrobustパッケージによる推定
+
+`rdrobust`関数に結果変数`y`とスコア変数`x`を指定すれば、結果のリストが得られる。他の回帰分析のパッケージのようにフォーミュラを用いた定式化ができないのが現時点での`rdrobust`の不便な点の一つである。
+
+```{r}
+result <- 
+  rdrobust::rdrobust(
+    y = dgp_lee$y,
+    x = dgp_lee$s
+  )
+```
+
+推定結果は以下のようにテクストとして表示される。`modelsummary`などによるレポーティングに対応していない点も不便な点の一つである。
+
+```{r}
+summary(result)
+```
+
+推定時にオプションを指定しなかった場合には、従来型 (Conventional)な推定量と標準誤差、それからバイアスの漸近誤差に対して頑健 (Robust) な標準誤差のみが出力される。一方、下記のようにオプションとして `all = TRUE` を渡せば、バイアス修正済 (Bias-Corrected) 推定量もまとめて出力される。出力される標準誤差は従来型とバイアス修正済みの行で同じ値に、推定値はバイアス修正済みと頑健の行で同じ値になっている。
+
+```{r}
+result <- 
+  rdrobust::rdrobust(
+    y = dgp_lee$y,
+    x = dgp_lee$s, 
+    all = TRUE
+  )
+summary(result)
+```
+
+また、デフォルトで、最適バンド幅は推定された平均二乗誤差を最小化するように選択され、カーネル関数は三角カーネルが選択される。
+
+なお、上記の例では`rho = 0.645`、すなわち、バイアス修正用のバンド幅が最終的に推定に用いられるバンド幅に比べてかなり小さいものが最適として選ばれている。ここで、`rho = 1`のオプションを指定すると、バイアス修正と最終的な推定のいずれでも同じバンド幅を用いるように要求することができる。
+
+```{r}
+result <- 
+  rdrobust::rdrobust(
+    y = dgp_lee$y,
+    x = dgp_lee$s, 
+    all = TRUE,
+    rho = 1
+  )
+summary(result)
+```
+
+なお、このときはバイアス修正から推定という二段階を経なくとも、局所二次回帰を行ったときにMSE最適となるようにバンド幅を選べば、数値的に同値となることが知られている。すなわち、下記のようにlocal-quadraticを指定`p = 2`して、バンド幅を共通のものとすれば、`Conventional`に現れる推定結果が`rho = 1`の場合の`Robust`推定結果と同一なものになる。
+
+```{r}
+result <- 
+  rdrobust::rdrobust(
+    y = dgp_lee$y,
+    x = dgp_lee$s, 
+    all = TRUE,
+    p = 2,
+    h = result$bws[1,1],
+    b = result$bws[1,1]
+  )
+summary(result)
+```
+
+
+## rdplotによる描写
+
+RD推定では、実際の推定値に加えて、処置側・統制のそれぞれで別々にフィットさせた推定値のプロットを、ビン平均値のプロットに組み合わせる作図が好まれる。これは、`rdplot`関数によって容易に実現できる。
+
+```{r}
+rdrobust::rdplot(
+  y = dgp_lee$y,
+  x = dgp_lee$s
+)
+```
+
+ビンの区切り方は`binselect`オプションを指定することで変えられる。`es`で始まる選択肢はx軸を等幅に区切る方法で、`qs`で始まる選択肢はスコア変数の分位数で区切る方法である。ビンの数は、平均二乗誤差を最小化する方法や、生データの分散をビン平均値の分散で近似するように選ぶような方法が選択できる。
+
+ここで、`es`または`qs`はいずれもサポート全体の平均二乗誤差を最小化するようにビン数を選ぶ方法である。`es`は等間隔でビンを区切るため、極端に少ない観測の平均をその他の平均と同等であるかのように見せる恐れがある。`qs`のビン選択では、各ビンに同じ観測数が入るので、そのような問題を避けることができる。
+
+```{r}
+rdrobust::rdplot(
+  y = dgp_lee$y,
+  x = dgp_lee$s,
+  binselect = "es"
+)
+```
+
+実際、`qs`のビンの位置は、`es`のビンの位置に比べ、観測の多い閾値の周辺に集積していることがわかる。
+このため、`qs`によるプロットは下記のように観測の多い点に集中してビンを区切るため、プロットとして必ずしも見やすいものが出力されるとは限らない。したがって、`qs`によるビン選択を頑健性確認として参照しつつも、`es`によるビン選択をその限界に注意した上で用いることが考えられる。
+
+```{r}
+rdrobust::rdplot(
+  y = dgp_lee$y,
+  x = dgp_lee$s,
+  binselect = "qs"
+)
+```
+
+なお、デフォルトは`esmv`であり、等間隔ビンにおいて生データの分散をビン平均値の分散で近似する決定方法である。
+
+```{r}
+rdrobust::rdplot(
+  y = dgp_lee$y,
+  x = dgp_lee$s
+)
+```
+
+## 密度検定
+
+密度検定は、Cattaneo, Jansson and Ma (2020)の方法を用いてスコア変数の密度関数の閾値における連続性を検定するものである。`rddensity`パッケージは、密度関数を分布関数の局所二次推定の一階導関数として得たうえで、検定を行う。
+
+```{r}
+result_density <- 
+  rddensity::rddensity(
+    X = dgp_lee$s
+  )
+summary(result_density)
+```
+
+検定統計量の値は-0.2074で、p値が0.8357となっている。
+
+推定結果はrdplotdensity関数を用いればヒストグラムと合わせて以下のように図示される。
+
+```{r}
+rddensity::rdplotdensity(
+  rdd = result_density,
+  X = dgp_lee$s
+)
+```
+
+## バンド幅とバイアス・分散の関係
+
+パイロットバンド幅を固定して、推定バンド幅をMSE最適なものから動かすと、バイアスと(バイアス除去前の)分散が変化する。バンド幅の選択によって、推定結果が大きく変わる。
+
+```{r}
+result_opt <- 
+  rdrobust::rdrobust(
+    y = dgp_lee$y,
+    x = dgp_lee$s
+    )
+table <- 
+  data.frame(
+    case = "optimal",
+    absolute_bias = sum(abs(result_opt$bias)), 
+    se_raw = result_opt$se[1], 
+    bandwidth_h = result_opt$bws[1,1],
+    bandwidth_b = result_opt$bws[2,1]
+  )
+
+result_small <- 
+  rdrobust::rdrobust(
+    y = dgp_lee$y,
+    x = dgp_lee$s,
+    h = result_opt$bws[1, 1] / 10,
+    b = result_opt$bws[2, 1]
+  )
+table <- 
+  rbind(
+    table,
+    data.frame(
+      case = "small",
+      absolute_bias = sum(abs(result_small$bias)),
+      se_raw = result_small$se[1],
+      bandwidth_h = result_small$bws[1, 1],
+      bandwidth_b = result_small$bws[2, 1]
+    )
+  )
+
+result_large <- 
+  rdrobust::rdrobust(
+    y = dgp_lee$y,
+    x = dgp_lee$s,
+    h = result_opt$bws[1, 1] * 4,
+    b = result_opt$bws[2, 1]
+  )
+table <- 
+  rbind(
+    table,
+    data.frame(
+      case = "large",
+      absolute_bias = sum(abs(result_large$bias)),
+      se_raw = result_large$se[1],
+      bandwidth_h = result_large$bws[1, 1],
+      bandwidth_b = result_large$bws[2, 1]
+    )
+  )
+table %>%
+  kbl() %>%
+  kable_styling()
+```
+
+上の結果のとおり、バンド幅を最適バンド幅よりも狭くとると、バイアスが小さくなる一方で標準誤差が大きくなることがわかる。また、バンド幅を最適バンド幅よりも広くとると、標準誤差が小さくなる一方でバイアスが小さくなることもわかる。
+
+# 付録：本文作図用
+
+```{r}
+plot <- 
+  data.frame(
+    s = 
+      c(
+        -50, 
+        50
+        )
+  ) %>%
+  ggplot(
+    aes(
+      x = s
+    )
+  ) + 
+  stat_function(
+    fun = AppliedEconometrics::specify_mu_ludwig_miller_modified_plus,
+    geom = "line",
+    color = "red",
+    alpha = 0.8, 
+    size = 2.2,
+    linetype = "dashed",
+    show.legend = TRUE
+  ) + 
+  stat_function(
+    fun = AppliedEconometrics::specify_mu_ludwig_miller_modified_minus,
+    geom = "line",
+    color = "blue",
+    alpha = 0.8, 
+    size = 2.2,
+    linetype = "dashed",
+    show.legend = TRUE
+  ) + 
+  geom_function(
+    fun = function(x) 
+      mean(
+        AppliedEconometrics::specify_mu_ludwig_miller_modified(
+          s = x[x >= 0]
+        )
+      ),
+      color = "red",
+      size = 1,
+      linetype = "dotted",
+      alpha = 0.6
+  ) + 
+  geom_function(
+      fun = function(x) 
+        mean(
+          AppliedEconometrics::specify_mu_ludwig_miller_modified(
+            s = x[x < 0]
+          )
+        ),
+        color = "blue",
+        size = 1,
+        linetype = "dotted",
+        alpha = 0.6
+  ) +
+  geom_point(
+    aes(
+        x = 0,
+        y = AppliedEconometrics::specify_mu_ludwig_miller_modified(
+          s = -1.e-10
+        )
+       ), 
+       shape = 21, 
+       size = 3, 
+       fill = "white"
+  ) +  
+  geom_function(
+    fun = AppliedEconometrics::specify_mu_ludwig_miller_modified,
+    size = 1,
+    xlim = 
+      c(
+        -50,
+        -1.3
+      )
+  ) + 
+  geom_function(
+    fun = AppliedEconometrics::specify_mu_ludwig_miller_modified,
+    size = 1.5,
+    xlim = 
+      c(
+        0,
+        50
+      )
+  ) +
+  labs(
+    y = ""
+  ) +
+  theme_classic()
+
+plot
+
+plot <- plot +
+  geom_vline(
+    xintercept = 0,
+    size = 0.8,
+    linetype = "dashed"
+  ) 
+
+plot
+```
+```{r}
+set.seed(1)
+rand_x <- 
+  runif(
+    n = 1000, 
+    min = -10, 
+    max = 20
+  )
+rand_e <- 
+  rnorm(
+    n = 1000, 
+    mean = 0,
+    sd = 1
+  )
+
+l_constant <- 
+  mean(
+    AppliedEconometrics::specify_mu_ludwig_miller_modified_minus(
+      s = rand_x[(rand_x >= 0) & (rand_x <= 10)]
+    )
+  )
+
+data <- 
+  data.frame(
+    x = rand_x, 
+    y = 
+      AppliedEconometrics::specify_mu_ludwig_miller_modified_minus(
+        s = rand_x
+      ) + 
+      rand_e
+  ) 
+
+ll_fit <-
+  data %>%
+  dplyr::filter(
+    x >= 0,
+    x <= 10
+  ) %>%
+  lm(
+  data = .,
+  formula = y ~ 1 + x
+  )
+
+plot <- 
+  data.frame(
+    x = 
+      c(
+        -10, 
+        20
+      )
+    ) %>%
+  ggplot(
+    aes(
+      x = x
+    )
+  ) + 
+  geom_function(
+    fun = AppliedEconometrics::specify_mu_ludwig_miller_modified_minus,
+    size = 1,
+    alpha = 0.7,
+    xlim = 
+      c(
+        0, 
+        20
+      )
+  ) + 
+  geom_vline(
+    xintercept = 0,
+  ) + 
+  geom_function(
+    fun = function(v) l_constant,
+    color = "red",
+    linetype = "dotted",
+    size = 1.5,
+    xlim = 
+      c(
+        -10,
+        10
+      )
+  ) + 
+  geom_function(
+    fun = function(v) ll_fit$coefficients[1] + ll_fit$coefficients[2] * v,
+    color = "blue",
+    linetype = "dashed",
+    size = 1.5,
+    xlim = 
+      c(
+        -10,
+        10
+      )
+  ) + 
+  labs(
+    y = ""
+  ) +
+  theme_classic()
+  
+plot
+```
+```{r}
+set.seed(1)
+rand_x <- 
+  runif(
+    n = 1000,
+    min = -20,
+    max = 20
+  )
+rand_e <- 
+  rnorm(
+    n = 1000,
+    mean = 0,
+    sd = 1
+  )
+
+l_constant <- 
+  mean(
+    AppliedEconometrics::specify_mu_ludwig_miller_modified_minus(
+      s = rand_x[(rand_x >= -10) & (rand_x <= 10)]
+    )
+  )
+data <- 
+  data.frame(
+    x = rand_x, 
+    y = 
+      AppliedEconometrics::specify_mu_ludwig_miller_modified_minus(
+        s = rand_x)
+       + 
+      rand_e
+  ) 
+
+ll_fit <- 
+  data %>%
+  dplyr::filter(
+    x >= -10,
+    x <= 10
+  ) %>%
+  lm(
+    data = .,
+    formula = y ~ 1 + x
+  )
+
+plot <- 
+  data.frame(
+    x = 
+      c(
+        -20, 
+        20
+      )
+  ) %>%
+  ggplot(
+    aes(
+      x = x
+    )
+  ) + 
+  geom_function(
+    fun = AppliedEconometrics::specify_mu_ludwig_miller_modified_minus,
+    size = 1,
+    alpha = 0.7,
+    xlim = 
+      c(
+        -20, 
+        20
+      )
+  ) + 
+  geom_vline(
+    xintercept = 0,
+  ) + 
+  geom_function(
+    fun = function(v) l_constant,
+    color = "red",
+    linetype = "dotted",
+    size = 1.5,
+    xlim = 
+      c(
+        -10, 
+        10
+      )
+  ) + 
+  geom_function(
+    fun = function(v) ll_fit$coefficients[1] + ll_fit$coefficients[2]*v,
+    color = "blue",
+    linetype = "dashed",
+    size = 1.5,
+    xlim = 
+      c(
+        -10, 
+        10
+      )
+  ) + 
+  ylab("") +
+  theme_classic()
+plot
+```

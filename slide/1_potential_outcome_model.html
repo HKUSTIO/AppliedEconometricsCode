@@ -3069,18 +3069,21 @@ var loadDeck = function(event) {
   });
 };
 
-if (document.readyState !== "loading" &&
-    document.querySelector('slides') === null) { 
-  // if the document is done loading but our element hasn't yet appeared, defer
-  // loading of the deck
-  window.setTimeout(function() {
-    loadDeck(null);
-  }, 0);
-} else {
-  // still loading the DOM, so wait until it's finished
-  document.addEventListener("DOMContentLoaded", loadDeck);
-}
+if (!window.Shiny) {
+  // If Shiny is loaded, the slide deck is initialized in ioslides template
 
+  if (document.readyState !== "loading" &&
+      document.querySelector('slides') === null) {
+    // if the document is done loading but our element hasn't yet appeared, defer
+    // loading of the deck
+    window.setTimeout(function() {
+      loadDeck(null);
+    }, 0);
+  } else {
+    // still loading the DOM, so wait until it's finished
+    document.addEventListener("DOMContentLoaded", loadDeck);
+  }
+}
 
 
 </script>
@@ -3306,11 +3309,11 @@ $(document).ready(function() {
 <ul>
 <li>Units: \(i = 1, \cdots, N\).</li>
 <li>Binary treatment indicator: \(Z_i \in \{0, 1\}\).</li>
-<li>Potential outcomes: \(Y_i^\ast(Z_i)\).</li>
-<li>Pre-treatment variabels or covariates: \(W_i\).</li>
+<li>Potential outcomes: \(Y_i^\ast(0)\) and \(Y_i^\ast(1)\).</li>
+<li>Pre-treatment variables or covariates: \(W_i\).</li>
 <li>\(\mathbf{Y}^\ast(0)\): and \(\mathbf{Y}^\ast(1)\) be the \(N\)-component column vectors of potential outcomes with \(i\)th elements equal to \(Y_i^\ast(0)\) and \(Y_i^\ast(1)\).</li>
 <li>\(\mathbf{Z}\): \(N\)-component column vector with \(i\)th element equal to \(Z_i\).</li>
-<li>\(\mathbf{Z}\): \(N \times K\) matrix of covariates with \(i\)th row equal to \(W_i\).</li>
+<li>\(\mathbf{W}\): \(N \times K\) matrix of covariates with \(i\)th row equal to \(W_i\).</li>
 </ul>
 
 </article></slide><slide class=""><hgroup><h2>Causal estimands</h2></hgroup><article  id="causal-estimands">
@@ -3331,23 +3334,23 @@ Y_i^\ast(1) - Y_i^\ast(0), i = 1, \cdots, N.
 </ul>
 
 <p>\[
-\tau_{fs}(f) = \frac{1}{N} \sum_{i = 1, W_i = f}^N [Y_i^\ast(1) - Y_i^\ast(0)].
-\]</p>
+\tau_{fs}(f) = \frac{1}{N(f)} \sum_{i: W_i = f} [Y_i^\ast(1) - Y_i^\ast(0)],
+\] where \(N(f) \equiv \#\{i = 1, \cdots, N: W_i = f\}\).</p>
 
 <ul>
 <li>The <em>average causal effect for those who were exposed to it</em>:</li>
 </ul>
 
 <p>\[
-\tau_{fs, t} = \frac{1}{N} \sum_{i = 1, Z_i = 1}^N [Y_i^\ast(1) - Y_i^\ast(0)].
-\]</p>
+\tau_{fs, t} = \frac{1}{N_1} \sum_{i: Z_i = 1} [Y_i^\ast(1) - Y_i^\ast(0)],
+\] where \(N_1 \equiv \sum_{i = 1}^N Z_i\).</p>
 
 </article></slide><slide class=""><hgroup><h2>Causal estimands</h2></hgroup><article  id="causal-estimands-2">
 
 <ul>
 <li>The <em>average causal effect for positive outcomes</em>: \[
-\tau_{fs, pos} = \frac{1}{N} \sum_{i = 1, Y_i^\ast(0) &gt; 0, Y_i^\ast(1) &gt; 0}^N [Y_i^\ast(1) - Y_i^\ast(0)].
-\]
+\tau_{fs, pos} = \frac{1}{N_{pos}} \sum_{i: Y_i^\ast(0) &gt; 0, Y_i^\ast(1) &gt; 0} [Y_i^\ast(1) - Y_i^\ast(0)],
+\] where \(N_{pos} \equiv \#\{i = 1, \cdots, N: Y_i^\ast(0) &gt; 0, Y_i^\ast(1) &gt; 0\}\).
 
 <ul>
 <li>e.g. effects on wages for employed workers.</li>
@@ -3369,7 +3372,7 @@ Y_i^\ast(1) - Y_i^\ast(0), i = 1, \cdots, N.
 <th align="left">Unit</th>
 <th align="left">Potential outcomes</th>
 <th align="left"></th>
-<th align="left">Causal Effecte</th>
+<th align="left">Causal Effect</th>
 </tr>
 <tr class="odd">
 <td align="left"></td>
@@ -3465,7 +3468,7 @@ Y_i^\ast(0) &amp; \text{   if   } Z_i = 1.
 <ul>
 <li>The average outcomes are 6 for treated and 7 for not treated.<footnote>Table 1.5 of Imbens and Rubin (2015) </footnote></li>
 <li>The simple difference means that the treatment has the causal effect of -1, whereas the true average causal effect is 2.</li>
-<li>No valid coclusion can be made without knowing the <em>treatment assignment mechanism</em> to correct the missing data problem.</li>
+<li>No valid conclusion can be made without knowing the <em>treatment assignment mechanism</em> to correct the missing data problem.</li>
 </ul>
 
 </article></slide><slide class=""><hgroup><h2>Fundamental problem of causal inference</h2></hgroup><article  id="fundamental-problem-of-causal-inference">
@@ -3474,7 +3477,7 @@ Y_i^\ast(0) &amp; \text{   if   } Z_i = 1.
 <li>The definition depends on the potential outcomes, but not on which outcome is actually observed.
 
 <ul>
-<li>For example, I take Aspirin and feel no headache can be either of Improvement due to Aspirin and Headache gone regardless of Aspirin, becuase the headache could have gone without taking Aspirin.</li>
+<li>For example, I take Aspirin and feel no headache can be either of Improvement due to Aspirin and Headache gone regardless of Aspirin, because the headache could have gone without taking Aspirin.</li>
 </ul></li>
 <li>The definition is based on the comparison of potential outcomes of the same unit.
 
@@ -3487,7 +3490,7 @@ Y_i^\ast(0) &amp; \text{   if   } Z_i = 1.
 </article></slide><slide class=""><hgroup><h2>SUTVA</h2></hgroup><article  id="sutva">
 
 <ul>
-<li><p>The previous potential outcome model presumes the followings:</p></li>
+<li><p>The previous potential outcome model presumes the following:</p></li>
 <li><p><strong>Assumption: SUTVA (Stable unit treatment value assumption)</strong>:</p>
 
 <ol>
@@ -3518,7 +3521,7 @@ Y_i^\ast(0) &amp; \text{   if   } Z_i = 1.
 <li>The dependence of the assignment on the covariate, assignment, and the potential outcomes of other units does not contradict with SUTVA, because SUTVA is about the definition of the potential outcomes.</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Unit assigmnemt probability</h2></hgroup><article  id="unit-assigmnemt-probability">
+</article></slide><slide class=""><hgroup><h2>Unit assignment probability</h2></hgroup><article  id="unit-assignment-probability">
 
 <ul>
 <li>Assignment mechanism is a joint probability of assignments for the entire population.</li>
@@ -3531,7 +3534,7 @@ Y_i^\ast(0) &amp; \text{   if   } Z_i = 1.
 </article></slide><slide class=""><hgroup><h2>Finite population propensity score</h2></hgroup><article  id="finite-population-propensity-score">
 
 <ul>
-<li>The average unit assignment probability for units with \(W_i = x\) is called the <em>propesity score</em> at \(x\).</li>
+<li>The average unit assignment probability for units with \(W_i = x\) is called the <em>propensity score</em> at \(x\).</li>
 <li><strong>Definition: Finite Population Propensity Score</strong>: \[
   e(x) = \frac{1}{N(x)} \sum_{i: W_i = x} p_i(\mathbf{W}, \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0)),
   \] where \(N(x) = \#\{i = 1, \cdots, N| W_i = x\}\).</li>
@@ -3540,7 +3543,7 @@ Y_i^\ast(0) &amp; \text{   if   } Z_i = 1.
 </article></slide><slide class=""><hgroup><h2>Restrictions on the assignment mechanism</h2></hgroup><article  id="restrictions-on-the-assignment-mechanism">
 
 <ul>
-<li><p>To classify the various types of assignment mechanisms, present three general properties that assignment mechanisms may satisfy.</p>
+<li><p>To classify the various types of assignment mechanisms, we present three general properties that assignment mechanisms may satisfy.</p>
 
 <ol>
 <li>Individualistic assignment.</li>
@@ -3553,7 +3556,7 @@ Y_i^\ast(0) &amp; \text{   if   } Z_i = 1.
 
 <ul>
 <li>The first restriction limits the dependence of the treatment assignment for unit \(i\) on the outcomes and assignments for other units.</li>
-<li><strong>Definition: Individualistic Assignemnt</strong>:
+<li><strong>Definition: Individualistic Assignment</strong>:
 
 <ul>
 <li>An assignment mechanism \(\mathbb{P}[\mathbf{Z}|\mathbf{W}, \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0)]\) is <em>individualistic</em> if, for some functions \(q(\cdot) \in [0, 1]\): \[
@@ -3643,7 +3646,7 @@ N_1
 \] for all \(\mathbf{Z}\) such that \(\sum_{i = 1}^N Z_i = N_1\).</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Stratfied randomized experiments</h2></hgroup><article  id="stratfied-randomized-experiments">
+</article></slide><slide class=""><hgroup><h2>Stratified randomized experiments</h2></hgroup><article  id="stratified-randomized-experiments">
 
 <ul>
 <li>First partition the population on the basis of covariate values into \(G\) strata, i.e. if the covariate space is \(\mathbb{X}\), partition \(\mathbb{X}\) into \(\mathbb{X}_1, \cdots, \mathbb{X}_G\), so that \(\bigcup_g \mathbb{X}_g = \mathbb{X}\) and \(\mathbb{X}_g \cap \mathbb{X}_{g&#39;} = \emptyset\) if \(g \neq g&#39;\).</li>
@@ -4187,7 +4190,7 @@ NA
 <li><em>The state of the world</em>: a value of \(m = (\mathbf{y}^\ast(\cdot), \mathbf{p}_Z) \in \mathcal{M}\).
 
 <ul>
-<li>For example: \(\mathbf{y}^\ast(\cdot)\) is as in the table, \(\mathbf{p}_Z)\) is a completely randomized experiment.</li>
+<li>For example: \(\mathbf{y}^\ast(\cdot)\) is as in the table, \(\mathbf{p}_Z\) is a completely randomized experiment.</li>
 </ul></li>
 <li>This uniquely determines the value of <em>parameter of interest</em> \(\theta\): \[
 \theta = \frac{1}{N} \sum_{i = 1}^N [y_i^\ast(1) - y_i^\ast(0)] = 174.  
@@ -4201,7 +4204,7 @@ NA
 
 <ul>
 <li>Includes the basic setting of the binary potential outcome model.</li>
-<li>Incclude the knowledge of the assignment mechanism.</li>
+<li>Include the knowledge of the assignment mechanism.</li>
 <li>Does not include the potential outcome.</li>
 </ul></li>
 <li><em>Structure</em> \(s(\phi, \theta) \subset \mathcal{M}\): the value of \(m \in \mathcal{M}\) that is consistent with the information \(\phi\) and the value of \(\theta\).</li>
@@ -4213,7 +4216,7 @@ NA
 <li>Parameter \(\theta\) and \(\tilde{\theta}\) are said to be <em>observationally equivalent</em> if there exist information \(\phi\) and \(s(\phi, \theta) \neq \emptyset\) and \(s(\phi, \tilde{\theta}) \neq \emptyset\).
 
 <ul>
-<li>If two parameters are observationally equivalent, both can be consistent with the information to the analysis.</li>
+<li>If two parameters are observationally equivalent, both can be consistent with the information to the analyst.</li>
 </ul></li>
 <li>The parameter \(\theta\) is said to be <em>identified</em> if there is no other parameter \(\tilde{\theta}\) that is observationally equivalent to \(\theta\).</li>
 <li>The parameter space \(\Theta\) is said to be <em>globally identified</em> if every parameter in \(\Theta\) is identified.</li>
@@ -4230,7 +4233,7 @@ NA
 </article></slide><slide class=""><hgroup><h2>Example</h2></hgroup><article  id="example-2">
 
 <ul>
-<li><p>Because the knowledge that the assignment mechanism is unconfounded is included in information \(\phi\), the analyt can show that the above is \[
+<li><p>Because the knowledge that the assignment mechanism is unconfounded is included in information \(\phi\), the analyst can show that the above is \[
 \begin{split}
   &amp;\frac{1}{N_1} \sum_{i = 1}^N \mathbb{E}[Z_i] Y_i^\ast(1) - \frac{1}{N_0} \sum_{i = 1}^N (1 - \mathbb{E}[Z_i]) Y_i^\ast(0) \\
   &amp;= \frac{1}{N_1} \sum_{i = 1}^N \frac{N_1}{N} Y_i^\ast(1) - \frac{1}{N_0} \sum_{i = 1}^N \frac{N_0}{N} Y_i^\ast(0) \\
@@ -4244,7 +4247,7 @@ NA
 </article></slide><slide class=""><hgroup><h2>Counterexample</h2></hgroup><article  id="counterexample">
 
 <ul>
-<li>Suppose that assignment mechanism \(\mathbf{p}_Z\) is such that assignint tutorial to three students whose individual treatment effect is the highest.
+<li>Suppose that assignment mechanism \(\mathbf{p}_Z\) is such that assigning tutorial to three students whose individual treatment effect is the highest.
 
 <ul>
 <li>Units 1, 2, 7 are always treated.</li>
@@ -4816,6 +4819,11 @@ NA
        window.jQuery(document).on('slideenter', function(e) {
          window.jQuery(e.target).trigger('shown');
       });
+    }
+    if (window.Shiny) {
+      // Initialize slides when this script appears on the page, since it
+      // indicates that the <slides> markup has been fully loaded.
+      window.loadDeck();
     }
   })();
 </script>

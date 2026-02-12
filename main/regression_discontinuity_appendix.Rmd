@@ -1,0 +1,302 @@
+---
+title: "regression_discontinuity_appendix"
+output: html_document
+date: "2023-11-14"
+---
+
+
+# 付録：本文作図用
+
+```{r}
+plot <- 
+  data.frame(
+    s = 
+      c(
+        -50, 
+        50
+        )
+  ) %>%
+  ggplot(
+    aes(
+      x = s
+    )
+  ) + 
+  stat_function(
+    fun = AppliedEconometrics::specify_mu_ludwig_miller_modified_plus,
+    geom = "line",
+    color = "red",
+    alpha = 0.8, 
+    size = 2.2,
+    linetype = "dashed",
+    show.legend = TRUE
+  ) + 
+  stat_function(
+    fun = AppliedEconometrics::specify_mu_ludwig_miller_modified_minus,
+    geom = "line",
+    color = "blue",
+    alpha = 0.8, 
+    size = 2.2,
+    linetype = "dashed",
+    show.legend = TRUE
+  ) + 
+  geom_function(
+    fun = function(x) 
+      mean(
+        AppliedEconometrics::specify_mu_ludwig_miller_modified(
+          s = x[x >= 0]
+        )
+      ),
+      color = "red",
+      size = 1,
+      linetype = "dotted",
+      alpha = 0.6
+  ) + 
+  geom_function(
+      fun = function(x) 
+        mean(
+          AppliedEconometrics::specify_mu_ludwig_miller_modified(
+            s = x[x < 0]
+          )
+        ),
+        color = "blue",
+        size = 1,
+        linetype = "dotted",
+        alpha = 0.6
+  ) +
+  geom_point(
+    aes(
+        x = 0,
+        y = AppliedEconometrics::specify_mu_ludwig_miller_modified(
+          s = -1.e-10
+        )
+       ), 
+       shape = 21, 
+       size = 3, 
+       fill = "white"
+  ) +  
+  geom_function(
+    fun = AppliedEconometrics::specify_mu_ludwig_miller_modified,
+    size = 1,
+    xlim = 
+      c(
+        -50,
+        -1.3
+      )
+  ) + 
+  geom_function(
+    fun = AppliedEconometrics::specify_mu_ludwig_miller_modified,
+    size = 1.5,
+    xlim = 
+      c(
+        0,
+        50
+      )
+  ) +
+  labs(
+    y = ""
+  ) +
+  theme_classic()
+
+plot
+
+plot <- plot +
+  geom_vline(
+    xintercept = 0,
+    size = 0.8,
+    linetype = "dashed"
+  ) 
+
+plot
+```
+```{r}
+set.seed(1)
+rand_x <- 
+  runif(
+    n = 1000, 
+    min = -10, 
+    max = 20
+  )
+rand_e <- 
+  rnorm(
+    n = 1000, 
+    mean = 0,
+    sd = 1
+  )
+
+l_constant <- 
+  mean(
+    AppliedEconometrics::specify_mu_ludwig_miller_modified_minus(
+      s = rand_x[(rand_x >= 0) & (rand_x <= 10)]
+    )
+  )
+
+data <- 
+  data.frame(
+    x = rand_x, 
+    y = 
+      AppliedEconometrics::specify_mu_ludwig_miller_modified_minus(
+        s = rand_x
+      ) + 
+      rand_e
+  ) 
+
+ll_fit <-
+  data %>%
+  dplyr::filter(
+    x >= 0,
+    x <= 10
+  ) %>%
+  lm(
+  data = .,
+  formula = y ~ 1 + x
+  )
+
+plot <- 
+  data.frame(
+    x = 
+      c(
+        -10, 
+        20
+      )
+    ) %>%
+  ggplot(
+    aes(
+      x = x
+    )
+  ) + 
+  geom_function(
+    fun = AppliedEconometrics::specify_mu_ludwig_miller_modified_minus,
+    size = 1,
+    alpha = 0.7,
+    xlim = 
+      c(
+        0, 
+        20
+      )
+  ) + 
+  geom_vline(
+    xintercept = 0,
+  ) + 
+  geom_function(
+    fun = function(v) l_constant,
+    color = "red",
+    linetype = "dotted",
+    size = 1.5,
+    xlim = 
+      c(
+        -10,
+        10
+      )
+  ) + 
+  geom_function(
+    fun = function(v) ll_fit$coefficients[1] + ll_fit$coefficients[2] * v,
+    color = "blue",
+    linetype = "dashed",
+    size = 1.5,
+    xlim = 
+      c(
+        -10,
+        10
+      )
+  ) + 
+  labs(
+    y = ""
+  ) +
+  theme_classic()
+  
+plot
+```
+```{r}
+set.seed(1)
+rand_x <- 
+  runif(
+    n = 1000,
+    min = -20,
+    max = 20
+  )
+rand_e <- 
+  rnorm(
+    n = 1000,
+    mean = 0,
+    sd = 1
+  )
+
+l_constant <- 
+  mean(
+    AppliedEconometrics::specify_mu_ludwig_miller_modified_minus(
+      s = rand_x[(rand_x >= -10) & (rand_x <= 10)]
+    )
+  )
+data <- 
+  data.frame(
+    x = rand_x, 
+    y = 
+      AppliedEconometrics::specify_mu_ludwig_miller_modified_minus(
+        s = rand_x)
+       + 
+      rand_e
+  ) 
+
+ll_fit <- 
+  data %>%
+  dplyr::filter(
+    x >= -10,
+    x <= 10
+  ) %>%
+  lm(
+    data = .,
+    formula = y ~ 1 + x
+  )
+
+plot <- 
+  data.frame(
+    x = 
+      c(
+        -20, 
+        20
+      )
+  ) %>%
+  ggplot(
+    aes(
+      x = x
+    )
+  ) + 
+  geom_function(
+    fun = AppliedEconometrics::specify_mu_ludwig_miller_modified_minus,
+    size = 1,
+    alpha = 0.7,
+    xlim = 
+      c(
+        -20, 
+        20
+      )
+  ) + 
+  geom_vline(
+    xintercept = 0,
+  ) + 
+  geom_function(
+    fun = function(v) l_constant,
+    color = "red",
+    linetype = "dotted",
+    size = 1.5,
+    xlim = 
+      c(
+        -10, 
+        10
+      )
+  ) + 
+  geom_function(
+    fun = function(v) ll_fit$coefficients[1] + ll_fit$coefficients[2]*v,
+    color = "blue",
+    linetype = "dashed",
+    size = 1.5,
+    xlim = 
+      c(
+        -10, 
+        10
+      )
+  ) + 
+  ylab("") +
+  theme_classic()
+plot
+```

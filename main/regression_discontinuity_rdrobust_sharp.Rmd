@@ -20,7 +20,7 @@ date: 'Last update: `r Sys.Date()`'
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(cache = FALSE, echo = TRUE, fig.align = "center")
-library(AppliedEconometricsCode)
+library(AppliedEconometrics)
 library(foreach)
 library(magrittr)
 library(ggplot2)
@@ -30,7 +30,7 @@ library(rdrobust)
 color_main <- scales::viridis_pal(option = "C")(1)
 ```
 
-Here, we implement the estimation method for sharp regression discontinuity design using the `rdrobust` package. The functions called from `AppliedEconometricsCode` are defined in `R/functions_rdrobust.R`. Below, we generate samples based on Lee (2008), set options for the `rdrobust` package, and explain the interpretation of the results. Additionally, we conduct a density test, which is the verification process for local randomization, based on the `rddensity` package.
+Here, we implement the estimation method for sharp regression discontinuity design using the `rdrobust` package. The functions called from `AppliedEconometrics` are defined in `R/functions_rdrobust.R`. Below, we generate samples based on Lee (2008), set options for the `rdrobust` package, and explain the interpretation of the results. Additionally, we conduct a density test, which is the verification process for local randomization, based on the `rddensity` package.
 
 # Lee (2008)
 
@@ -152,7 +152,7 @@ lim_mean_y %>%
 
 # Analysis
 
-## Estmiating with `rdrobust` package
+## Estimating with `rdrobust` package
 
 By specifying the outcome variable `y` and the score variable `x` to the `rdrobust` function, a list of results can be obtained. One of the current inconveniences of `rdrobust` is that it does not allow for formulation using formulas like other regression analysis packages.
 

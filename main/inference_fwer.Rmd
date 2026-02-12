@@ -15,7 +15,7 @@ output:
                  # "espresso", "zenburn", "haddock", "textmate"
     df_print: paged
     code_folding: show
-date: 'Lastu pdate: `r Sys.Date()`'
+date: 'Last Update: `r Sys.Date()`'
 ---
 
 In this report, we introduce the problem of multiple testing and methods to control FWER.
@@ -23,7 +23,7 @@ In this report, we introduce the problem of multiple testing and methods to cont
 ```{r setup, include=FALSE}
 rm(list = ls())
 knitr::opts_chunk$set(cache = FALSE, echo = TRUE, fig.align = "center")
-library(AppliedEconometricsCode)
+library(AppliedEconometrics)
 library(foreach)
 library(magrittr)
 library(ggplot2)

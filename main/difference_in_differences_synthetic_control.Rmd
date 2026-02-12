@@ -1,0 +1,317 @@
+---
+title: "合成コントロール法 Synthetic Control"
+subtitle: "標準的デザインにおける推定"
+output: 
+  html_document:
+    css: style_do.css
+    #以下設定追加
+    number_sections: yes
+    toc: yes
+    toc_depth: '3'
+    toc_float: yes
+    theme: "spacelab" #"default", "bootstrap", "cerulean", "cosmo", "darkly", "flatly",
+                 # "journal", "lumen", "paper", "readable", "sandstone", "simplex",
+                 # "spacelab", "united", "yeti"
+    highlight: "pygments" #"default", "tango", "pygments", "kate", "monochrome",
+                 # "espresso", "zenburn", "haddock", "textmate"
+    df_print: paged
+    code_folding: show
+#date: '2022-04-19'
+date: '最終更新: `r Sys.Date()`'
+---
+
+ここでは`tidysynth`パッケージを用いた合成コントロール法の推定を行う。
+AppliedEconometrics`から呼び出している関数は`R/functions_did.R`に定義されている。
+
+```{r setup, include=FALSE}
+rm(list = ls())
+knitr::opts_chunk$set(cache = FALSE, echo = TRUE, fig.align = "center")
+library(tidysynth)
+color_main <- scales::viridis_pal(option = "C")(1)
+```
+
+`tidysynth`パッケージにはAbadie et al. (2010)のカリフォルニアにおけるタバコ規制の効果検証データ`smoking`が含まれている。
+
+````{r}
+data("smoking")
+smoking %>% dplyr::glimpse()
+```
+ここでは、`lnincome`、`beer`、`age15to24`をそのままとし、仮想的に再生成した`retprice`と`cigsale`について、その性質を見ることにする。
+したがって、分析の実装は基本的に`tidysynth`パッケージのREADME https://github.com/edunford/tidysynth#readme に従うものとする。
+(すなわち、Abadie et al. 2010の構成に従うこととなる。)
+
+# データの生成
+
+まずは、`retprice`と`cigsale`がそれぞれ以下のような一変量ファクターモデルで生成されているとする。
+```{=latex}
+$$
+Y_{it} = \alpha_0 + \delta_t + \lambda_t \mu_i + \epsilon_{it}, \delta_t \sim N(0,3), \mu_i \sim N(0,5), \lambda_t ~ Unif(0,1), \epsilon_{it} \sim N(0,1).
+$$
+```
+具体的には、以下のように生成しよう：
+```{r}
+# seedの固定
+set.seed(1)
+
+smoking_fake <- smoking
+years <- unique(smoking_fake$year)
+states <- unique(smoking_fake$state)
+for (t in years) {
+  smoking_fake$retprice[smoking_fake$year == t] <- 
+    35 + stats::rnorm(n=1,sd=3)  + stats::runif(n=length(states)) * stats::rnorm(n=1,sd=5) + stats::rnorm(n=length(states))
+  smoking_fake$cigsale[smoking_fake$year == t] <- 
+    140 + stats::rnorm(n=1,sd=3)  + stats::runif(n=length(states)) * stats::rnorm(n=1,sd=5) + stats::rnorm(n=length(states))
+}
+smoking_fake_factor_no_effect <- smoking_fake
+```
+
+# 推定の実行
+
+`tidysynth`パッケージでは、以下の手順を踏むことになる。
+1. `synthetic_control`関数で設定を読み込み、
+2. `generate_predictor`関数で予測に用いる変数と期間を定義し、
+3. `generate_weights`関数で予測に用いるウェイトを計算し(内部で`synth_weights`を呼んでいる)、
+4. `generatecontrol`関数で生成されたウェイトをもとに、
+アウトカムの予測値を他の個体のアウトカムの加重平均として計算し、返している。
+
+これらはpipe`%>%`で繋げることで、以下のように一括処理を行うことができる。
+
+```{r}
+smoking_out_factor_noeffect <-
+  smoking_fake_factor_no_effect %>% 
+  
+  # 分析の設定を定義する：
+  synthetic_control(outcome = cigsale, # アウトカムの指定
+                    unit = state, # 個体を識別する変数
+                    time = year, # 期間を識別する変数
+                    i_unit = "California", # 処置個体の名前
+                    i_time = 1988, # 処置が発生した時点
+                    generate_placebos=T # プラセボ分析の準備を行うか否か
+                    ) %>%
+  
+  # generate_placeboがTRUEならば、処置個体以外の個体についても全てウェイトが計算される。
+  # Abadie et al. (2010)のような、無作為化検定を行うためには必要である。
+
+  # 予測に用いる系列を定義する。指定の仕方は二種類ある
+  # time_windowは単一期、または連続した期間で指定する必要がある
+
+  # time_windowを連続した期間で指定すると、その期間について平均を取ったものが生成される。
+  # なお、これらの変数 lnincome, age15to24, beerはそれぞれ欠損期間が存在する。
+  # 従って、下記のtime_windowでは欠損が存在しない期間を指定しているため問題が起きないが、
+  # time_window = 1970:1988などとしたうえで、na.rm=TRUEを指定しないとエラーが発生する。
+  generate_predictor(time_window = 1980:1988,
+                     ln_income = mean(lnincome, na.rm = T),
+                     youth = mean(age15to24, na.rm = T)) %>%
+  generate_predictor(time_window = 1984:1988,
+                     beer_sales = mean(beer, na.rm = T)) %>%
+  
+  # time_windowを単一期とすると、その期の変数がそのまま予測に用いられる。
+  # ここでは、Abadie et al (2010)と同じく、1975, 1980, 1988を予測に用いることにする。
+  generate_predictor(time_window = 1975,
+                     cigsale_1975 = cigsale) %>%
+  generate_predictor(time_window = 1980,
+                     cigsale_1980 = cigsale) %>%
+  generate_predictor(time_window = 1988,
+                     cigsale_1988 = cigsale) %>%
+  
+  # 予測に用いる変数を生成したのち、ウェイトを生成する。
+  # generate_placebos=TRUEが指定されていれば、ここでCaliforniaだけでなく、
+  # 全ての州についてウェイトが計算される。
+  
+  # ウェイトの計算は数値的に行われ、そのオプションが設定できる。
+  # ここで指定している margin_ipop, sigf_ipop, bound_ipopは
+  # すべて二次計画ソルバー(kernlab::ipop) に用いられるパラメータである。
+  generate_weights(optimization_window = 1970:1988, # ウェイトの計算に用いる期間の指定
+                   margin_ipop = .02,sigf_ipop = 7,bound_ipop = 6
+  ) %>%
+  
+  # 最後にgenerate_controlを呼べば、推定が完了する。
+  generate_control()
+```
+
+## 推定結果の表示
+推定結果は`plot_trends`関数、`plot_differences`関数で視覚的に得られる。
+
+`plot_trends`関数では、合成コントロール系列と観測系列を比較するプロットが得られる。
+今のデータは全ての州が同じ系列に従っており、その通りの結果が得られている。
+```{r}
+smoking_out_factor_noeffect %>% plot_trends()
+```
+
+`plot_differences`関数はそれらを差分として表示してくれる。
+```{r}
+smoking_out_factor_noeffect %>% plot_differences()
+```
+
+`plot_weights`関数を用いれば、どの統制群とどの変数が予測に寄与しているかが表示される。
+```{r}
+smoking_out_factor_noeffect %>% plot_weights()
+```
+さらに、`grab_balance_table`により、予測に用いた変数について
+合成コントロールと実際の観測でどれだけ類似しているかを見ることができる。
+```{r}
+smoking_out_factor_noeffect %>% grab_balance_table()
+```
+## プラセボ分析と推測統計
+推定において、`generate_placebos`をTRUEにしていれば、統制群の各個体についても
+同様のウェイトが計算されている。`plot_placebos`は全個体に対する予測と
+合成コントロール予測を視覚的に比較してくれる。
+```{r}
+smoking_out_factor_noeffect %>% plot_placebos()
+```
+ただし、デフォルトでは、予測がうまくいっていない個体については自動で排除するようになっている。
+`prune = FALSE`とすれば、全ての予測効果が表示される。
+```{r}
+smoking_out_factor_noeffect %>% plot_placebos(prune = FALSE)
+```
+Abadie et al (2010)では、処置個体の予測誤差が、処置を受けていない統制群の予測誤差
+と同じ分布に従っているならば「大きすぎる」ことを持って推測統計としている。
+`plot_mspe_ratio`を呼べば、統制群のプラセボ予測誤差に比べて、処置群の予測誤差が
+何番目に大きいかを表示することができる。
+```{r}
+smoking_out_factor_noeffect %>% plot_mspe_ratio()
+```
+正式には`grab_significance`を呼べば、処置個体と他の全てのプラセボ個体が同じ
+予測誤差を持っている場合の帰無仮説において、特定の順位が生じる確率が
+`fishers_exac_pvalue`として得られる。`California`は8番目に大きく、p-valueは
+0.205であり、必ずしも処置効果があるとは言えない結果が得られた。これは、データ生成
+過程と整合的である。
+```{r}
+smoking_out_factor_noeffect %>% grab_significance()
+```
+
+## 処置効果があるケース
+次に、同じデータ生成過程だが、カリフォルニアの処置期以降について、その販売量を
+比例的に減らしてみることにする。
+```{r}
+smoking_fake <- smoking
+years <- unique(smoking_fake$year)
+states <- unique(smoking_fake$state)
+
+# seedの固定
+set.seed(1)
+for (t in years) {
+  smoking_fake$retprice[smoking_fake$year == t] <- 
+    35 + stats::rnorm(n=1,sd=3)  + stats::runif(n=length(states)) * stats::rnorm(n=1,sd=5) + stats::rnorm(n=length(states))
+  smoking_fake$cigsale[smoking_fake$year == t] <- 
+    140 + stats::rnorm(n=1,sd=3)  + stats::runif(n=length(states)) * stats::rnorm(n=1,sd=5) + stats::rnorm(n=length(states))
+  smoking_fake$cigsale[smoking_fake$year == t & smoking_fake$state == 'California'] <- 
+    smoking_fake$cigsale[smoking_fake$year == t & smoking_fake$state == 'California'] * (1 - stats::runif(n=1,0.05,0.1)*(t > 1988))
+}
+smoking_fake_factor_some_effect <- smoking_fake
+```
+
+今後のために、手順を関数化させておく：
+```{r}
+call_synthetic_control <- function(data) {
+  out <- data %>% 
+    synthetic_control(outcome = cigsale, # アウトカムの指定
+                    unit = state, # 個体を識別する変数
+                    time = year, # 期間を識別する変数
+                    i_unit = "California", # 処置個体の名前
+                    i_time = 1988, # 処置が発生した時点
+                    generate_placebos=T # プラセボ分析の準備を行うか否か
+                    ) %>%
+      generate_predictor(time_window = 1980:1988,
+                     ln_income = mean(lnincome, na.rm = T),
+                     youth = mean(age15to24, na.rm = T)) %>%
+      generate_predictor(time_window = 1984:1988,
+                         beer_sales = mean(beer, na.rm = T)) %>%
+      generate_predictor(time_window = 1975,
+                         cigsale_1975 = cigsale) %>%
+      generate_predictor(time_window = 1980,
+                         cigsale_1980 = cigsale) %>%
+      generate_predictor(time_window = 1988,
+                         cigsale_1988 = cigsale) %>%
+      generate_weights(optimization_window = 1970:1988, # ウェイトの計算に用いる期間の指定
+                       margin_ipop = .02,sigf_ipop = 7,bound_ipop = 6
+      ) %>% generate_control()
+}
+```
+
+以下の通り、データ生成の通り消費量の減少を推定することができた。
+```{r}
+smoking_out_some_effect <- call_synthetic_control(smoking_fake_factor_some_effect)
+smoking_out_some_effect %>% plot_trends()
+smoking_out_some_effect %>% plot_placebos()
+```
+推測統計においても、同じく有意な差が確認できる。
+```{r}
+smoking_out_some_effect %>% plot_mspe_ratio()
+smoking_out_some_effect %>% grab_significance()
+```
+
+## 自己回帰モデルでの挙動
+Abadie et al (2010)では、係数が時間に応じて変化するような自己回帰モデルでも推定に
+問題がないことが主張されている。これを確かめよう。具体的には、以下のように生成する：
+```{r}
+smoking_fake <- smoking
+years <- unique(smoking_fake$year)
+
+# seedの固定
+set.seed(1)
+smoking_fake$retprice[smoking_fake$year == 1] <- 35 + stats::rnorm(sum(smoking_fake$year == 1),sd=3)
+smoking_fake$cigsale[smoking_fake$year == 1] <- 140 -0.1 * smoking_fake$retprice[smoking_fake$year == 1] +
+      stats::rnorm(sum(smoking_fake$year == 1),sd=3)  
+
+for (t in years[2:length(years)]) {
+  smoking_fake$retprice[smoking_fake$year == t] <- 
+    35 + 
+    0.01*((t - 1980)/30)^2 * smoking_fake$cigsale[smoking_fake$year == t-1] +
+    0.5* ((t - 1970)/30) * smoking_fake$retprice[smoking_fake$year == t-1] + stats::rnorm(sum(smoking_fake$year == t),sd=3)
+  smoking_fake$cigsale[smoking_fake$year == t] <- 
+    140 + 
+      -0.1 * smoking_fake$retprice[smoking_fake$year == t] +
+      0.5 * ((t - 1970)/30)^2 * smoking_fake$cigsale[smoking_fake$year == t-1] + stats::rnorm(sum(smoking_fake$year == t),sd=3)  
+}
+smoking_fake_ar_no_effect <- smoking_fake
+```
+
+上のデータ生成過程は全ての個体が同じ確率過程に従っている。この時、視覚的にも効果がなく、
+```{r}
+smoking_out_ar_noeffect <- call_synthetic_control(smoking_fake_ar_no_effect)
+smoking_out_ar_noeffect %>% plot_trends()
+smoking_out_ar_noeffect %>% plot_placebos()
+```
+有意でもないことが確認できる。
+```{r}
+smoking_out_ar_noeffect %>% plot_mspe_ratio()
+smoking_out_ar_noeffect %>% grab_significance()
+```
+
+一方で、以下のように処置群のみに比例的な減少を施すと、
+```{r}
+smoking_fake <- smoking
+years <- unique(smoking_fake$year)
+
+# seedの固定
+set.seed(1)
+smoking_fake$retprice[smoking_fake$year == 1] <- 35 + stats::rnorm(sum(smoking_fake$year == 1),sd=3)
+smoking_fake$cigsale[smoking_fake$year == 1] <- 140 -0.1 * smoking_fake$retprice[smoking_fake$year == 1] +
+      stats::rnorm(sum(smoking_fake$year == 1),sd=3)  
+
+for (t in years[2:length(years)]) {
+  smoking_fake$retprice[smoking_fake$year == t] <- 
+    35 + 
+    0.01*((t - 1980)/30)^2 * smoking_fake$cigsale[smoking_fake$year == t-1] +
+    0.5* ((t - 1970)/30) * smoking_fake$retprice[smoking_fake$year == t-1] + stats::rnorm(sum(smoking_fake$year == t),sd=3)
+  smoking_fake$cigsale[smoking_fake$year == t] <- 
+    140 + 
+      -0.1 * smoking_fake$retprice[smoking_fake$year == t] +
+      0.5 * ((t - 1970)/30)^2 * smoking_fake$cigsale[smoking_fake$year == t-1] + stats::rnorm(sum(smoking_fake$year == t),sd=3)  
+  smoking_fake$cigsale[smoking_fake$year == t & smoking_fake$state == 'California'] <- 
+    smoking_fake$cigsale[smoking_fake$year == t & smoking_fake$state == 'California'] * (1 - stats::runif(n=1,0.05,0.1)*(t > 1988))
+}
+smoking_fake_ar_some_effect <- smoking_fake
+```
+視覚的にも減少が確認でき、
+```{r}
+smoking_out_ar_some_effect <- call_synthetic_control(smoking_fake_ar_some_effect)
+smoking_out_ar_some_effect %>% plot_trends()
+smoking_out_ar_some_effect %>% plot_placebos()
+```
+統計的にも有意である。
+```{r}
+smoking_out_ar_some_effect %>% plot_mspe_ratio()
+smoking_out_ar_some_effect %>% grab_significance()
+```

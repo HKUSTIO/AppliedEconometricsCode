@@ -64,7 +64,7 @@ $(document).ready(function() {
 
 ## Single Treated Unit
 
-- DID requires to estimate:
+- DID requires estimating:
 $$
 \begin{split}
 \tau_{DID} 
@@ -191,7 +191,7 @@ where:
 
 - Suppose that there exist a weight $w^\ast$ such that:
 $$
-\sum_{i = 2}^{N + 1} w_i^\ast Y_i^\ast(0) = Y_{1t}^\ast, t = 1, \cdots, T_0,
+\sum_{i = 2}^{N + 1} w_i^\ast Y_{it}^\ast(0) = Y_{1t}^\ast(0), t = 1, \cdots, T_0,
 $$
 and
 $$
@@ -203,9 +203,9 @@ $$
 - Then, the prediction error at $t < T_0$ is:
 $$
 \begin{split}
-&Y_{1t}^\ast(0) - \sum_{i = 2}^{N + 1} w_i^\ast Y_i\\
+&Y_{1t}^\ast(0) - \sum_{i = 2}^{N + 1} w_i^\ast Y_{it}\\
 &=\theta_t\left(Z_1 - \sum_{i = 2}^{N + 1} w_i^\ast Z_i\right)\\
-&+\lambda_t \left(\mu_1 - \sum_{i = 2}^{N + 1} \mu_i \right)\\
+&+\lambda_t \left(\mu_1 - \sum_{i = 2}^{N + 1} w_i^\ast \mu_i \right)\\
 &+\sum_{i = 2}^{N + 1} w_i^\ast (\epsilon_{1t} - \epsilon_{it}).
 \end{split}
 $$
@@ -217,7 +217,7 @@ $$
 \begin{split}
 &\mathbf{Y}_1 - \sum_{i = 2}^{N + 1} w_i^\ast \mathbf{Y}_i\\
 &= \boldsymbol{\theta}\left(Z_1 - \sum_{i = 2}^{N + 1} w_i^\ast Z_i\right)\\
-&+ \boldsymbol{\lambda} \left(\mu_1 - \sum_{i = 2}^{N + 1} \mu_i \right)\\
+&+ \boldsymbol{\lambda} \left(\mu_1 - \sum_{i = 2}^{N + 1} w_i^\ast \mu_i \right)\\
 &+\sum_{i = 2}^{N + 1} w_i^\ast (\boldsymbol{\epsilon}_1 - \boldsymbol{\epsilon}_i).
 \end{split}
 $$
@@ -227,7 +227,7 @@ $$
 - Solving the previous equation for the unobserved term gives:
 $$
 \begin{split}
-\left(\mu_1 - \sum_{i = 2}^{N + 1} \mu_i \right) & = (\boldsymbol{\lambda}' \boldsymbol{\lambda})^{-1} \boldsymbol{\lambda}' \left(\mathbf{Y}_1 - \sum_{i = 2}^{N + 1} w_i^\ast \mathbf{Y}_i\right)\\
+\left(\mu_1 - \sum_{i = 2}^{N + 1} w_i^\ast \mu_i \right) & = (\boldsymbol{\lambda}' \boldsymbol{\lambda})^{-1} \boldsymbol{\lambda}' \left(\mathbf{Y}_1 - \sum_{i = 2}^{N + 1} w_i^\ast \mathbf{Y}_i\right)\\
 &- (\boldsymbol{\lambda}' \boldsymbol{\lambda})^{-1} \boldsymbol{\lambda}' \boldsymbol{\theta}\left(Z_1 - \sum_{i = 2}^{N + 1} w_i^\ast Z_i\right) \\
 &- (\boldsymbol{\lambda}' \boldsymbol{\lambda})^{-1} \sum_{i = 2}^{N + 1} w_i^\ast (\boldsymbol{\epsilon}_1 - \boldsymbol{\epsilon}_i).
 \end{split}

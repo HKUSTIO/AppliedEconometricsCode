@@ -74,7 +74,7 @@ $(document).ready(function() {
 - There is only one cutoff.
 - Compliance with treatment assignment is perfect.
 
-## Score, cuttoff, and treatment
+## Score, cutoff, and treatment
 
 - There are $n$ units, indexed by $i = 1, \cdots, n$.
 - Each unit has a score $X_i$.
@@ -91,12 +91,12 @@ knitr::include_graphics("../figuretable/9_fig_1.png")
 ## Potential and observed outcomes
 
 - Each unit has potential outcomes $Y_i^\ast(1)$ and $Y_i^\ast(0)$.
-- The observed outcome is $Y_i = Z_i \cdot Y_i^\ast(1) + (1 - D_i) \cdot Y_i^\ast(0)$.
+- The observed outcome is $Y_i = Z_i \cdot Y_i^\ast(1) + (1 - Z_i) \cdot Y_i^\ast(0)$.
 - Assume that $\{Y_i^\ast(0), Y_i^\ast(1), X_i\}_{i = 1}^n$ is a random sample from a super population.
 
 ## Estimand
 
-- We are interested in the _shartp RD treatment effect_:<footnote> Figure 2 of Cattaneo et al. (2020) </footnote>
+- We are interested in the _sharp RD treatment effect_:<footnote> Figure 2 of Cattaneo et al. (2020) </footnote>
 $$
 \tau_{srd} \equiv \mathbb{E}[Y_i^\ast(1) - Y_i^\ast(0) | X_i = 0].
 $$
@@ -106,7 +106,7 @@ knitr::include_graphics("../figuretable/9_fig_2.png")
 ```
 
 
-## Continuity at the cuttoff
+## Continuity at the cutoff
 
 - Assume that the regression functions $\mathbb{E}[Y_i^\ast(1) | X_i = x]$ and $\mathbb{E}[Y_i^\ast(0)| X_i = x]$ are continuous at $x = 0$.
 - Then, we have:
@@ -161,7 +161,7 @@ $$
 
 ```{r}
 df <-
-  haven::read_dta("../input/meyersson_2014/regdata0.dta")
+  haven::read_dta("../input/meyersson_1994/regdata0.dta")
 df <-
   df %>%
   dplyr::mutate(
@@ -334,7 +334,7 @@ where $\mathcal{B}$ and $\mathcal{V}$ are leading bias and variance not includin
 
 - The leading bias term comprises the bias in the left and the right of the cutoff:
 $$
-\mathcal{B} = \mathcal{B}_+ - \mathcal{B}_-, \mathcal{B}_+ \approx \mu_+^{(p + 1)} B_+, \mathcal{B}_+ \approx \mu_-^{(p + 1)} B_-.
+\mathcal{B} = \mathcal{B}_+ - \mathcal{B}_-, \mathcal{B}_+ \approx \mu_+^{(p + 1)} B_+, \mathcal{B}_- \approx \mu_-^{(p + 1)} B_-.
 $$
 - They depend on the $p + 1$th derivative of the regression function:
 $$
@@ -346,7 +346,7 @@ $$
 
 - The leading variance term comprises the variance in the left and the right of the cutoff:
 $$
-\mathcal{V} = \mathcal{V}_+ - \mathcal{V}_-, \mathcal{V}_+ \approx \frac{\sigma_-^2}{f} V_-, \mathcal{V}_+ \approx \frac{\sigma_+^2}{f} V_+,
+\mathcal{V} = \mathcal{V}_+ + \mathcal{V}_-, \mathcal{V}_- \approx \frac{\sigma_-^2}{f} V_-, \mathcal{V}_+ \approx \frac{\sigma_+^2}{f} V_+,
 $$
 where $f$ is the density at $x = 0$.
 - If the density is low, i.e., if the observations are few around the cutoff, the variance is larger.
@@ -411,7 +411,7 @@ glance.rdrobust <- function(object, ...){
 
 ```{r}
 result <- rdrobust::rdrobust(y = df$y, x = df$x, c = 0, kernel = "uniform", p = 1, h = 20)
-result %>% modelsummary::modelsummary()
+summary(result)
 ```
 
 
@@ -420,14 +420,14 @@ result %>% modelsummary::modelsummary()
 
 <!-- ```{r} -->
 <!-- result <- df %>% dplyr::filter(abs(x) <= 20) %>% lm(data = ., formula = y ~ 1 + t + as.factor(t):x) -->
-<!-- result %>% modelsummary::modelsummary() -->
+<!-- summary(result) -->
 <!-- ``` -->
 
 ## Implementing point estimation with `rdrobust`: $h = 20$, triangular kernel
 
 ```{r}
 result <- rdrobust::rdrobust(y = df$y, x = df$x, c = 0, kernel = "triangular", p = 1, h = 20)
-result %>% modelsummary::modelsummary()
+summary(result)
 ```
 
 <!-- ## Manually implementing the same point estimation -->
@@ -452,7 +452,7 @@ bw$bws
 
 ```{r}
 result <- rdrobust::rdrobust(y = df$y, x = df$x, c = 0, kernel = "triangular", p = 1, h = bw$bws[1])
-result %>% modelsummary::modelsummary()
+summary(result)
 ```
 
 
@@ -462,7 +462,7 @@ result %>% modelsummary::modelsummary()
 
 ```{r}
 result <- rdrobust::rdrobust(y = df$y, x = df$x, c = 0, kernel = "triangular", p = 1, bwselect = "mserd")
-result %>% modelsummary::modelsummary()
+summary(result)
 ```
 
 
@@ -497,7 +497,7 @@ $$
 - Because the estimation of bias requires to estimate the $p + 1$th older local polynomials, we use additional bandwidth $b$ for the bias estimation.
 - We need to ensure $\rho = h/b \to 0$ to ensure that the bias term is asymptotically zero.
 - The asymptotic variance is the same with the conventional inference.
-- This confidence interval has a poor finite-sample performance, becuase $h/b$ is not zero in the finite sample.
+- This confidence interval has a poor finite-sample performance, because $h/b$ is not zero in the finite sample.
 - The `Bias-Corrected` row represent this result: the estimated is corrected, but the standard error is same with the conventional standard error.
 
 ## Robust bias corection
@@ -518,7 +518,7 @@ $$
 
 ```{r}
 result <- rdrobust::rdrobust(y = df$y, x = df$x, c = 0, kernel = "triangular", p = 1, bwselect = "mserd", all = TRUE)
-result %>% modelsummary::modelsummary()
+summary(result)
 ```
 
 ## Coverage error rate (CER) optimal bandwidth
@@ -535,7 +535,7 @@ result %>% modelsummary::modelsummary()
 
 ```{r}
 result <- rdrobust::rdrobust(y = df$y, x = df$x, c = 0, kernel = "triangular", p = 1, bwselect = "cerrd", all = TRUE)
-result %>% modelsummary::modelsummary()
+summary(result)
 ```
 
 
@@ -614,7 +614,7 @@ and $\gamma_Y, \gamma_{Y+}$, and $\gamma_{Y-}$ are some vectors.
 ```{r}
 z <- df %>% dplyr::select(vshr_islam1994, partycount, lpop1994, merkezi, merkezp, subbuyuk, buyuk)
 result <- rdrobust::rdrobust(y = df$y, x = df$x, c = 0, covs = z, kernel = "triangular", p = 1, bwselect = "mserd", all = TRUE)
-result %>% modelsummary::modelsummary()
+summary(result)
 ```
 
 ## Clustering the standard error
@@ -628,7 +628,7 @@ result %>% modelsummary::modelsummary()
 
 ```{r}
 result <- rdrobust::rdrobust(y = df$y, x = df$x, c = 0, covs = z, kernel = "triangular", p = 1, bwselect = "mserd", all = TRUE, cluster = df$province_post)
-result %>% modelsummary::modelsummary()
+summary(result)
 ```
 
 # Validation and Falsification Tests
@@ -638,7 +638,7 @@ result %>% modelsummary::modelsummary()
 - The continuity assumptions that gurantee the validity of the RD design are about unobservable features and as such are inherently untestable.
 - Nevertheless, the RD designs offers an array of empirical methods that can provide useful side evidence about the plausibility of its assumptions.
 - The null treatment effect on predetermined covariates or placebo outcomes.
-- The continuity of the score density around the cuttoff.
+- The continuity of the score density around the cutoff.
 - The treatment effect at artificial cutoff values.
 - The exclusion of observations near the cutoff.
 - The sensitivity to bandwidth choices.
@@ -662,7 +662,7 @@ rdrobust::rdplot(y = df$lpop1994, x = df$x, c = 0, binselect = "espr")
 
 ```{r}
 result <- rdrobust::rdrobust(y = df$lpop1994, x = df$x, c = 0, kernel = "triangular", p = 1, bwselect = "mserd", all = TRUE)
-result %>% modelsummary::modelsummary()
+summary(result)
 ```
 
 ## Permutation test of covariate continuity
@@ -761,7 +761,7 @@ result$test$p_jk
 
 ```{r}
 result <- rdrobust::rdrobust(y = df$y, x = df$x, c = 1, kernel = "triangular", p = 1, bwselect = "mserd", all = TRUE)
-result %>% modelsummary::modelsummary()
+summary(result)
 ```
 
 
@@ -773,7 +773,7 @@ result %>% modelsummary::modelsummary()
 ```{r}
 df_sub <- df %>% dplyr::filter(abs(x) >= 0.3)
 result <- rdrobust::rdrobust(y = df_sub$y, x = df_sub$x, c = 0, kernel = "triangular", p = 1, bwselect = "mserd", all = TRUE)
-result %>% modelsummary::modelsummary()
+summary(result)
 ```
 
 

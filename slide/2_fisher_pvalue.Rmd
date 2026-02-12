@@ -71,9 +71,9 @@ $$
 
 ## The difference in the means by treatment status
 
-- Consider a statistics:
+- Consider a statistic:
 $$
-T^{ave}(\mathbf{Z}, \mathbf{Y}^{obs}, \mathbf{W}) \equiv \overline{Y}_t^{obs} - \overline{Y}_c^{ob} = \frac{1}{N_1} \sum_{i: Z_i = 1}Y_i^{obs} - \frac{1}{N_0} \sum_{i:Z_i = 0} Y_i^{obs}.
+T^{ave}(\mathbf{Z}, \mathbf{Y}^{obs}, \mathbf{W}) \equiv \overline{Y}_t^{obs} - \overline{Y}_c^{obs} = \frac{1}{N_1} \sum_{i: Z_i = 1}Y_i^{obs} - \frac{1}{N_0} \sum_{i:Z_i = 0} Y_i^{obs}.
 $$
 - The p-value of the observation $\mathbf{Y}^{obs}, \mathbf{Z}^{obs}$, and $\mathbf{W}$ (where $\mathbf{Z}^{obs}$ is the realized treatment assignment) is:
 $$

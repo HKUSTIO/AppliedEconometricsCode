@@ -3093,8 +3093,8 @@ border-radius: 0px;
 
 
 <p>Translate: Here, we implement the clustered randomized experiment.
-The functions called from <code>AppliedEconometricsCode</code> are
-defined in <code>R/functions_randomized.R</code>. First, we generate the
+The functions called from <code>AppliedEconometrics</code> are defined
+in <code>R/functions_randomized.R</code>. First, we generate the
 potential outcomes of the sample, and then we generate the treatment
 vector and the realized outcomes. We consider two methods for estimating
 the average treatment effect: one that treats each cluster as an
@@ -3510,7 +3510,7 @@ experiment. We then calculate the realized outcomes based on the
 realized treatment vector and potential outcomes. The resulting
 <code>data_realized</code> is the observed data.</p>
 <pre class="r"><code>data_realized &lt;-
-  AppliedEconometricsCode::generate_data_cluster(
+  AppliedEconometrics::generate_data_cluster(
     outcome_potential = outcome_potential,
     G_1 = G_1,
     seed = 1

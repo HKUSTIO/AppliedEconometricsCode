@@ -109,11 +109,11 @@ $(document).ready(function() {
 
 - Units: $i = 1, \cdots, N$.
 - Binary treatment indicator: $Z_i \in \{0, 1\}$.
-- Potential outcomes: $Y_i^\ast(Z_i)$.
-- Pre-treatment variabels or covariates: $W_i$.
+- Potential outcomes: $Y_i^\ast(0)$ and $Y_i^\ast(1)$.
+- Pre-treatment variables or covariates: $W_i$.
 - $\mathbf{Y}^\ast(0)$: and $\mathbf{Y}^\ast(1)$ be the $N$-component column vectors of potential outcomes with $i$th elements equal to $Y_i^\ast(0)$ and $Y_i^\ast(1)$.
 - $\mathbf{Z}$: $N$-component column vector with $i$th element equal to $Z_i$.
-- $\mathbf{Z}$: $N \times K$ matrix of covariates with $i$th row equal to $W_i$.
+- $\mathbf{W}$: $N \times K$ matrix of covariates with $i$th row equal to $W_i$.
 
 ## Causal estimands
 
@@ -133,21 +133,24 @@ $$
 - The _average causal effect conditional on the covariate_:
 
 $$
-\tau_{fs}(f) = \frac{1}{N} \sum_{i = 1, W_i = f}^N [Y_i^\ast(1) - Y_i^\ast(0)].
+\tau_{fs}(f) = \frac{1}{N(f)} \sum_{i: W_i = f} [Y_i^\ast(1) - Y_i^\ast(0)],
 $$
+where $N(f) \equiv \#\{i = 1, \cdots, N: W_i = f\}$.
 
 - The _average causal effect for those who were exposed to it_:
 
 $$
-\tau_{fs, t} = \frac{1}{N} \sum_{i = 1, Z_i = 1}^N [Y_i^\ast(1) - Y_i^\ast(0)].
+\tau_{fs, t} = \frac{1}{N_1} \sum_{i: Z_i = 1} [Y_i^\ast(1) - Y_i^\ast(0)],
 $$
+where $N_1 \equiv \sum_{i = 1}^N Z_i$.
 
 ## Causal estimands
 
 - The _average causal effect for positive outcomes_:
 $$
-\tau_{fs, pos} = \frac{1}{N} \sum_{i = 1, Y_i^\ast(0) > 0, Y_i^\ast(1) > 0}^N [Y_i^\ast(1) - Y_i^\ast(0)].
+\tau_{fs, pos} = \frac{1}{N_{pos}} \sum_{i: Y_i^\ast(0) > 0, Y_i^\ast(1) > 0} [Y_i^\ast(1) - Y_i^\ast(0)],
 $$
+where $N_{pos} \equiv \#\{i = 1, \cdots, N: Y_i^\ast(0) > 0, Y_i^\ast(1) > 0\}$.
   - e.g. effects on wages for employed workers.
   - The definition depends on the potential outcomes but not on observed outcomes.
 
@@ -161,7 +164,7 @@ $$
 
 ## Causal inference as missing data problem
 
-| Unit | Potential outcomes | | Causal Effecte |
+| Unit | Potential outcomes | | Causal Effect |
 |------|--------------------|-|----------------|
 | | $Y_i^\ast(0)$ | $Y_i^\ast(1)$ | $Y_i^\ast(1) - Y_i^\ast(0)$ |
 | Patient 1 | 1 | 7 | 6 |
@@ -205,19 +208,19 @@ $$
 
 - The average outcomes are 6 for treated and 7 for not treated.<footnote>Table 1.5 of Imbens and Rubin (2015) </footnote>
 - The simple difference means that the treatment has the causal effect of -1, whereas the true average causal effect is 2.
-- No valid coclusion can be made without knowing the _treatment assignment mechanism_ to correct the missing data problem.
+- No valid conclusion can be made without knowing the _treatment assignment mechanism_ to correct the missing data problem.
 
 ## Fundamental problem of causal inference
 
 - The definition depends on the potential outcomes, but not on which outcome is actually observed.
-    - For example, I take Aspirin and feel no headache can be either of Improvement due to Aspirin and Headache gone regardless of Aspirin, becuase the headache could have gone without taking Aspirin.
+    - For example, I take Aspirin and feel no headache can be either of Improvement due to Aspirin and Headache gone regardless of Aspirin, because the headache could have gone without taking Aspirin.
 - The definition is based on the comparison of potential outcomes of the same unit.
     - For example, I take Aspirin and feel no headache and you do not take Aspirin and feel headache does not mean that Aspirin improved my headache.
 - The _individual causal effect_ is _well-defined_ but _never estimated_ because at most one of the potential outcomes can be realized and observed for each unit.
 
 ## SUTVA
 
-- The previous potential outcome model presumes the followings:
+- The previous potential outcome model presumes the following:
 
 - __Assumption: SUTVA (Stable unit treatment value assumption)__: 
   1. (no spillover, no interference) The potential outcomes for any unit do not vary with the treatments assigned to other units, and;
@@ -242,7 +245,7 @@ $$
 - In general, dependence of the assignment on the potential outcomes is not ruled out.
 - The dependence of the assignment on the covariate, assignment, and the potential outcomes of other units does not contradict with SUTVA, because SUTVA is about the definition of the potential outcomes.
     
-## Unit assigmnemt probability
+## Unit assignment probability
 
 - Assignment mechanism is a joint probability of assignments for the entire population.
 - We can derive the unit assignment probability from the assignment mechanism:
@@ -253,7 +256,7 @@ $$
     
 ## Finite population propensity score
 
-- The average unit assignment probability for units with $W_i = x$ is called the _propesity score_ at $x$.
+- The average unit assignment probability for units with $W_i = x$ is called the _propensity score_ at $x$.
 - __Definition: Finite Population Propensity Score__:
     $$
     e(x) = \frac{1}{N(x)} \sum_{i: W_i = x} p_i(\mathbf{W}, \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0)),
@@ -263,7 +266,7 @@ $$
     
 ## Restrictions on the assignment mechanism
 
-- To classify the various types of assignment mechanisms, present three general properties that assignment mechanisms may satisfy.
+- To classify the various types of assignment mechanisms, we present three general properties that assignment mechanisms may satisfy.
 
   1. Individualistic assignment.
   2. Probabilistic assignment.
@@ -273,7 +276,7 @@ $$
 ## Individualistic assignment
 
 - The first restriction limits the dependence of the treatment assignment for unit $i$ on the outcomes and assignments for other units.
-- __Definition: Individualistic Assignemnt__:
+- __Definition: Individualistic Assignment__:
   - An assignment mechanism $\mathbb{P}[\mathbf{Z}|\mathbf{W}, \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0)]$ is _individualistic_ if, for some functions $q(\cdot) \in [0, 1]$:
   $$
   p_i(\mathbf{W}, \mathbf{Y}^\ast(1), \mathbf{Y}^\ast(0)) = q(W_i, Y_i^\ast(0), Y_i^\ast(1))
@@ -341,7 +344,7 @@ N_1
 $$
 for all $\mathbf{Z}$ such that $\sum_{i = 1}^N Z_i = N_1$.
 
-## Stratfied randomized experiments
+## Stratified randomized experiments
 
 - First partition the population on the basis of covariate values into $G$ strata, i.e. if the covariate space is $\mathbb{X}$, partition $\mathbb{X}$ into $\mathbb{X}_1, \cdots, \mathbb{X}_G$, so that $\bigcup_g \mathbb{X}_g = \mathbb{X}$ and $\mathbb{X}_g \cap \mathbb{X}_{g'} = \emptyset$ if $g \neq g'$.
 - Let $G_{ig} = 1_{W_i \in \mathbf{W}_g}$ and $N_g$ be the number of units in stratum $g$.
@@ -536,7 +539,7 @@ for all $\mathbf{Z}$ such that if $W_{ig} = W_{i'g} = 1$ and $\sum_g \overline{W
 - Suppose that we are interested in the finite-sample average treatment effect.
 - _Model_ $\mathcal{M}$: possible values of $\mathbf{Y}^\ast(\cdot)$ and $\mathbf{P}_Z$.
 - _The state of the world_: a value of $m = (\mathbf{y}^\ast(\cdot), \mathbf{p}_Z) \in \mathcal{M}$.
-  - For example: $\mathbf{y}^\ast(\cdot)$ is as in the table, $\mathbf{p}_Z)$ is a completely randomized experiment.
+  - For example: $\mathbf{y}^\ast(\cdot)$ is as in the table, $\mathbf{p}_Z$ is a completely randomized experiment.
 - This uniquely determines the value of _parameter of interest_ $\theta$:
 $$
 \theta = \frac{1}{N} \sum_{i = 1}^N [y_i^\ast(1) - y_i^\ast(0)] = 174.  
@@ -546,7 +549,7 @@ $$
 
 - _Information_ $\phi$ to the analyst: all information that the analyst has about the model.
   - Includes the basic setting of the binary potential outcome model.
-  - Incclude the knowledge of the assignment mechanism.
+  - Include the knowledge of the assignment mechanism.
   - Does not include the potential outcome.
 - _Structure_ $s(\phi, \theta) \subset \mathcal{M}$: the value of $m \in \mathcal{M}$ that is consistent with the information $\phi$ and the value of $\theta$. 
 
@@ -554,7 +557,7 @@ $$
 ## Observationally equivalent and Identification
 
 - Parameter $\theta$ and $\tilde{\theta}$ are said to be _observationally equivalent_ if there exist information $\phi$ and $s(\phi, \theta) \neq \emptyset$ and $s(\phi, \tilde{\theta}) \neq \emptyset$.
-  - If two parameters are observationally equivalent, both can be consistent with the information to the analysis.
+  - If two parameters are observationally equivalent, both can be consistent with the information to the analyst.
 - The parameter $\theta$ is said to be _identified_ if there is no other parameter $\tilde{\theta}$ that is observationally equivalent to $\theta$.
 - The parameter space $\Theta$ is said to be _globally identified_ if every parameter in $\Theta$ is identified.
 
@@ -567,7 +570,7 @@ $$
 
 ## Example
 
-- Because the knowledge that the assignment mechanism is unconfounded is included in information $\phi$, the analyt can show that the above is
+- Because the knowledge that the assignment mechanism is unconfounded is included in information $\phi$, the analyst can show that the above is
 $$
 \begin{split}
     &\frac{1}{N_1} \sum_{i = 1}^N \mathbb{E}[Z_i] Y_i^\ast(1) - \frac{1}{N_0} \sum_{i = 1}^N (1 - \mathbb{E}[Z_i]) Y_i^\ast(0) \\
@@ -581,7 +584,7 @@ $$
 
 ## Counterexample
 
-- Suppose that assignment mechanism $\mathbf{p}_Z$ is such that assignint tutorial to three students whose individual treatment effect is the highest.
+- Suppose that assignment mechanism $\mathbf{p}_Z$ is such that assigning tutorial to three students whose individual treatment effect is the highest.
   - Units 1, 2, 7 are always treated.
   - Units 5, 9 are never treated.
   

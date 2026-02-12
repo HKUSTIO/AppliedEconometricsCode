@@ -1,0 +1,277 @@
+---
+title: "Difference in Difference"
+subtitle: "2 x 2 Design"
+output: 
+  html_document:
+    css: style_do.css
+    number_sections: yes
+    toc: yes
+    toc_depth: '3'
+    toc_float: yes
+    theme: spacelab #"default", "bootstrap", "cerulean", "cosmo", "darkly", "flatly",
+                 # "journal", "lumen", "paper", "readable", "sandstone", "simplex",
+                 # "spacelab", "united", "yeti"
+    df_print: paged
+    code_folding: show
+#date: '2022-03-30'
+date: 'Last Update: `r Sys.Date()`'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(cache = FALSE, echo = TRUE, fig.align = "center")
+library(foreach)
+library(magrittr)
+library(ggplot2)
+library(kableExtra)
+color_main <- scales::viridis_pal(option = "C")(1)
+```
+
+# Model
+
+- Consider outcome functions for $X_i \sim N(0, 1)$:
+$$
+Y_{it}(0) = f(X_i)t + \epsilon_{it}(0), \epsilon_{it}(0) \sim N(0, 1), 
+$$
+$$
+Y_{it}(1) = \tau + 5 \cdot X_i +  f(X_i)t + \epsilon_{it}(1), \epsilon_{it}(1) \sim N(0, 1), 
+$$
+and the propensity score:
+$$
+p(X_i) = \frac{exp(g(X_i))}{1 + \exp(g(X_i))}
+$$
+with:
+$$
+f(X_i) = X_i,
+$$
+$$
+g(X_i) = X_i.
+$$
+
+# Generating simulation data
+
+## Setting constants and parameters
+
+```{r}
+set.seed(1)
+N <- 1000
+T <- 2
+tau <- 10
+f <- 
+  function(x) {
+    y <- x
+    return(y)
+  }
+g <- 
+  function(x) {
+    y <- exp(x)
+    return(y)
+  }
+```
+
+## Generating data
+
+```{r}
+df_i <-
+  tibble::tibble(
+    i = 1:N,
+    x = rnorm(length(i)),
+    v = rnorm(length(i)),
+    d = 
+      (
+        runif(length(i)) < exp(g(x)) / (1 + exp(g(x)))
+      ) %>% 
+      as.integer()
+  )
+df <- 
+  tidyr::expand_grid(
+    i = 1:N, 
+    t = 0:(T - 1)
+  ) %>%
+  dplyr::left_join(
+    df_i, 
+    by = "i"
+  ) %>%
+  dplyr::mutate(
+    e_0 = rnorm(length(i)),
+    e_1 = rnorm(length(i)),
+    y_0 = f(x) * t + e_0,
+    y_1 = tau + x + f(x) * t + e_1,
+    y = (1 - d) * y_0 + d * (1 - t) * y_0 + d * t * y_1
+  )
+```
+
+## Visualizing data
+
+
+```{r}
+df %>%
+  modelsummary::datasummary_skim()
+```
+
+### Propensity score
+
+```{r}
+df %>% 
+  dplyr::mutate(
+    t = as.factor(t)
+  ) %>%
+  ggplot(
+    aes(
+      x = x, 
+      y = d, 
+      color = t, 
+      group = t
+    )
+  ) + 
+  geom_smooth(
+    method = "gam", 
+    formula = y ~ s(x, bs = "cs"), 
+    se = FALSE
+  ) + 
+  scale_color_viridis_d() + 
+  theme_classic()
+```
+
+### $Y_i^\ast(0)$
+
+```{r}
+df %>% 
+  dplyr::mutate(
+    t = as.factor(t)
+  ) %>%
+  ggplot(
+    aes(
+      x = x, 
+      y = y_0, 
+      color = t, 
+      group = t
+    )
+  ) + 
+  geom_point() + 
+  scale_color_viridis_d() + 
+  theme_classic()
+```
+
+### $Y_i^\ast(1)$
+
+```{r}
+df %>% 
+  dplyr::mutate(
+    t = as.factor(t)
+  ) %>%
+  ggplot(
+    aes(
+      x = x, 
+      y = y_1, 
+      color = t, 
+      group = t
+    )
+  ) + 
+  geom_point() + 
+  scale_color_viridis_d() + 
+  theme_classic()
+```
+
+### Treatment effect
+
+```{r}
+df %>% 
+  dplyr::mutate(
+    t = as.factor(t)
+  ) %>%
+  dplyr::mutate(
+    tau_i = y_1 - y_0
+  ) %>%
+  ggplot(
+    aes(
+      x = x, 
+      y = tau_i, 
+      color = t, 
+      group = t
+    )
+  ) + 
+  geom_point() + 
+  scale_color_viridis_d() + 
+  theme_classic()
+```
+
+## Computing average treatment effect on treated
+
+```{r}
+df %>% 
+  dplyr::filter(
+    t == 1, 
+    d == 1
+  ) %>% 
+  dplyr::summarise(
+    tau_1 = mean(y_1 - y_0)
+  )
+```
+
+# Analysis
+
+## Two-way fixed effects estimator
+
+```{r}
+model_twfe <-
+  lfe::felm(
+    data = df,
+    formula = y ~ d:t | i + t
+  )
+modelsummary::modelsummary(model_twfe)
+```
+
+## Outcome regression
+
+```{r}
+model_ordid <-
+  DRDID::ordid(
+    data = df, 
+    yname = "y", 
+    tname = "t",
+    idname = "i",
+    dname = "d", 
+    xformla = ~ x 
+  )
+summary(model_ordid)
+```
+
+## IPW
+
+```{r}
+model_ipwdid <-
+  DRDID::ipwdid(
+    data = df, 
+    yname = "y", 
+    tname = "t",
+    idname = "i",
+    dname = "d", 
+    xformla = ~ x
+  )
+summary(model_ipwdid)
+```
+
+
+## Doubly-robust DID
+
+```{r}
+model_drdid <-
+  DRDID::drdid(
+    data = df, 
+    yname = "y", 
+    tname = "t",
+    idname = "i",
+    dname = "d", 
+    xformla = ~ x 
+  )
+summary(model_drdid)
+```
+
+
+
+
+
+
+
+
+

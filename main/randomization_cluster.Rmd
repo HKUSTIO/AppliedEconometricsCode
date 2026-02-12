@@ -28,7 +28,7 @@ color_main <- scales::viridis_pal(option = "C")(1)
 ```
 
 
-Translate: Here, we implement the clustered randomized experiment. The functions called from `AppliedEconometricsCode` are defined in `R/functions_randomized.R`. First, we generate the potential outcomes of the sample, and then we generate the treatment vector and the realized outcomes. We consider two methods for estimating the average treatment effect: one that treats each cluster as an individual and calculates the average treatment effect ($\hat{\tau}_c$), and one that calculates the average treatment effect for the entire sample ($\hat{\tau}$). Finally, we calculate the cluster-robust standard error when estimating the average treatment effect using the data from the clustered randomized experiment.
+Translate: Here, we implement the clustered randomized experiment. The functions called from `AppliedEconometrics` are defined in `R/functions_randomized.R`. First, we generate the potential outcomes of the sample, and then we generate the treatment vector and the realized outcomes. We consider two methods for estimating the average treatment effect: one that treats each cluster as an individual and calculates the average treatment effect ($\hat{\tau}_c$), and one that calculates the average treatment effect for the entire sample ($\hat{\tau}$). Finally, we calculate the cluster-robust standard error when estimating the average treatment effect using the data from the clustered randomized experiment.
 
 # Generating simulated data
 
@@ -158,7 +158,7 @@ Next, we generate the observed data. First, we generate the treatment vector `z`
 
 ```{r}
 data_realized <-
-  AppliedEconometricsCode::generate_data_cluster(
+  AppliedEconometrics::generate_data_cluster(
     outcome_potential = outcome_potential,
     G_1 = G_1,
     seed = 1

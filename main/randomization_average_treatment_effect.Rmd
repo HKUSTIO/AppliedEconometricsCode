@@ -28,7 +28,7 @@ library(kableExtra)
 color_main <- scales::viridis_pal(option = "C")(1)
 ```
 
-Here we implement the method of "6 Estimation of Average Treatment Effect". The functions called from `AppliedEconometricsCode` are defined in `R/functions_randomized.R`. First, we generate the potential outcomes of the sample, and then we generate the treatment vector and the realized outcomes. Based on the realized treatment vector and outcomes, we obtain the estimator of the average treatment effect based on the difference in means. Finally, we calculate the standard error of the estimator of the average treatment effect using Neyman's method.
+Here we implement the method of "6 Estimation of Average Treatment Effect". The functions called from `AppliedEconometrics` are defined in `R/functions_randomized.R`. First, we generate the potential outcomes of the sample, and then we generate the treatment vector and the realized outcomes. Based on the realized treatment vector and outcomes, we obtain the estimator of the average treatment effect based on the difference in means. Finally, we calculate the standard error of the estimator of the average treatment effect using Neyman's method.
 
 # Generate simulation data
 
@@ -91,7 +91,7 @@ Next, we generate the observed data. To do this, we first generate the treatment
 
 ```{r}
 data_realized <-
-  AppliedEconometricsCode::generate_data_randomized(
+  AppliedEconometrics::generate_data_randomized(
     outcome_potential = outcome_potential,
     N_1 = N_1,
     seed = 1

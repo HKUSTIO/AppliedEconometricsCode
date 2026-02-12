@@ -89,7 +89,7 @@ $$
 
 - In observational studies, the observed covariates can be substantially unbalanced between treated and control units.
 - In the regular assignment mechanism, we can remove all biases in comparisons between treated and control units as long as we adjust for differences in observed covariates.
-- Therefore, the main focus of the analysis using the regular assignment mechanism is how to adjust the covariance distributions.
+- Therefore, the main focus of the analysis using the regular assignment mechanism is how to adjust the covariate distributions.
 
 ## Balancing score
 
@@ -153,20 +153,20 @@ $$
 ## Propensity score is the coarsest balancing score
 
 - __Lemma: Coarseness of balancing score__
-  - The propensity score is the coarsest balancing score. That is, the propensity score is a function of every balansing score.
+  - The propensity score is the coarsest balancing score. That is, the propensity score is a function of every balancing score.
   
 - Suppose not. Then, there is a balancing score $b(w)$ and values $w, w'$ such that $b(w) = b(w')$ but $e(w) \neq e(w')$.
 - Then, we have:
 $$
 \mathbb{P}(Z_i = 1| W_i = w) = e(w) \neq e(w') = \mathbb{P}(Z_i = 1| W_i = w'). 
 $$
-- Then, $Z_i$ and $W_i$ are not independent on $b(w) = b(w')$.
+- Then, $Z_i$ and $W_i$ are not independent given $b(w) = b(w')$.
 
 # Estimation and inference
 
 ## Estimands
 
-- The super-population average tretment effect:
+- The super-population average treatment effect:
 $$
 \tau_{sp} \equiv \mathbb{E}[Y_i^\ast(1) - Y_i^\ast(0)] = \mathbb{E}[\tau_{sp}(W_i)],
 $$
@@ -225,7 +225,7 @@ $$
 \mathbb{E}[Y_i^\ast(l)|W_i] = W_i \beta_l, l = 0, 1.
 $$
 
-## Mode-based imputation
+## Model-based imputation
 
 - Then, estimate the linear model:
 $$
@@ -311,7 +311,7 @@ $$
 $$
 \mathbb{E}\{Z_i|W_i = w\}.
 $$
-- A doubly-robust estimator is consistent if either of them are correctly-specified.
+- A doubly-robust estimator is consistent if either of them is correctly specified.
 
 ## Doubly-robust estimator
 
@@ -362,11 +362,11 @@ $$
 - The unconfoundedness assumption is not testable. 
 - Giving up testing it, we try to estimate _pseudo_-causal estimands with a priori known values, which are typically zero, under assumptions more restrictive than unconfoundedness.
 - If these analyses suggest the null hypothesis does not hold, then the unconfoundedness assumption will be viewed less plausible.
-- If the unconfoundedness assumption is less plausible, we should conclude that it is not possible to estimate credibly and precisly the causal effects of interest.
+- If the unconfoundedness assumption is less plausible, we should conclude that it is not possible to estimate credibly and precisely the causal effects of interest.
 
 ## Estimating effects on pseudo-outcomes
 
-- One approachs is to test the __pseudo-outcome unconfoundedness__:
+- One approach is to test the __pseudo-outcome unconfoundedness__:
 $$
 Z_i \perp \!\!\! \perp W_i^p | W_i^r,
 $$

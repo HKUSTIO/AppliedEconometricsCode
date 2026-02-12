@@ -3171,7 +3171,7 @@ Y_i = X_i&#39; \beta + u_i,
 <li>Homoskedasticity: \(\mathbb{E}[u_i u_j] = 0\) if \(i \neq j\) and \(\sigma^2\) if \(i = j\). \[
 \widehat{\mathbb{V}}_{homo}[\hat{\beta}] = \sigma^2 (\sum_{i = 1}^N X_i X_i&#39;)^{-1}.
 \]</li>
-<li>Heteroskedasticity: \(\mathbb{E}[u_i u_j] = 0\) if $i j. \[
+<li>Heteroskedasticity: \(\mathbb{E}[u_i u_j] = 0\) if \(i \neq j\). \[
 \widehat{\mathbb{V}}_{hetero}[\hat{\beta}] = (\sum_{i = 1}^N X_i X_i&#39;)^{-1} \sum_{i = 1}^N X_i \hat{u}_i \hat{u}_i X_i&#39; (\sum_{i = 1}^N X_i X_i&#39;)^{-1}.
 \]</li>
 <li>Heteroskedasticity and autocorrelation: \(corr(u_i, u_j) = \rho^{|j - i|}\). \[
@@ -3197,12 +3197,12 @@ Y_i = X_i&#39; \beta + u_i,
 <li>The ratio of \(\widehat{\mathbb{V}}_{cluster}[\hat{\beta}]\) to \(\widehat{\mathbb{V}}_{homo}[\hat{\beta}]\) for \(\beta_k\) is approximately inflated by \[
 1 + \rho_k \rho_u (\overline{N}_g - 1),
 \] where \(\rho_k\) and \(\rho_u\) are within-cluster correlation of \(k\)-th \(X_i\) and \(u_i\) and \(\overline{N}_g\) is the average units per cluster.</li>
-<li>When \(\rho_k\) and \(\rho_u\) have the same sign, the downward bias of the homoskedastic standard error is greater then:
+<li>When \(\rho_k\) and \(\rho_u\) have the same sign, the downward bias of the homoskedastic standard error is greater when:
 
 <ul>
 <li>The within-cluster correlation of the regressor is higher;</li>
 <li>The within-cluster correlation of the error is higher;</li>
-<li>The average units per cluster.</li>
+<li>The average number of units per cluster is larger.</li>
 </ul></li>
 </ul>
 
@@ -3238,7 +3238,7 @@ Y_i = X_i&#39; \beta + u_i,
 <li>Form \(G\) clusters by resampling with replacement from original \(G\) clusters to obtain \(\{(Y_1^b, X_1^b), \cdots, (Y_G^b, X_G^b)\}\).</li>
 <li>Compute the OLS estimator with the sample to obtain \(\hat{\beta}^b\).</li>
 </ol></li>
-<li>Use the empirical distribution of \(\{\hat{\beta}^b\}_{b = 1}^B\) conduct an inference.</li>
+<li>Use the empirical distribution of \(\{\hat{\beta}^b\}_{b = 1}^B\) to conduct inference.</li>
 <li>For example, the bootstrap cluster-robust standard error is: \[
 \widehat{V}_{cluster, bootstrap}[\hat{\beta}] = \frac{1}{B - 1} \sum_{b = 1}^B (\hat{\beta}^b - \overline{\hat{\beta}}) (\hat{\beta}^b - \overline{\hat{\beta}})&#39;.
 \]</li>
@@ -3247,7 +3247,7 @@ Y_i = X_i&#39; \beta + u_i,
 </article></slide><slide class=""><hgroup><h2>Wild cluster bootstrap</h2></hgroup><article  id="wild-cluster-bootstrap">
 
 <ul>
-<li>Impose the null hypothesis \(H_0\) and estimate \(\beta\) to obtain the constrained OLS estimator\(\hat{\beta}_{H_0}\).</li>
+<li>Impose the null hypothesis \(H_0\) and estimate \(\beta\) to obtain the constrained OLS estimator \(\hat{\beta}_{H_0}\).</li>
 <li>Calculate \(\tilde{u}_i = Y_i - X_i&#39;\hat{\beta}_{H_0}\).</li>
 <li>Repeat the following steps for \(b = 1, \cdots, B\):
 
@@ -3255,19 +3255,19 @@ Y_i = X_i&#39; \beta + u_i,
 <li>Randomly assign cluster \(g\) the weight \(d_g = - 1\) w/p 0.5 and \(+1\) w/p 0.5.</li>
 <li>Generate a pseudo-residual \(u_i^b = d_g \tilde{u}_i\) and new pseudo-outcome variable \(Y_i^b = X_i&#39;\hat{\beta}_{H_0} + u_i^b\).</li>
 <li>Compute the OLS estimator \(\hat{\beta}^b\) and its cluster-robust standard error \(s_{\hat{\beta}^b}\) with this sample.</li>
-<li>Calculate the Wald test statics \(w^b = (\hat{\beta}^b - \hat{\beta})/s_{\hat{\beta}^b}\).</li>
+<li>Calculate the Wald test statistic \(w^b = (\hat{\beta}^b - \hat{\beta})/s_{\hat{\beta}^b}\).</li>
 </ol></li>
 </ul>
 
 </article></slide><slide class=""><hgroup><h2>Wild cluster bootstrap</h2></hgroup><article  id="wild-cluster-bootstrap-1">
 
 <ul>
-<li>Reject the null hypothesis \(H_0\) if the Wald statics \(w = |\hat{\beta} - \beta_0|/s_{\hat{\beta}}\) is greater than \((1 -\alpha/2)\)-percentile of \(\{w^b\}_{b = 1}^B\).</li>
-<li>This procedure is specific to a single null hypotheses.</li>
+<li>Reject the null hypothesis \(H_0\) if the Wald statistic \(w = |\hat{\beta} - \beta_0|/s_{\hat{\beta}}\) is greater than \((1 -\alpha/2)\)-percentile of \(\{w^b\}_{b = 1}^B\).</li>
+<li>This procedure is specific to a single null hypothesis.</li>
 <li>Because \((1-\alpha)\)-confidence interval is the set of null hypotheses \(H_0: \beta = \beta_0\) that are not rejected at the significance level of \(\alpha\), to construct the \((1 - \alpha)\)-confidence interval with the wild cluster bootstrap, we need to repeat the procedure by changing the values of \(\beta_0\).</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Two-way cluster-robust stanadard error</h2></hgroup><article  id="two-way-cluster-robust-stanadard-error">
+</article></slide><slide class=""><hgroup><h2>Two-way cluster-robust standard error</h2></hgroup><article  id="two-way-cluster-robust-standard-error">
 
 <ul>
 <li>The cluster-robust standard error assumed that \(\mathbb{E}[u_i u_j]\) can be non-zero if \(i\) and \(j\) belong to the same cluster.</li>
@@ -3282,7 +3282,7 @@ Y_i = X_i&#39; \beta + u_i,
 </ul></li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Two-way cluster-robust standard error</h2></hgroup><article  id="two-way-cluster-robust-standard-error">
+</article></slide><slide class=""><hgroup><h2>Two-way cluster-robust standard error</h2></hgroup><article  id="two-way-cluster-robust-standard-error-1">
 
 <ul>
 <li>The standard error is: \[

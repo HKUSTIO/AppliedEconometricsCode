@@ -3093,7 +3093,7 @@ border-radius: 0px;
 
 
 <p>Here we implement the method of “5 Fisher’s p-value”. The functions
-called from <code>AppliedEconometricsCode</code> are defined in
+called from <code>AppliedEconometrics</code> are defined in
 <code>R/functions_randomized.R</code>. First, we generate the potential
 outcomes of the sample, and then we generate the treatment vector and
 the realized outcomes. Based on the realized treatment vector and
@@ -3344,7 +3344,7 @@ randomized experiment. Furthermore, we calculate the realized outcomes
 from the realized treatment vector and potential outcomes. The resulting
 <code>data_realized</code> is the observed data.</p>
 <pre class="r"><code>data_realized &lt;-
-  AppliedEconometricsCode::generate_data_randomized(
+  AppliedEconometrics::generate_data_randomized(
     outcome_potential = outcome_potential,
     N_1 = N_1,
     seed = 1
@@ -3551,7 +3551,7 @@ statistic</h2>
 operation will also be repeated in the calculation of the p-value, so we
 will make it a function.</p>
 <pre class="r"><code>t &lt;- 
-  AppliedEconometricsCode::calculate_difference_in_means(
+  AppliedEconometrics::calculate_difference_in_means(
     data_realized = data_realized
   )
 t</code></pre>
@@ -3577,12 +3577,12 @@ t_distribution &lt;-
   1:R %&gt;%
   purrr::map(
     .,
-    ~ AppliedEconometricsCode::generate_data_randomized(
+    ~ AppliedEconometrics::generate_data_randomized(
         outcome_potential = outcome_potential_null,
         N_1 = N_1,
         seed = .
       ) %&gt;%
-      AppliedEconometricsCode::calculate_difference_in_means()
+      AppliedEconometrics::calculate_difference_in_means()
   ) %&gt;%
   purrr::reduce(c)
 

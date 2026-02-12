@@ -3175,9 +3175,9 @@ Difference in Means</h3>
 
 
 <p>Here we implement the method of “6 Estimation of Average Treatment
-Effect”. The functions called from <code>AppliedEconometricsCode</code>
-are defined in <code>R/functions_randomized.R</code>. First, we generate
-the potential outcomes of the sample, and then we generate the treatment
+Effect”. The functions called from <code>AppliedEconometrics</code> are
+defined in <code>R/functions_randomized.R</code>. First, we generate the
+potential outcomes of the sample, and then we generate the treatment
 vector and the realized outcomes. Based on the realized treatment vector
 and outcomes, we obtain the estimator of the average treatment effect
 based on the difference in means. Finally, we calculate the standard
@@ -3428,7 +3428,7 @@ from the realized treatment vector and the potential outcomes. This part
 of the process is the same as in
 <code>randomization_fisher_pvalue.Rmd</code>.</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>data_realized <span class="ot">&lt;-</span></span>
-<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>  AppliedEconometricsCode<span class="sc">::</span><span class="fu">generate_data_randomized</span>(</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>  AppliedEconometrics<span class="sc">::</span><span class="fu">generate_data_randomized</span>(</span>
 <span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>    <span class="at">outcome_potential =</span> outcome_potential,</span>
 <span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>    <span class="at">N_1 =</span> N_1,</span>
 <span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>    <span class="at">seed =</span> <span class="dv">1</span></span>
