@@ -3480,7 +3480,7 @@ Y_i^{obs} = Z_i \cdot W_i \beta_1 + (1 - Z_i) \cdot W_i \beta_0 + \epsilon_i,
 \begin{split}
 &amp;\mathbb{E}\left[g_1(W_i) + \frac{Z_iY_i - Z_i g_1(W_i)}{e(W_i)} \right] \\
 &amp;= \mathbb{E}\left[g_1(W_i) + \frac{Z_iY_i - Z_i g_1(W_i)}{\mathbb{E}\{Z_i|W_i\}} \right]\\
-&amp;= \mathbb{E}\left[\frac{Z_iY_i}{\mathbb{E}\{Z_i|W_i\}} \right] + \mathbb{E}\left[\mathbb{E}\left[g_1(Z_i) - \frac{Z_i g_1(W_i)}{\mathbb{E}\{Z_i|W_i\}}|W_i\right] \right]\\
+&amp;= \mathbb{E}\left[\frac{Z_iY_i}{\mathbb{E}\{Z_i|W_i\}} \right] + \mathbb{E}\left[\mathbb{E}\left[g_1(W_i) - \frac{Z_i g_1(W_i)}{\mathbb{E}\{Z_i|W_i\}}|W_i\right] \right]\\
 &amp;= \mathbb{E}\left[\frac{Z_iY_i}{\mathbb{E}\{Z_i|W_i\}} \right]\\
 &amp;= \mathbb{E}[Y_i^\ast(1)].
 \end{split}

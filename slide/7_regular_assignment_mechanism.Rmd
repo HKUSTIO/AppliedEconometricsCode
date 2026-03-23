@@ -349,7 +349,7 @@ $$
 \begin{split}
 &\mathbb{E}\left[g_1(W_i) + \frac{Z_iY_i - Z_i g_1(W_i)}{e(W_i)} \right] \\
 &= \mathbb{E}\left[g_1(W_i) + \frac{Z_iY_i - Z_i g_1(W_i)}{\mathbb{E}\{Z_i|W_i\}} \right]\\
-&= \mathbb{E}\left[\frac{Z_iY_i}{\mathbb{E}\{Z_i|W_i\}} \right] + \mathbb{E}\left[\mathbb{E}\left[g_1(Z_i) - \frac{Z_i g_1(W_i)}{\mathbb{E}\{Z_i|W_i\}}|W_i\right] \right]\\
+&= \mathbb{E}\left[\frac{Z_iY_i}{\mathbb{E}\{Z_i|W_i\}} \right] + \mathbb{E}\left[\mathbb{E}\left[g_1(W_i) - \frac{Z_i g_1(W_i)}{\mathbb{E}\{Z_i|W_i\}}|W_i\right] \right]\\
 &= \mathbb{E}\left[\frac{Z_iY_i}{\mathbb{E}\{Z_i|W_i\}} \right]\\
 &= \mathbb{E}[Y_i^\ast(1)].
 \end{split}
