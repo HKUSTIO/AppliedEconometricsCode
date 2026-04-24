@@ -174,3 +174,67 @@ compute_b <-
     b <- 2 * v - 1 * v * (v > 0)
     return(b)
   }
+
+#' @export
+tidy.rdrobust <-
+  function(
+    object,
+    ...
+  ) {
+    ret <-
+      data.frame(
+        term = row.names(object$coef),
+        estimate = object$coef[, 1],
+        std.error = object$se[, 1],
+        statistic = object$z[, 1],
+        p.value = object$pv[, 1],
+        conf.low = object$ci[, 1],
+        conf.high = object$ci[, 2]
+      )
+    row.names(ret) <- NULL
+    return(ret)
+  }
+
+#' @export
+glance.rdrobust <-
+  function(
+    object,
+    ...
+  ) {
+    ret <-
+      data.frame(
+        nobs.left = object$N[1],
+        nobs.right = object$N[2],
+        nobs.effective.left = object$N_h[1],
+        nobs.effective.right = object$N_h[2],
+        cutoff = object$c,
+        order.regression = object$q,
+        order.bias = object$q,
+        kernel = object$kernel,
+        bwselect = object$bwselect
+      )
+    return(ret)
+  }
+
+rdrobust_kable <-
+  function(
+    object,
+    digits = 3
+  ) {
+    fmt <-
+      function(x) {
+        formatC(x, digits = digits, format = "f")
+      }
+
+    tidy.rdrobust(object) %>%
+      dplyr::transmute(
+        Method = term,
+        Estimate = fmt(estimate),
+        `Std. Error` = fmt(std.error),
+        z = fmt(statistic),
+        `P>|z|` = fmt(p.value),
+        `95% CI` = paste0("[", fmt(conf.low), ", ", fmt(conf.high), "]")
+      ) %>%
+      kableExtra::kbl(align = "lccccc", booktabs = TRUE) %>%
+      kableExtra::kable_styling(full_width = FALSE)
+  }

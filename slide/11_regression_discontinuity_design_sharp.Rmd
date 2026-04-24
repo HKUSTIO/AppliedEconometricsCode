@@ -9,6 +9,7 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
+devtools::load_all("..", quiet = TRUE)
 library(magrittr)
 library(foreach)
 library(ggplot2)
@@ -371,47 +372,11 @@ $$
 h_{mse} = \Bigg(\frac{\mathcal{V}}{2(p + 1) \mathcal{B}^2} \Bigg)^{\frac{1}{2p + 3}} n^{- \frac{1}{2 p + 3}}.
 $$
 
-## Functions to use `modelsummary` for `rdrobust` results
-
-- Define the following functions: Taken from [here](https://gist.github.com/vincentarelbundock/5ee12d715d59266beb81ff654d2227d5)
-
-```{r}
-tidy.rdrobust <- function(object, ...){
-    ret <- data.frame(term = row.names(object$coef), 
-                      estimate = object$coef[, 1], 
-                      std.error = object$se[, 1], 
-                      statistic = object$z[, 1],
-                      p.value = object$pv[, 1], 
-                      conf.low = object$ci[,1],
-                      conf.high = object$ci[, 2])
-    row.names(ret) <- NULL
-    ret
-}
-```
-
-## Functions to use `modelsummary` for `rdrobust` results
-
-```{r}
-glance.rdrobust <- function(object, ...){
-    ret <- data.frame(nobs.left = object$N[1],
-                      nobs.right = object$N[2],
-                      nobs.effective.left = object$N_h[1],
-                      nobs.effective.right = object$N_h[2],
-                      cutoff = object$c,
-                      order.regression = object$q,
-                      order.bias = object$q,
-                      kernel = object$kernel,
-                      bwselect = object$bwselect)
-        ret
-}
-```
-
-
 ## Implementing point estimation with `rdrobust`: $h = 20$, uniform kernel
 
 ```{r}
 result <- rdrobust::rdrobust(y = df$y, x = df$x, c = 0, kernel = "uniform", p = 1, h = 20)
-summary(result)
+rdrobust_kable(result)
 ```
 
 
@@ -427,7 +392,7 @@ summary(result)
 
 ```{r}
 result <- rdrobust::rdrobust(y = df$y, x = df$x, c = 0, kernel = "triangular", p = 1, h = 20)
-summary(result)
+rdrobust_kable(result)
 ```
 
 <!-- ## Manually implementing the same point estimation -->
@@ -452,7 +417,7 @@ bw$bws
 
 ```{r}
 result <- rdrobust::rdrobust(y = df$y, x = df$x, c = 0, kernel = "triangular", p = 1, h = bw$bws[1])
-summary(result)
+rdrobust_kable(result)
 ```
 
 
@@ -462,7 +427,7 @@ summary(result)
 
 ```{r}
 result <- rdrobust::rdrobust(y = df$y, x = df$x, c = 0, kernel = "triangular", p = 1, bwselect = "mserd")
-summary(result)
+rdrobust_kable(result)
 ```
 
 
@@ -518,7 +483,7 @@ $$
 
 ```{r}
 result <- rdrobust::rdrobust(y = df$y, x = df$x, c = 0, kernel = "triangular", p = 1, bwselect = "mserd", all = TRUE)
-summary(result)
+rdrobust_kable(result)
 ```
 
 ## Coverage error rate (CER) optimal bandwidth
@@ -535,7 +500,7 @@ summary(result)
 
 ```{r}
 result <- rdrobust::rdrobust(y = df$y, x = df$x, c = 0, kernel = "triangular", p = 1, bwselect = "cerrd", all = TRUE)
-summary(result)
+rdrobust_kable(result)
 ```
 
 
@@ -614,7 +579,7 @@ and $\gamma_Y, \gamma_{Y+}$, and $\gamma_{Y-}$ are some vectors.
 ```{r}
 z <- df %>% dplyr::select(vshr_islam1994, partycount, lpop1994, merkezi, merkezp, subbuyuk, buyuk)
 result <- rdrobust::rdrobust(y = df$y, x = df$x, c = 0, covs = z, kernel = "triangular", p = 1, bwselect = "mserd", all = TRUE)
-summary(result)
+rdrobust_kable(result)
 ```
 
 ## Clustering the standard error
@@ -628,7 +593,7 @@ summary(result)
 
 ```{r}
 result <- rdrobust::rdrobust(y = df$y, x = df$x, c = 0, covs = z, kernel = "triangular", p = 1, bwselect = "mserd", all = TRUE, cluster = df$province_post)
-summary(result)
+rdrobust_kable(result)
 ```
 
 # Validation and Falsification Tests
@@ -662,7 +627,7 @@ rdrobust::rdplot(y = df$lpop1994, x = df$x, c = 0, binselect = "espr")
 
 ```{r}
 result <- rdrobust::rdrobust(y = df$lpop1994, x = df$x, c = 0, kernel = "triangular", p = 1, bwselect = "mserd", all = TRUE)
-summary(result)
+rdrobust_kable(result)
 ```
 
 ## Permutation test of covariate continuity
@@ -761,7 +726,7 @@ result$test$p_jk
 
 ```{r}
 result <- rdrobust::rdrobust(y = df$y, x = df$x, c = 1, kernel = "triangular", p = 1, bwselect = "mserd", all = TRUE)
-summary(result)
+rdrobust_kable(result)
 ```
 
 
@@ -773,7 +738,7 @@ summary(result)
 ```{r}
 df_sub <- df %>% dplyr::filter(abs(x) >= 0.3)
 result <- rdrobust::rdrobust(y = df_sub$y, x = df_sub$x, c = 0, kernel = "triangular", p = 1, bwselect = "mserd", all = TRUE)
-summary(result)
+rdrobust_kable(result)
 ```
 
 
