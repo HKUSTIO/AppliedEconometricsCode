@@ -499,6 +499,14 @@ $$
 - Abadie, Alberto, Alexis Diamond, and Jens Hainmueller. 2011. “Synth: An R Package for Synthetic Control Methods in Comparative Case Studies,” June. https://dspace.mit.edu/handle/1721.1/71234?show=full.
 - Abadie, Alberto, and Javier Gardeazabal. 2003. “The Economic Costs of Conflict: A Case Study of the Basque Country.” The American Economic Review 93 (1): 113–32.
 
+## DID, SCM, Synthetic DID
+
+- If the control period is short, only DID works
+- If the control period is long, all methods can work
+   - If the treated unit is single, only SCM works
+   - If the treated unit is multiple, DID and Synthetic DID can work
+       - DID requires a relatively larger cross-sectional sample
+
 ## Reference
 
 - Abadie, Alberto, and Jérémy L’Hour. 2021. “A Penalized Synthetic Control Estimator for Disaggregated Data.” Journal of the American Statistical Association, August, 1–18.

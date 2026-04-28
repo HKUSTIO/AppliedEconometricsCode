@@ -89,7 +89,7 @@ $(document).ready(function() {
 ## Taxonomy: $G \times T$ design
 
 - $(Y_{it}, G_{it})$, $i = 1, \cdots, N$.
-- Period: $t \in \{1, \cdots, T\}$.
+- Period: $t \in \{1, T\}$.
 - Group: $G_i \in \{q, \cdots, T, \infty\}$.
 - Treatment: $D_{it} = 1\{t \ge G_i\}$, that is, units in group $G_i$ is treated in period $G_i$.
 - Potential outcomes: $Y_{it}^\ast(r)$ the potential outcome in period $t$ if it received treatment in period $r$.
@@ -431,7 +431,7 @@ $$
 - Therefore, the confidence interval for each null hypothesis is not appropriate.
 - The $(1 - \alpha)$-uniform confidence interval $CI_t(r)$ for $r = q, \cdots, T, \infty$ and $t = 1, \cdots, T$
 $$
-\mathbb{P}[\tau_t(r) \in CI_t(r), r = q, \cdots, T, \infty, t = 1, \cdots, T] \ge 1 - \alpha.
+\mathbb{P}[\tau_t(r) \in CI_t(r), r = q, \cdots, T, \infty, t = 1, \cdots, T] \le 1 - \alpha.
 $$
 - Callaway and Sant'Anna (2021) proposed a bootstrap estimator $\widehat{CI}_t(r)$ such that
 $$
@@ -448,4 +448,8 @@ as $N \to \infty$.
 
 
 ## Reference
+
+- Callaway, Brantly, and Pedro H. C. Sant'Anna. 2021. "Difference-in-Differences with Multiple Time Periods." Journal of Econometrics 225 (2): 200-230.
+- Goodman-Bacon, Andrew. 2021. "Difference-in-Differences with Variation in Treatment Timing." Journal of Econometrics 225 (2): 254-277.
+- Wooldridge, Jeffrey M. 2025. "Two-Way Fixed Effects, the Two-Way Mundlak Regression, and Difference-in-Differences Estimators." Empirical Economics 69: 2545-2587.
 

@@ -3376,7 +3376,7 @@ Y_{it} = \mu_i + \lambda_t + \tau \cdot G_i \cdot t + \epsilon_{it}.
 \mathbb{E}(Y_{i1}(0) - Y_{i0}(0)|G_i = 1) = \mathbb{E}(Y_{i1}(0) - Y_{i0}(0)| G_i = 0).
 \]</p></li>
 <li><p>This holds when: \[
-Y_{it}(1) - Y_{it}(0) \perp\!\!\!\!\perp G_i.
+Y_{i1}(0) - Y_{i0}(0) \perp\!\!\!\!\perp G_i.
 \]</p></li>
 <li><p>Under this assumption, the DID parameter is the average treatment effect on treated: \[
 \tau_{DID} = \tau_{ATT}.
@@ -3416,12 +3416,14 @@ Y_{it} = \mu_i + X_i&#39;\lambda_t + \tau \cdot G_i \cdot t + \epsilon_{it}.
 
 <ul>
 <li>Abadie (2005).</li>
-<li>Let \(p(X_i) = \mathbb{P}(G_i = 1| X_i)\) is the propensity score.</li>
+<li>Let \(p(X_i) = \mathbb{P}(G_i = 1| X_i)\) be the propensity score.</li>
 <li>We have: \[
 \begin{split}
 &amp;\mathbb{E}[Y_{i1} - Y_{i0}| G_i = 1, X_i] - \mathbb{E}[Y_{i1} - Y_{i0}| G_i = 0, X_i]\\
-&amp;= \frac{1}{p(X_i)} \mathbb{E}[G_i \cdot (Y_{i1} - Y_{i0})| X_i] - \frac{1}{1 - p(X_i)} \mathbb{E}[(1 - G_i) \cdot (Y_{i1} - Y_{i0})| X_i]\\
-&amp;= \mathbb{E}\Bigg[\left(\frac{G_i}{p(X_i)} -  \frac{1 - G_i}{1 - p(X_i)} \right) \cdot (Y_{i1} - Y_{i0}) \Bigg | X_i   \Bigg].
+&amp;= \frac{1}{p(X_i)} \mathbb{E}[G_i \cdot (Y_{i1} - Y_{i0})| X_i]\\
+&amp;\quad - \frac{1}{1 - p(X_i)} \mathbb{E}[(1 - G_i) \cdot (Y_{i1} - Y_{i0})| X_i]\\
+&amp;= \mathbb{E}\Bigg[\left(\frac{G_i}{p(X_i)} -  \frac{1 - G_i}{1 - p(X_i)} \right)\\
+&amp;\quad \cdot (Y_{i1} - Y_{i0}) \Bigg | X_i \Bigg].
 \end{split}
 \]</li>
 </ul>
@@ -3429,40 +3431,65 @@ Y_{it} = \mu_i + X_i&#39;\lambda_t + \tau \cdot G_i \cdot t + \epsilon_{it}.
 </article></slide><slide class=""><hgroup><h2>Inverse probability weight (IPW) approach</h2></hgroup><article  id="inverse-probability-weight-ipw-approach-1">
 
 <ul>
-<li>The average treatment effect on treated under the conditional paralel trend assumption is: \[
+<li>The average treatment effect on treated under the conditional parallel trend assumption is: \[
 \begin{split}
+\tau^{ATT}
 &amp;= \mathbb{E}[Y_{i1}(1) - Y_{i1}(0)|G_i = 1] \\
 &amp;= \int \mathbb{E}[Y_{i1}(1) - Y_{i1}(0)|G_i = 1, X_i] d\mathbb{P}(X_i|G_i = 1)\\
-&amp;= \int \{\mathbb{E}[Y_{i1} - Y_{i0}| G_i = 1, X_i] - \mathbb{E}[Y_{i1} - Y_{i0}| G_i = 0, X_i]\}  d\mathbb{P}(X_i|G_i = 1)\\
-&amp;= \int \mathbb{E}\Bigg[\left(\frac{G_i}{p(X_i)} -  \frac{1 - G_i}{1 - p(X_i)} \right) \cdot (Y_{i1} - Y_{i0}) \Bigg | X_i   \Bigg] d\mathbb{P}(X_i|G_i = 1)\\
-&amp;= \int \mathbb{E}\Bigg[\left(\frac{G_i}{p(X_i)} -  \frac{1 - G_i}{1 - p(X_i)} \right) \cdot (Y_{i1} - Y_{i0}) \cdot \frac{p(X_i)}{\mathbb{P}(G_i = 1)} \Bigg | X_i   \Bigg] d\mathbb{P}(X_i)
+&amp;= \int \{\mathbb{E}[Y_{i1} - Y_{i0}| G_i = 1, X_i]\\
+&amp;\quad - \mathbb{E}[Y_{i1} - Y_{i0}| G_i = 0, X_i]\} d\mathbb{P}(X_i|G_i = 1)\\
+&amp;= \int \mathbb{E}\Bigg[\left(\frac{G_i}{p(X_i)} -  \frac{1 - G_i}{1 - p(X_i)} \right)\\
+&amp;\quad \cdot (Y_{i1} - Y_{i0}) \Bigg | X_i \Bigg] d\mathbb{P}(X_i|G_i = 1).
 \end{split}
 \]</li>
 </ul>
 
 </article></slide><slide class=""><hgroup><h2>Inverse probability weight (IPW) approach</h2></hgroup><article  id="inverse-probability-weight-ipw-approach-2">
 
-<p>\[
+<ul>
+<li>Since \(d\mathbb{P}(X_i|G_i = 1) = \frac{p(X_i)}{\mathbb{P}(G_i = 1)} d\mathbb{P}(X_i)\): \[
 \begin{split}
-&amp;= \mathbb{E}\Bigg[\left(\frac{G_i}{p(X_i)} -  \frac{1 - G_i}{1 - p(X_i)} \right) \cdot (Y_{i1} - Y_{i0}) \cdot \frac{p(X_i)}{\mathbb{P}(G_i = 1)} \Bigg]\\
-&amp;= \mathbb{E}\Bigg[\left(\frac{G_i}{\mathbb{P}(G_i = 1)} - \frac{\frac{p(X_i)(1 - G_i)}{1 - p(X_i)}}{\mathbb{E}\left[\frac{p(X_i)(1 - G_i)}{1 - p(X_i)}\right]} \right) \cdot (Y_{i1} - Y_{i0}) \Bigg].
+\tau^{ATT}
+&amp;= \mathbb{E}\Bigg[\left(\frac{G_i}{p(X_i)} -  \frac{1 - G_i}{1 - p(X_i)} \right)\\
+&amp;\quad \cdot (Y_{i1} - Y_{i0}) \cdot \frac{p(X_i)}{\mathbb{P}(G_i = 1)} \Bigg]\\
+&amp;= \mathbb{E}\Bigg[\bigg(\frac{G_i}{\mathbb{P}(G_i = 1)}\\
+&amp;\quad - \frac{p(X_i)(1 - G_i)}{(1 - p(X_i))\mathbb{P}(G_i = 1)} \bigg)\\
+&amp;\quad \cdot (Y_{i1} - Y_{i0}) \Bigg].
 \end{split}
-\]</p>
+\]</li>
+</ul>
 
 </article></slide><slide class=""><hgroup><h2>Inverse probability weight (IPW) approach</h2></hgroup><article  id="inverse-probability-weight-ipw-approach-3">
 
 <ul>
 <li>We first estimate the propensity score \(p(\cdot)\) by a parametric model, kernel or local polynomial estimator to obtain \(\hat{p}(\cdot)\).</li>
-<li>Then, we can estimate the average treatment effect on treated as: \[
-\hat{\tau}^{IPW} = \frac{1}{N} \sum_{i = 1}^N \Bigg[\left(\frac{G_i}{\mathbb{P}(G_i = 1)} - \frac{\frac{\hat{p}(X_i)(1 - G_i)}{1 - \hat{p}(X_i)}}{\mathbb{E}\left[\frac{\hat{p}(X_i)(1 - G_i)}{1 - \hat{p}(X_i)}\right]} \right) \cdot (Y_{i1} - Y_{i0}) \Bigg]
-\]</li>
+<li>Let \(N_1 = \sum_{i = 1}^N G_i\).</li>
+<li>We normalize the control weights by the sample analogue of \(\mathbb{P}(G_i = 1)\).</li>
+<li>Then, we can estimate the average treatment effect on treated as:</li>
+</ul>
+
+<p>\[
+\begin{aligned}
+\hat{\tau}^{IPW}
+&amp;= \sum_{i = 1}^N
+\left[
+\frac{G_i}{N_1}
+- \frac{\frac{\hat{p}(X_i)(1 - G_i)}{1 - \hat{p}(X_i)}}{
+\sum_{j = 1}^N \frac{\hat{p}(X_j)(1 - G_j)}{1 - \hat{p}(X_j)}
+}
+\right]\\
+&amp;\quad \cdot (Y_{i1} - Y_{i0})
+\end{aligned}
+\]</p>
+
+<ul>
 <li>This relies on the correct estimation of propensity score \(p(\cdot)\).</li>
 </ul>
 
 </article></slide><slide class=""><hgroup><h2>Doubly-robust (DR) approach</h2></hgroup><article  id="doubly-robust-dr-approach">
 
 <ul>
-<li>Anna and Zhao (2020) combines both approaches.</li>
+<li>Sant’Anna and Zhao (2020) combines both approaches.</li>
 <li>Combine both methods: \[
 \begin{split}
 \hat{\tau}^{IPW} = \frac{1}{N} \sum_{i = 1}^N &amp;\Bigg[\left(\frac{G_i}{\mathbb{P}(G_i = 1)} - \frac{\frac{\hat{p}(X_i)(1 - G_i)}{1 - \hat{p}(X_i)}}{\mathbb{E}\left[\frac{\hat{p}(X_i)(1 - G_i)}{1 - \hat{p}(X_i)}\right]} \right)\\
@@ -3474,10 +3501,10 @@ Y_{it} = \mu_i + X_i&#39;\lambda_t + \tau \cdot G_i \cdot t + \epsilon_{it}.
 </article></slide><slide class=""><hgroup><h2>Reference</h2></hgroup><article  id="reference">
 
 <ul>
-<li>Abadie, Alberto. 2005. “Semiparametric Difference-in-Differences Estimators.” The Review of Economic Studies 72 (1): 1–19.</li>
-<li>Sant’Anna, Pedro H. C., and Jun Zhao. 2020. “Doubly Robust Difference-in-Differences Estimators.” Journal of Econometrics 219 (1): 101–22.</li>
-<li>Heckman, James J., Hidehiko Ichimura, and Petra E. Todd. 1997. “Matching As An Econometric Evaluation Estimator: Evidence from Evaluating a Job Training Programme.” The Review of Economic Studies 64 (4): 605–54.</li>
-<li>LaLonde, Robert J. 1986. “Evaluating the Econometric Evaluations of Training Programs with Experimental Data.” The American Economic Review 76 (4): 604–20.</li>
+<li>Abadie, Alberto. 2005. &ldquo;Semiparametric Difference-in-Differences Estimators.&rdquo; The Review of Economic Studies 72 (1): 1–19.</li>
+<li>Sant’Anna, Pedro H. C., and Jun Zhao. 2020. &ldquo;Doubly Robust Difference-in-Differences Estimators.&rdquo; Journal of Econometrics 219 (1): 101–22.</li>
+<li>Heckman, James J., Hidehiko Ichimura, and Petra E. Todd. 1997. &ldquo;Matching As An Econometric Evaluation Estimator: Evidence from Evaluating a Job Training Programme.&rdquo; The Review of Economic Studies 64 (4): 605–54.</li>
+<li>LaLonde, Robert J. 1986. &ldquo;Evaluating the Econometric Evaluations of Training Programs with Experimental Data.&rdquo; The American Economic Review 76 (4): 604–20.</li>
 </ul></article></slide>
 
 
