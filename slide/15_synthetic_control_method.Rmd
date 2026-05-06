@@ -229,7 +229,8 @@ $$
 \begin{split}
 \left(\mu_1 - \sum_{i = 2}^{N + 1} w_i^\ast \mu_i \right) & = (\boldsymbol{\lambda}' \boldsymbol{\lambda})^{-1} \boldsymbol{\lambda}' \left(\mathbf{Y}_1 - \sum_{i = 2}^{N + 1} w_i^\ast \mathbf{Y}_i\right)\\
 &- (\boldsymbol{\lambda}' \boldsymbol{\lambda})^{-1} \boldsymbol{\lambda}' \boldsymbol{\theta}\left(Z_1 - \sum_{i = 2}^{N + 1} w_i^\ast Z_i\right) \\
-&- (\boldsymbol{\lambda}' \boldsymbol{\lambda})^{-1} \sum_{i = 2}^{N + 1} w_i^\ast (\boldsymbol{\epsilon}_1 - \boldsymbol{\epsilon}_i).
+&- (\boldsymbol{\lambda}' \boldsymbol{\lambda})^{-1} \sum_{i = 2}^{N + 1} w_i^\ast (\boldsymbol{\epsilon}_1 - \boldsymbol{\epsilon}_i)\\
+&= - (\boldsymbol{\lambda}' \boldsymbol{\lambda})^{-1} \sum_{i = 2}^{N + 1} w_i^\ast (\boldsymbol{\epsilon}_1 - \boldsymbol{\epsilon}_i).
 \end{split}
 $$
 
@@ -239,9 +240,7 @@ $$
 $$
 \begin{split}
 &Y_{1t}^\ast(0) - \sum_{i = 2}^{N + 1} w_i^\ast Y_i\\
-&= \lambda_t (\boldsymbol{\lambda}' \boldsymbol{\lambda})^{-1} \boldsymbol{\lambda}' \left(\mathbf{Y}_1 - \sum_{i = 2}^{N + 1} w_i^\ast \mathbf{Y}_i\right)\\
-&+ (\theta_t - \lambda_t (\boldsymbol{\lambda}' \boldsymbol{\lambda})^{-1} \boldsymbol{\lambda}')\left(Z_1 - \sum_{i = 2}^{N + 1} w_i^\ast Z_i\right)\\
-&- \lambda_t (\boldsymbol{\lambda}' \boldsymbol{\lambda})^{-1} \boldsymbol{\lambda}' \sum_{i = 2}^{N + 1} w_i^\ast (\boldsymbol{\epsilon}_1 - \boldsymbol{\epsilon}_i) +\sum_{i = 2}^{N + 1} w_i^\ast (\epsilon_{1t} - \epsilon_{it}).
+&= - \lambda_t (\boldsymbol{\lambda}' \boldsymbol{\lambda})^{-1} \boldsymbol{\lambda}' \sum_{i = 2}^{N + 1} w_i^\ast (\boldsymbol{\epsilon}_1 - \boldsymbol{\epsilon}_i) +\sum_{i = 2}^{N + 1} w_i^\ast (\epsilon_{1t} - \epsilon_{it}).
 \end{split}
 $$
 
@@ -249,16 +248,15 @@ $$
 
 $$
 \begin{split}
-&= - \lambda_t (\boldsymbol{\lambda}' \boldsymbol{\lambda})^{-1} \boldsymbol{\lambda}' \sum_{i = 2}^{N + 1} w_i^\ast (\boldsymbol{\epsilon}_1 - \boldsymbol{\epsilon}_i) +\sum_{i = 2}^{N + 1} w_i^\ast (\epsilon_{1t} - \epsilon_{it})\\
 &= - \lambda_t (\boldsymbol{\lambda}' \boldsymbol{\lambda})^{-1} \boldsymbol{\lambda}' \boldsymbol{\epsilon}_1\\
 &+ \lambda_t (\boldsymbol{\lambda}' \boldsymbol{\lambda})^{-1} \boldsymbol{\lambda}' \sum_{i = 2}^{N + 1} w_i^\ast \boldsymbol{\epsilon}_i \\
 & +\sum_{i = 2}^{N + 1} w_i^\ast (\epsilon_{1t} - \epsilon_{it})
 \end{split}
 $$
 
-- The first term is mean zero.
-- The third term is mean zero because $w_i^\ast$ contains information on $t \le T_0$ and independent of errors at $t > T_0$.
-- The second term may not be mean zero: bias term.
+- The first term is mean zero because $\boldsymbol{\epsilon}_1$ has mean zero conditional on $\boldsymbol{\lambda}$.
+- The third term is mean zero because $w_i^\ast$ contains information on $t \le T_0$ and is independent of errors at $t > T_0$.
+- The second term may not be mean zero: bias term because $w_i^\ast$ and $\boldsymbol{\epsilon}_i$ are correlated.
 
 ## Justification in Abadie et al. (2010)
 
